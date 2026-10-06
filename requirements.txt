@@ -1,2 +1,5 @@
 # Stage 1 uses the Python standard library only.
 # Do not add followthemoney here: v4.x pulls in rigour -> PyICU, which needs system ICU.
+
+# Dev dependency
+pytest
