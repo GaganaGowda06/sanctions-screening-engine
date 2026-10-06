@@ -1,5 +1,5 @@
-# Stage 1 uses the Python standard library only.
-# Do not add followthemoney here: v4.x pulls in rigour -> PyICU, which needs system ICU.
+# Data pipeline (src/download_data.py, src/profile_data.py) is standard-library only.
+# Do not add followthemoney: v4.x pulls in rigour -> PyICU, which needs system ICU.
 
-# Dev dependency
-pytest
+# Dev dependency (tests only)
+pytest==9.1.1

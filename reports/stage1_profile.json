@@ -1,6 +1,9 @@
 {
   "input": "data/sanctions/entities.ftm.json",
   "dataset_version": "20261006074704-hib",
+  "file_sha1": "08f7f5b3eaf9c08877cf073ca5426344ad742de7",
+  "sha1_matches_version_file": true,
+  "python_version": "3.14.7",
   "file_size_bytes": 366569573,
   "file_size_mib": 349.6,
   "total_entities": 301585,

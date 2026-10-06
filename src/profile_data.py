@@ -11,7 +11,10 @@ Run:
     python src/profile_data.py --input path/to/entities.ftm.json --output path/to/profile.json
 """
 import argparse
+import hashlib
 import json
+import platform
+import sys
 import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -141,6 +144,20 @@ class Coverage:
                 for s in sorted(self.rows, key=lambda k: (k != "ALL", -self.rows[k]["n"], k))}
 
 
+def file_sha1(path: Path) -> str:
+    sha1 = hashlib.sha1()
+    with open(path, "rb") as fh:
+        while chunk := fh.read(1024 * 1024):
+            sha1.update(chunk)
+    return sha1.hexdigest()
+
+
+def read_version_file(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    return dict(line.split("=", 1) for line in path.read_text().splitlines() if "=" in line)
+
+
 def profile(path: Path) -> dict:
     ftm = json.loads(PROPS_PATH.read_text())["schemas"]
     id_props = {s: [p for p in v["identifier"] if p not in EXCLUDED_IDENTIFIERS] for s, v in ftm.items()}
@@ -232,6 +249,8 @@ def profile(path: Path) -> dict:
             version = json.loads(index_path.read_text()).get("version")
         except ValueError:
             pass
+    recorded = read_version_file(path.with_name("VERSION"))
+    sha1 = file_sha1(path)
 
     top = [{"property": p, "entities": n, "target_entities": id_prop_targets[p]}
            for p, n in id_prop_all.most_common()]
@@ -241,6 +260,9 @@ def profile(path: Path) -> dict:
     return {
         "input": str(path),
         "dataset_version": version,
+        "file_sha1": sha1,
+        "sha1_matches_version_file": (sha1 == recorded["sha1"]) if "sha1" in recorded else None,
+        "python_version": platform.python_version(),
         "file_size_bytes": size,
         "file_size_mib": round(size / 1024 / 1024, 1),
         "total_entities": total,
@@ -268,6 +290,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
 
+    print(f"Python {platform.python_version()}", file=sys.stderr)
     result = profile(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
