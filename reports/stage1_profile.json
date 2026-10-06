@@ -1,0 +1,347 @@
+{
+  "input": "data/sanctions/entities.ftm.json",
+  "dataset_version": "20261006074704-hib",
+  "file_size_bytes": 366569573,
+  "file_size_mib": 349.6,
+  "total_entities": 301585,
+  "target_entities": 72728,
+  "unparseable_lines": 0,
+  "schema_counts": {
+    "all": {
+      "Sanction": 169382,
+      "Person": 41820,
+      "Address": 24125,
+      "Organization": 20618,
+      "Passport": 11593,
+      "Ownership": 6459,
+      "LegalEntity": 5359,
+      "Identification": 5080,
+      "UnknownLink": 3578,
+      "Security": 3197,
+      "Company": 2986,
+      "CryptoWallet": 2830,
+      "Vessel": 2001,
+      "Representation": 1534,
+      "Directorship": 431,
+      "Airplane": 342,
+      "Family": 155,
+      "Membership": 59,
+      "Asset": 36
+    },
+    "targets": {
+      "Person": 40254,
+      "Organization": 17288,
+      "LegalEntity": 5124,
+      "CryptoWallet": 2824,
+      "Company": 2509,
+      "Security": 2331,
+      "Vessel": 2001,
+      "Airplane": 342,
+      "Asset": 36,
+      "Address": 19
+    }
+  },
+  "names": {
+    "all_entities": {
+      "entities_with_names": 76065,
+      "entities_without_names": 225520,
+      "total_names": 305910,
+      "names_with_non_latin_letter": 95503,
+      "names_without_letters": 2,
+      "names_containing_script": {
+        "Latin": 215104,
+        "Cyrillic": 70964,
+        "Arabic": 12617,
+        "Japanese kana": 7429,
+        "Han": 4005,
+        "Hebrew": 1462,
+        "Greek": 469,
+        "Thai": 400,
+        "Hangul": 148,
+        "Georgian": 58,
+        "Armenian": 7,
+        "Khmer": 6,
+        "Myanmar": 6,
+        "Ethiopic": 4,
+        "Lao": 1,
+        "Coptic": 1
+      },
+      "entities_with_any_non_latin_name": 40678,
+      "entities_with_no_purely_latin_name": 1542
+    },
+    "targets": {
+      "entities_with_names": 69637,
+      "entities_without_names": 3091,
+      "total_names": 296515,
+      "names_with_non_latin_letter": 92829,
+      "names_without_letters": 2,
+      "names_containing_script": {
+        "Latin": 208305,
+        "Cyrillic": 68474,
+        "Arabic": 12586,
+        "Japanese kana": 7428,
+        "Han": 3988,
+        "Hebrew": 1421,
+        "Thai": 400,
+        "Greek": 373,
+        "Hangul": 148,
+        "Georgian": 57,
+        "Khmer": 6,
+        "Myanmar": 6,
+        "Armenian": 5,
+        "Ethiopic": 4,
+        "Lao": 1,
+        "Coptic": 1
+      },
+      "entities_with_any_non_latin_name": 39330,
+      "entities_with_no_purely_latin_name": 1317
+    }
+  },
+  "coverage": {
+    "named_entities": {
+      "ALL": {
+        "n": 76065,
+        "birthDate": 31522,
+        "country": 61365,
+        "own_identifier": 64424,
+        "any_identifier": 64448,
+        "own_identifier_no_programId": 44094,
+        "any_identifier_no_programId": 46532
+      },
+      "Person": {
+        "n": 41766,
+        "birthDate": 31522,
+        "country": 31999,
+        "own_identifier": 33230,
+        "any_identifier": 33254,
+        "own_identifier_no_programId": 20763,
+        "any_identifier_no_programId": 23201
+      },
+      "Organization": {
+        "n": 20617,
+        "birthDate": 0,
+        "country": 17276,
+        "own_identifier": 19652,
+        "any_identifier": 19652,
+        "own_identifier_no_programId": 17019,
+        "any_identifier_no_programId": 17019
+      },
+      "LegalEntity": {
+        "n": 5355,
+        "birthDate": 0,
+        "country": 4911,
+        "own_identifier": 4238,
+        "any_identifier": 4238,
+        "own_identifier_no_programId": 194,
+        "any_identifier_no_programId": 194
+      },
+      "Company": {
+        "n": 2986,
+        "birthDate": 0,
+        "country": 2495,
+        "own_identifier": 1967,
+        "any_identifier": 1967,
+        "own_identifier_no_programId": 854,
+        "any_identifier_no_programId": 854
+      },
+      "Security": {
+        "n": 2943,
+        "birthDate": 0,
+        "country": 2747,
+        "own_identifier": 2943,
+        "any_identifier": 2943,
+        "own_identifier_no_programId": 2943,
+        "any_identifier_no_programId": 2943
+      },
+      "Vessel": {
+        "n": 2001,
+        "birthDate": 0,
+        "country": 1920,
+        "own_identifier": 1997,
+        "any_identifier": 1997,
+        "own_identifier_no_programId": 1995,
+        "any_identifier_no_programId": 1995
+      },
+      "Airplane": {
+        "n": 342,
+        "birthDate": 0,
+        "country": 5,
+        "own_identifier": 342,
+        "any_identifier": 342,
+        "own_identifier_no_programId": 326,
+        "any_identifier_no_programId": 326
+      },
+      "Asset": {
+        "n": 36,
+        "birthDate": 0,
+        "country": 11,
+        "own_identifier": 36,
+        "any_identifier": 36,
+        "own_identifier_no_programId": 0,
+        "any_identifier_no_programId": 0
+      },
+      "Address": {
+        "n": 19,
+        "birthDate": 0,
+        "country": 1,
+        "own_identifier": 19,
+        "any_identifier": 19,
+        "own_identifier_no_programId": 0,
+        "any_identifier_no_programId": 0
+      }
+    },
+    "targets": {
+      "ALL": {
+        "n": 72728,
+        "birthDate": 30469,
+        "country": 59133,
+        "own_identifier": 62017,
+        "any_identifier": 62041,
+        "own_identifier_no_programId": 42229,
+        "any_identifier_no_programId": 44667
+      },
+      "Person": {
+        "n": 40254,
+        "birthDate": 30469,
+        "country": 31528,
+        "own_identifier": 31789,
+        "any_identifier": 31813,
+        "own_identifier_no_programId": 19821,
+        "any_identifier_no_programId": 22259
+      },
+      "Organization": {
+        "n": 17288,
+        "birthDate": 0,
+        "country": 16742,
+        "own_identifier": 16681,
+        "any_identifier": 16681,
+        "own_identifier_no_programId": 14078,
+        "any_identifier_no_programId": 14078
+      },
+      "LegalEntity": {
+        "n": 5124,
+        "birthDate": 0,
+        "country": 4775,
+        "own_identifier": 4123,
+        "any_identifier": 4123,
+        "own_identifier_no_programId": 79,
+        "any_identifier_no_programId": 79
+      },
+      "CryptoWallet": {
+        "n": 2824,
+        "birthDate": 0,
+        "country": 0,
+        "own_identifier": 2824,
+        "any_identifier": 2824,
+        "own_identifier_no_programId": 2824,
+        "any_identifier_no_programId": 2824
+      },
+      "Company": {
+        "n": 2509,
+        "birthDate": 0,
+        "country": 2221,
+        "own_identifier": 1875,
+        "any_identifier": 1875,
+        "own_identifier_no_programId": 775,
+        "any_identifier_no_programId": 775
+      },
+      "Security": {
+        "n": 2331,
+        "birthDate": 0,
+        "country": 1930,
+        "own_identifier": 2331,
+        "any_identifier": 2331,
+        "own_identifier_no_programId": 2331,
+        "any_identifier_no_programId": 2331
+      },
+      "Vessel": {
+        "n": 2001,
+        "birthDate": 0,
+        "country": 1920,
+        "own_identifier": 1997,
+        "any_identifier": 1997,
+        "own_identifier_no_programId": 1995,
+        "any_identifier_no_programId": 1995
+      },
+      "Airplane": {
+        "n": 342,
+        "birthDate": 0,
+        "country": 5,
+        "own_identifier": 342,
+        "any_identifier": 342,
+        "own_identifier_no_programId": 326,
+        "any_identifier_no_programId": 326
+      },
+      "Asset": {
+        "n": 36,
+        "birthDate": 0,
+        "country": 11,
+        "own_identifier": 36,
+        "any_identifier": 36,
+        "own_identifier_no_programId": 0,
+        "any_identifier_no_programId": 0
+      },
+      "Address": {
+        "n": 19,
+        "birthDate": 0,
+        "country": 1,
+        "own_identifier": 19,
+        "any_identifier": 19,
+        "own_identifier_no_programId": 0,
+        "any_identifier_no_programId": 0
+      }
+    }
+  },
+  "top_identifier_properties": [
+    {
+      "property": "programId",
+      "entities": 194068,
+      "target_entities": 56780
+    },
+    {
+      "property": "authorityId",
+      "entities": 95290,
+      "target_entities": 0
+    },
+    {
+      "property": "innCode",
+      "entities": 13885,
+      "target_entities": 13557
+    },
+    {
+      "property": "number",
+      "entities": 13174,
+      "target_entities": 0
+    },
+    {
+      "property": "idNumber",
+      "entities": 12252,
+      "target_entities": 11745
+    },
+    {
+      "property": "registrationNumber",
+      "entities": 8870,
+      "target_entities": 8556
+    },
+    {
+      "property": "taxNumber",
+      "entities": 7901,
+      "target_entities": 7709
+    },
+    {
+      "property": "ogrnCode",
+      "entities": 7757,
+      "target_entities": 7397
+    },
+    {
+      "property": "unscId",
+      "entities": 6008,
+      "target_entities": 0
+    },
+    {
+      "property": "passportNumber",
+      "entities": 5815,
+      "target_entities": 5391
+    }
+  ]
+}

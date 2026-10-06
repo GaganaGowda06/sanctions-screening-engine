@@ -1,0 +1,734 @@
+{
+ "_source": "followthemoney 4.11.0 schema YAML, inheritance resolved; type=identifier / type=country",
+ "schemas": {
+  "Address": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "googlePlaceId",
+    "osmId",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Airplane": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "icaoCode",
+    "programId",
+    "registrationNumber",
+    "serialNumber",
+    "wikidataId"
+   ]
+  },
+  "Analyzable": {
+   "country": [
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned"
+   ]
+  },
+  "Article": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Asset": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Associate": {
+   "country": [],
+   "identifier": []
+  },
+  "Audio": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "BankAccount": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "accountNumber",
+    "bic",
+    "iban",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Call": {
+   "country": [],
+   "identifier": []
+  },
+  "CallForTenders": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "authorityReferenceId",
+    "callId",
+    "cpvCode",
+    "nutsCode",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Company": {
+   "country": [
+    "country",
+    "jurisdiction",
+    "mainCountry"
+   ],
+   "identifier": [
+    "bikCode",
+    "brightQueryId",
+    "brightQueryOrgId",
+    "bvdId",
+    "cageCode",
+    "cikCode",
+    "coatoCode",
+    "dunsCode",
+    "fnsCode",
+    "giiNumber",
+    "idNumber",
+    "imoNumber",
+    "innCode",
+    "ipoCode",
+    "irsCode",
+    "isinCode",
+    "jibCode",
+    "kppCode",
+    "leiCode",
+    "licenseNumber",
+    "mbsCode",
+    "npiCode",
+    "ogrnCode",
+    "okpoCode",
+    "okvedCode",
+    "permId",
+    "pfrNumber",
+    "programId",
+    "registrationNumber",
+    "ricCode",
+    "sayariId",
+    "swiftBic",
+    "taxNumber",
+    "ticker",
+    "uniqueEntityId",
+    "uscCode",
+    "vatCode",
+    "voenCode",
+    "wikidataId"
+   ]
+  },
+  "Contract": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "ContractAward": {
+   "country": [],
+   "identifier": [
+    "cpvCode",
+    "nutsCode"
+   ]
+  },
+  "Control": {
+   "country": [],
+   "identifier": []
+  },
+  "CourtCase": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "caseNumber",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "CourtCaseParty": {
+   "country": [],
+   "identifier": []
+  },
+  "CryptoWallet": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "accountId",
+    "cryptoAddress",
+    "programId",
+    "publicKey",
+    "wikidataId"
+   ]
+  },
+  "Debt": {
+   "country": [],
+   "identifier": []
+  },
+  "Directorship": {
+   "country": [],
+   "identifier": []
+  },
+  "Document": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Documentation": {
+   "country": [],
+   "identifier": []
+  },
+  "EconomicActivity": {
+   "country": [
+    "departureCountry",
+    "destinationCountry",
+    "originCountry",
+    "tradingCountry"
+   ],
+   "identifier": [
+    "ccdNumber",
+    "vedCode"
+   ]
+  },
+  "Email": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Employment": {
+   "country": [],
+   "identifier": []
+  },
+  "Event": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Family": {
+   "country": [],
+   "identifier": []
+  },
+  "Folder": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "HyperText": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Identification": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "number"
+   ]
+  },
+  "Image": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Interest": {
+   "country": [],
+   "identifier": []
+  },
+  "Interval": {
+   "country": [],
+   "identifier": []
+  },
+  "LegalEntity": {
+   "country": [
+    "country",
+    "jurisdiction",
+    "mainCountry"
+   ],
+   "identifier": [
+    "brightQueryId",
+    "brightQueryOrgId",
+    "bvdId",
+    "dunsCode",
+    "idNumber",
+    "innCode",
+    "leiCode",
+    "licenseNumber",
+    "npiCode",
+    "ogrnCode",
+    "okpoCode",
+    "okvedCode",
+    "programId",
+    "registrationNumber",
+    "sayariId",
+    "swiftBic",
+    "taxNumber",
+    "uniqueEntityId",
+    "uscCode",
+    "vatCode",
+    "wikidataId"
+   ]
+  },
+  "License": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Membership": {
+   "country": [],
+   "identifier": []
+  },
+  "Mention": {
+   "country": [
+    "contextCountry"
+   ],
+   "identifier": []
+  },
+  "Message": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Note": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Occupancy": {
+   "country": [],
+   "identifier": []
+  },
+  "Organization": {
+   "country": [
+    "country",
+    "jurisdiction",
+    "mainCountry"
+   ],
+   "identifier": [
+    "brightQueryId",
+    "brightQueryOrgId",
+    "bvdId",
+    "cageCode",
+    "dunsCode",
+    "giiNumber",
+    "idNumber",
+    "imoNumber",
+    "innCode",
+    "leiCode",
+    "licenseNumber",
+    "npiCode",
+    "ogrnCode",
+    "okpoCode",
+    "okvedCode",
+    "permId",
+    "programId",
+    "registrationNumber",
+    "sayariId",
+    "swiftBic",
+    "taxNumber",
+    "uniqueEntityId",
+    "uscCode",
+    "vatCode",
+    "wikidataId"
+   ]
+  },
+  "Ownership": {
+   "country": [],
+   "identifier": []
+  },
+  "Package": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Page": {
+   "country": [],
+   "identifier": []
+  },
+  "Pages": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Passport": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "number",
+    "passportNumber",
+    "personalNumber"
+   ]
+  },
+  "Payment": {
+   "country": [],
+   "identifier": []
+  },
+  "Person": {
+   "country": [
+    "birthCountry",
+    "citizenship",
+    "country",
+    "jurisdiction",
+    "mainCountry",
+    "nationality"
+   ],
+   "identifier": [
+    "brightQueryId",
+    "brightQueryOrgId",
+    "bvdId",
+    "dunsCode",
+    "idNumber",
+    "innCode",
+    "leiCode",
+    "licenseNumber",
+    "npiCode",
+    "ogrnCode",
+    "okpoCode",
+    "okvedCode",
+    "passportNumber",
+    "programId",
+    "registrationNumber",
+    "sayariId",
+    "socialSecurityNumber",
+    "swiftBic",
+    "taxNumber",
+    "uniqueEntityId",
+    "uscCode",
+    "vatCode",
+    "wikidataId"
+   ]
+  },
+  "PlainText": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Position": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Project": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "projectId",
+    "wikidataId"
+   ]
+  },
+  "ProjectParticipant": {
+   "country": [],
+   "identifier": []
+  },
+  "PublicBody": {
+   "country": [
+    "country",
+    "jurisdiction",
+    "mainCountry"
+   ],
+   "identifier": [
+    "brightQueryId",
+    "brightQueryOrgId",
+    "bvdId",
+    "cageCode",
+    "dunsCode",
+    "giiNumber",
+    "idNumber",
+    "imoNumber",
+    "innCode",
+    "leiCode",
+    "licenseNumber",
+    "npiCode",
+    "ogrnCode",
+    "okpoCode",
+    "okvedCode",
+    "permId",
+    "programId",
+    "registrationNumber",
+    "sayariId",
+    "swiftBic",
+    "taxNumber",
+    "uniqueEntityId",
+    "uscCode",
+    "vatCode",
+    "wikidataId"
+   ]
+  },
+  "RealEstate": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "cadastralCode",
+    "programId",
+    "registrationNumber",
+    "titleNumber",
+    "wikidataId"
+   ]
+  },
+  "Representation": {
+   "country": [],
+   "identifier": []
+  },
+  "Risk": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId"
+   ]
+  },
+  "Sanction": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "authorityId",
+    "programId",
+    "unscId"
+   ]
+  },
+  "Security": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "figiCode",
+    "isin",
+    "programId",
+    "registrationNumber",
+    "ticker",
+    "wikidataId"
+   ]
+  },
+  "Similar": {
+   "country": [],
+   "identifier": []
+  },
+  "Succession": {
+   "country": [],
+   "identifier": []
+  },
+  "Table": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "TaxRoll": {
+   "country": [
+    "country"
+   ],
+   "identifier": []
+  },
+  "Territory": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "fipsCode",
+    "nutsCode",
+    "programId",
+    "territoryCode",
+    "wikidataId",
+    "zipCode"
+   ]
+  },
+  "Thing": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Trip": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "UnknownLink": {
+   "country": [],
+   "identifier": []
+  },
+  "UserAccount": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Value": {
+   "country": [],
+   "identifier": []
+  },
+  "Vehicle": {
+   "country": [
+    "country"
+   ],
+   "identifier": [
+    "programId",
+    "registrationNumber",
+    "wikidataId"
+   ]
+  },
+  "Vessel": {
+   "country": [
+    "country",
+    "flag",
+    "pastFlags"
+   ],
+   "identifier": [
+    "callSign",
+    "crsNumber",
+    "imoNumber",
+    "mmsi",
+    "programId",
+    "registrationNumber",
+    "wikidataId"
+   ]
+  },
+  "Video": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  },
+  "Workbook": {
+   "country": [
+    "country",
+    "detectedCountry"
+   ],
+   "identifier": [
+    "ibanMentioned",
+    "programId",
+    "wikidataId"
+   ]
+  }
+ }
+}

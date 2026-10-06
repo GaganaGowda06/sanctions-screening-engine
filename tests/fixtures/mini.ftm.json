@@ -1,0 +1,13 @@
+{"id": "P1", "schema": "Person", "target": true, "properties": {"name": ["محمد علي"], "alias": ["Mohammed Ali", "Mohammed Ali"], "weakAlias": ["Mohammed Ali"], "birthDate": ["1970"], "nationality": ["sa"]}}
+{"id": "P2", "schema": "Person", "target": true, "properties": {"name": ["Владимир Иванов"], "idNumber": ["123"]}}
+{"id": "P3", "schema": "Person", "target": false, "properties": {"name": ["张伟"], "alias": ["Zhang Wei"], "previousName": ["Zhang Wei"], "birthDate": ["1980-01-01"], "citizenship": ["cn"]}}
+{"id": "P4", "schema": "Person", "target": true, "properties": {"name": ["김민수"], "birthDate": ["1990"]}}
+{"id": "P5", "schema": "Person", "target": false, "properties": {"name": ["たなか"], "alias": ["ヤマダ"]}}
+{"id": "broken", "schema": 
+{"id": "P6", "schema": "Person", "target": false, "properties": {"name": ["Ｊｏｈｎ Ｓｍｉｔｈ"], "programId": ["PRG"]}}
+{"id": "P7", "schema": "Person", "target": false, "properties": {"birthDate": ["1960"]}}
+
+{"id": "C1", "schema": "Company", "target": true, "properties": {"name": ["Gazprom Нефть"], "jurisdiction": ["ru"], "leiCode": ["LEI1"]}}
+{"id": "C2", "schema": "Company", "target": false, "properties": {"name": ["Acme Ltd"], "wikidataId": ["Q2"]}}
+{"id": "PS1", "schema": "Passport", "target": false, "properties": {"holder": ["P1"], "passportNumber": ["X1"], "number": ["X1"]}}
+{"id": "S1", "schema": "Sanction", "target": false, "properties": {"entity": ["P2"]}}
