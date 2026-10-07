@@ -25,12 +25,14 @@ The log and the store raise AuditError on any failure. Nothing here swallows an 
 Standard library only.
 """
 
+import fcntl
 import json
 import os
 import re
 import secrets
 import uuid
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -56,6 +58,10 @@ HEADER_FIELDS = (
     "matched_entity_ids",
     "payload_digest",
 )
+# Added by the log when a header is appended: its position, the hash of the record before it, and its own hash.
+CHAIN_FIELDS = ("seq", "prev_hash", "record_hash")
+LOGGED_HEADER_FIELDS = HEADER_FIELDS + CHAIN_FIELDS
+GENESIS_PREV_HASH = "0" * 64  # prev_hash of the first record
 CANDIDATE_FIELDS = (
     "entity_id",
     "score",
@@ -176,19 +182,147 @@ def build_header(
     }
 
 
+def compute_record_hash(record: Mapping[str, object]) -> str:
+    """SHA-256 of the canonical JSON of a logged header, including prev_hash and excluding record_hash."""
+    body = {k: v for k, v in record.items() if k != "record_hash"}
+    return sha256(canonical_json(body).encode("utf-8")).hexdigest()
+
+
+class CheckpointError(AuditError):
+    """The header line was written but the head checkpoint could not be updated. The header is in the log."""
+
+
 class HeaderLog:
-    """Append-only JSONL file of headers: one canonical JSON object per line. There is no way to edit or remove a
-    line through this class. Each line is written with one write() on a descriptor opened with O_APPEND and then
-    flushed to disk."""
+    """Append-only, hash-chained JSONL file of headers: one canonical JSON object per line.
+
+    On append the log adds seq (0 for the first record), prev_hash (the previous record_hash, or GENESIS_PREV_HASH)
+    and record_hash (see compute_record_hash). Appends are serialised by an exclusive flock on `<log>.lock`, held
+    from reading the head to writing the checkpoint, so concurrent writers, in threads or processes, cannot fork the
+    chain. After each append `<log>.head` is rewritten with the record count and last record_hash. The chain alone
+    cannot show that the last N lines were deleted; the checkpoint can. A local checkpoint is tamper-evident, not
+    tamper-proof: whoever can rewrite the log can rewrite the checkpoint (production anchors the head outside, in
+    WORM storage or a periodic signed export).
+
+    The log refuses to append, and the call fails, when its head is not trustworthy: a torn final line from a crash
+    mid-write, an edited last record, or a checkpoint that does not match (a log shorter than its checkpoint is the
+    tail-truncation signature). Appending past any of those would hide them. A checkpoint exactly one record behind
+    the log, where that record's prev_hash is the checkpoint's hash and its own hash verifies, is the signature of a
+    crash between the two writes and is repaired; every other mismatch is refused. flock is POSIX only and not
+    reentrant across descriptors: code that holds locked() must call append_locked(), not append().
+    """
 
     def __init__(self, path: Path, fsync: bool = True) -> None:
         self.path = Path(path)
         self.fsync = fsync
+        self.lock_path = self.path.with_name(self.path.name + ".lock")
+        self.checkpoint_path = self.path.with_name(self.path.name + ".head")
 
-    def append(self, header: Mapping[str, object]) -> None:
+    @contextmanager
+    def locked(self) -> Iterator[None]:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(self.lock_path, os.O_WRONLY | os.O_CREAT, 0o600)
         try:
-            line = (canonical_json(header) + "\n").encode("utf-8")
-            self.path.parent.mkdir(parents=True, exist_ok=True)
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            yield
+        finally:
+            os.close(fd)  # closing releases the lock
+
+    def read_checkpoint(self) -> dict | None:
+        """The stored head {"count", "record_hash"}, or None if there is no checkpoint file."""
+        if not self.checkpoint_path.exists():
+            return None
+        return json.loads(self.checkpoint_path.read_text(encoding="utf-8"))
+
+    def _write_checkpoint(self, count: int, record_hash: str) -> None:
+        tmp = self.checkpoint_path.with_name(self.checkpoint_path.name + ".tmp")
+        data = canonical_json({"count": count, "record_hash": record_hash}).encode("utf-8")
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            os.write(fd, data)
+            if self.fsync:
+                os.fsync(fd)
+        finally:
+            os.close(fd)
+        os.replace(tmp, self.checkpoint_path)
+        if self.fsync:
+            dir_fd = os.open(self.path.parent, os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+
+    def _last_line(self) -> bytes | None:
+        """The last complete line, or None for an empty or missing file. Raises AuditError on a torn tail."""
+        if not self.path.exists() or self.path.stat().st_size == 0:
+            return None
+        with open(self.path, "rb") as fh:
+            fh.seek(-1, os.SEEK_END)
+            if fh.read(1) != b"\n":
+                raise AuditError(f"{self.path} ends in a torn line (a crash mid-write); not appending")
+            end = fh.seek(0, os.SEEK_END) - 1  # offset of the final newline
+            tail = b""
+            position = end
+            while position > 0:
+                step = min(8192, position)
+                position -= step
+                fh.seek(position)
+                tail = fh.read(step) + tail
+                if b"\n" in tail:
+                    break
+            return tail.rsplit(b"\n", 1)[-1]
+
+    def _next_link(self) -> tuple[int, str]:
+        """(seq, prev_hash) for the next record, after checking the head against the checkpoint."""
+        last = self._last_line()
+        checkpoint = self.read_checkpoint()
+        if last is None:
+            if checkpoint is not None and checkpoint["count"] > 0:
+                raise AuditError(f"{self.path} is empty but its checkpoint records {checkpoint['count']} records")
+            return 0, GENESIS_PREV_HASH
+        try:
+            head = json.loads(last)
+        except ValueError as exc:
+            raise AuditError(f"the last line of {self.path} is not valid JSON: {exc}") from exc
+        if compute_record_hash(head) != head.get("record_hash"):
+            raise AuditError(f"the last record of {self.path} does not match its own hash; not appending")
+        if checkpoint is None:
+            raise AuditError(f"{self.checkpoint_path} is missing for a non-empty log; not appending")
+        count, seq = checkpoint["count"], head["seq"]
+        if count == seq + 1 and checkpoint["record_hash"] == head["record_hash"]:
+            return seq + 1, head["record_hash"]
+        if count == seq and checkpoint["record_hash"] == head["prev_hash"]:
+            # Exactly one line past the checkpoint, linked to it, and the line's own hash verified above: a crash
+            # between the line and the checkpoint. Repair the checkpoint, then continue.
+            try:
+                self._write_checkpoint(seq + 1, head["record_hash"])
+            except OSError as exc:
+                raise AuditError(f"could not repair the checkpoint of {self.path}: {exc}") from exc
+            return seq + 1, head["record_hash"]
+        if count > seq + 1:
+            raise AuditError(f"{self.path} has {seq + 1} records but its checkpoint records {count}: tail truncated")
+        raise AuditError(f"the head of {self.path} does not match its checkpoint; not appending")
+
+    def append(self, header: Mapping[str, object]) -> dict:
+        """Chain and append a header, taking the lock. Returns the record as written. Raises AuditError."""
+        try:
+            with self.locked():
+                return self.append_locked(header)
+        except AuditError:
+            raise
+        except (OSError, TypeError, ValueError) as exc:
+            raise AuditError(f"could not append to the header log {self.path}: {exc}") from exc
+
+    def append_locked(self, header: Mapping[str, object]) -> dict:
+        """append() for a caller that already holds locked(). The lock covers reading the head to writing the
+        checkpoint, so two writers cannot take the same seq."""
+        clash = set(CHAIN_FIELDS) & set(header)
+        if clash:
+            raise AuditError(f"a header to append must not carry {sorted(clash)}")
+        try:
+            seq, prev_hash = self._next_link()
+            record = {**header, "seq": seq, "prev_hash": prev_hash}
+            record["record_hash"] = compute_record_hash(record)
+            line = (canonical_json(record) + "\n").encode("utf-8")
             fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
             try:
                 if os.write(fd, line) != len(line):
@@ -197,14 +331,24 @@ class HeaderLog:
                     os.fsync(fd)
             finally:
                 os.close(fd)
+            try:
+                self._write_checkpoint(seq + 1, record["record_hash"])
+            except OSError as exc:
+                raise CheckpointError(f"header written but the checkpoint could not be: {exc}") from exc
+            return record
+        except AuditError:
+            raise
         except (OSError, TypeError, ValueError) as exc:
             raise AuditError(f"could not append to the header log {self.path}: {exc}") from exc
 
     def read_all(self) -> list[dict]:
+        """Every complete line. A torn final line (no newline) is left out; verify_chain reports it."""
         if not self.path.exists():
             return []
-        with open(self.path, encoding="utf-8") as fh:
-            return [json.loads(line) for line in fh if line.strip()]
+        raw = self.path.read_bytes()
+        lines = raw.split(b"\n")
+        lines.pop()  # the empty piece after the last newline, or the torn fragment
+        return [json.loads(line) for line in lines if line.strip()]
 
 
 class PayloadStore:
@@ -257,14 +401,23 @@ class AuditLog:
         return cls(HeaderLog(directory / "headers.jsonl", fsync), PayloadStore(directory / "payloads", fsync))
 
     def write(self, header: Mapping[str, object], payload: PayloadRecord) -> None:
-        """Payload first, then header. If the header cannot be written the payload is removed again, so there is no
-        header without a payload that matches it and no payload without a header unless removal also fails."""
-        self.payloads.write(payload)
+        """Payload first, then header, both under the header log's exclusive lock, so a verifier that takes the same
+        lock never sees a payload whose header is still to come. If the header cannot be written the payload is
+        removed again. After a crash between the two writes an orphan payload can remain; verify_chain reports it."""
         try:
-            self.headers.append(header)
+            with self.headers.locked():
+                self.payloads.write(payload)
+                try:
+                    self.headers.append_locked(header)
+                except CheckpointError:
+                    raise  # the header is in the log, so its payload must stay
+                except AuditError:
+                    try:
+                        self.payloads.remove(payload.request_id)
+                    except OSError:
+                        pass
+                    raise
         except AuditError:
-            try:
-                self.payloads.remove(payload.request_id)
-            except OSError:
-                pass
             raise
+        except OSError as exc:
+            raise AuditError(f"could not write the audit record: {exc}") from exc

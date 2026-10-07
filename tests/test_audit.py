@@ -180,7 +180,10 @@ def test_header_log_appends_one_line_per_header_and_never_rewrites(tmp_path):
     log.append(second)
     after = (tmp_path / "headers.jsonl").read_bytes()
     assert after.startswith(before) and after.count(b"\n") == 2
-    assert log.read_all() == [first, second]
+    one, two = log.read_all()
+    assert {k: v for k, v in one.items() if k not in audit.CHAIN_FIELDS} == first
+    assert {k: v for k, v in two.items() if k not in audit.CHAIN_FIELDS} == second
+    assert tuple(sorted(one)) == tuple(sorted(audit.LOGGED_HEADER_FIELDS))
 
 
 def test_header_log_failure_raises_audit_error(tmp_path):
@@ -237,6 +240,7 @@ def test_audit_log_writes_both_when_it_can(tmp_path):
     record = PayloadRecord("b" * 32, b"s" * 32, {"x": 1})
     header = header_for([entry("e1", 0.9)])
     log.write(header, record)
-    assert log.headers.read_all() == [header]
+    (logged,) = log.headers.read_all()
+    assert {k: v for k, v in logged.items() if k not in audit.CHAIN_FIELDS} == header
     assert log.payloads.read("b" * 32) == record
     assert json.loads((tmp_path / "payloads" / ("b" * 32 + ".json")).read_text())["salt_hex"] == (b"s" * 32).hex()

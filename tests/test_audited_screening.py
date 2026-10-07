@@ -20,6 +20,7 @@ import audit
 import audited_screening as asc
 import run_context as rc
 from audit import AuditError, AuditLog
+from audit_verify import verify_chain
 from audited_screening import AuditedEngine
 from screening import ScreeningConfig, ScreeningEngine
 
@@ -135,7 +136,7 @@ def test_the_header_contains_nothing_derived_from_the_name_birth_date_or_country
     payload = audited.log.payloads.read(result.request_id).data
     forbidden = forbidden_strings(name, birth_date, country, payload["normalised"], payload)
     assert forbidden, "the payload should hold the name-derived strings"
-    assert set(header) == set(audit.HEADER_FIELDS)  # the log writes keys sorted
+    assert set(header) == set(audit.LOGGED_HEADER_FIELDS)  # the log writes keys sorted, and adds the chain fields
     text = json.dumps(header, ensure_ascii=False).lower()
     for leaf in string_leaves(header):
         assert leaf not in forbidden, leaf
@@ -343,6 +344,8 @@ def check_equivalence(tmp_path, queries: list[tuple[str, dict]]) -> tuple[int, i
         assert header["decision"] == ("alert" if plain else "clear")
         assert header["matched_entity_ids"] == [m.entity_id for m in plain]
         alerts += bool(plain)
+    result = verify_chain(audited.log)  # the whole log the run produced is a clean chain
+    assert result.ok and result.records == len(queries), result.failures[:3]
     return len(queries), alerts
 
 
