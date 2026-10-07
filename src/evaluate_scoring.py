@@ -94,8 +94,10 @@ SYNTHETIC = {
     "test_other": {"other": 400},
     # the second screening hold-out, for the trained matcher: the same design plus "other" negatives
     "holdout2": {"Latin": 800, "Cyrillic": 350, "Arabic": 350, "other": 400},
+    # the third screening hold-out, for the fairness stage: identical design to the second
+    "holdout3": {"Latin": 800, "Cyrillic": 350, "Arabic": 350, "other": 400},
 }
-NEAR_MISS = {"dev": 250, "test": 500, "final": 500, "holdout2": 500}
+NEAR_MISS = {"dev": 250, "test": 500, "final": 500, "holdout2": 500, "holdout3": 500}
 MODES = {
     "neither": (False, False),
     "birth_date_only": (True, False),

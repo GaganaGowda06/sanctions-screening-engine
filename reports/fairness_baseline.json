@@ -1,0 +1,213 @@
+{
+  "python_version": "3.14.7",
+  "code_commit": "5021eddfea9b0cc8900b499235f00c95c424b53e",
+  "holdout": {
+    "path": "holdout/screening_holdout_v3.json",
+    "sha256": "963b278ba2b27eb6e872e99dd032aa35c208e3977bff1831f2d995f4ffffd81b",
+    "checksum_ok": true,
+    "clean_names": 2400,
+    "positive_queries": 2400
+  },
+  "engine": {
+    "global_threshold": 0.86,
+    "blend": 0.5,
+    "skeleton_floor": 0.6,
+    "skeleton_lift": 0.2,
+    "per_script_thresholds": false,
+    "changed": false
+  },
+  "metric": "share of clean names (matching no listed entity) that raise an alert, by query script",
+  "headline_synthetic_clean_names": {
+    "per_script": {
+      "Latin": {
+        "alert_rate": 0.065,
+        "ci95": [
+          0.0499,
+          0.0842
+        ],
+        "alerts": 52,
+        "names": 800,
+        "alerts_per_1000": 65.0
+      },
+      "Cyrillic": {
+        "alert_rate": 0.06,
+        "ci95": [
+          0.0396,
+          0.09
+        ],
+        "alerts": 21,
+        "names": 350,
+        "alerts_per_1000": 60.0
+      },
+      "Arabic": {
+        "alert_rate": 0.3257,
+        "ci95": [
+          0.2787,
+          0.3765
+        ],
+        "alerts": 114,
+        "names": 350,
+        "alerts_per_1000": 325.7
+      },
+      "other": {
+        "alert_rate": 0.005,
+        "ci95": [
+          0.0014,
+          0.018
+        ],
+        "alerts": 2,
+        "names": 400,
+        "alerts_per_1000": 5.0
+      }
+    },
+    "contrasts": {
+      "Arabic vs Latin": {
+        "ratio": 5.01,
+        "ratio_ci95": [
+          3.8,
+          6.92
+        ],
+        "difference_points": 26.1,
+        "difference_ci95": [
+          21.0,
+          31.4
+        ],
+        "bootstrap_resamples_with_zero_reference_rate": 0
+      },
+      "Arabic vs Cyrillic": {
+        "ratio": 5.43,
+        "ratio_ci95": [
+          3.66,
+          9.17
+        ],
+        "difference_points": 26.6,
+        "difference_ci95": [
+          21.1,
+          32.0
+        ],
+        "bootstrap_resamples_with_zero_reference_rate": 0
+      }
+    },
+    "arabic_vs_latin_and_cyrillic_pooled": {
+      "ratio": 5.13,
+      "ratio_ci95": [
+        3.96,
+        6.74
+      ],
+      "difference_points": 26.2,
+      "difference_ci95": [
+        21.1,
+        31.2
+      ],
+      "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+  },
+  "all_clean_names_not_like_for_like": {
+    "note": "includes near-miss namesakes, which are almost all Latin or Cyrillic",
+    "per_script": {
+      "Latin": {
+        "alert_rate": 0.0519,
+        "ci95": [
+          0.0405,
+          0.0662
+        ],
+        "alerts": 60,
+        "names": 1156,
+        "alerts_per_1000": 51.9
+      },
+      "Cyrillic": {
+        "alert_rate": 0.0467,
+        "ci95": [
+          0.0313,
+          0.069
+        ],
+        "alerts": 23,
+        "names": 493,
+        "alerts_per_1000": 46.7
+      },
+      "Arabic": {
+        "alert_rate": 0.3248,
+        "ci95": [
+          0.2779,
+          0.3754
+        ],
+        "alerts": 114,
+        "names": 351,
+        "alerts_per_1000": 324.8
+      },
+      "other": {
+        "alert_rate": 0.005,
+        "ci95": [
+          0.0014,
+          0.018
+        ],
+        "alerts": 2,
+        "names": 400,
+        "alerts_per_1000": 5.0
+      }
+    },
+    "contrasts": {
+      "Arabic vs Latin": {
+        "ratio": 6.26,
+        "ratio_ci95": [
+          4.75,
+          8.51
+        ],
+        "difference_points": 27.3,
+        "difference_ci95": [
+          22.2,
+          32.3
+        ],
+        "bootstrap_resamples_with_zero_reference_rate": 0
+      },
+      "Arabic vs Cyrillic": {
+        "ratio": 6.96,
+        "ratio_ci95": [
+          4.7,
+          11.44
+        ],
+        "difference_points": 27.8,
+        "difference_ci95": [
+          22.6,
+          33.1
+        ],
+        "bootstrap_resamples_with_zero_reference_rate": 0
+      }
+    },
+    "near_miss_names_per_script": {
+      "Latin": 356,
+      "Cyrillic": 143,
+      "Arabic": 1,
+      "other": 0
+    }
+  },
+  "recall_by_query_script_for_context": {
+    "Latin": {
+      "value": 0.7,
+      "ci95": [
+        0.6755,
+        0.7234
+      ],
+      "k": 980,
+      "n": 1400
+    },
+    "Cyrillic": {
+      "value": 0.86,
+      "ci95": [
+        0.8162,
+        0.8947
+      ],
+      "k": 258,
+      "n": 300
+    },
+    "Arabic": {
+      "value": 0.6767,
+      "ci95": [
+        0.6218,
+        0.7271
+      ],
+      "k": 203,
+      "n": 300
+    }
+  }
+}

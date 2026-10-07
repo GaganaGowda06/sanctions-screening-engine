@@ -48,7 +48,8 @@ def test_only_the_builder_names_the_second_screening_holdout_file():
     # build_screening_holdout.py writes it once. The final evaluation of the trained matcher will be the only
     # other file allowed to name it, and it does not exist yet.
     for path in (ROOT / "src").glob("*.py"):
-        if path.name != "build_screening_holdout.py":
+        # the third hold-out's builder reads the second one only to keep its own entities disjoint
+        if path.name not in ("build_screening_holdout.py", "build_screening_holdout_v3.py"):
             assert "screening_holdout_v2.json" not in path.read_text(), path.name
 
 
@@ -65,3 +66,16 @@ def test_the_second_holdouts_were_each_scored_once_on_the_frozen_files():
     assert pairs_report["frozen"]["holdout_membership_sha256"] == manifest["final_holdout_membership_sha256"]
     assert pairs_report["frozen"]["dataset_sha256"] == manifest["dataset_sha256"]
     assert pairs_report["code_commit"] == screening["code_commit"]  # scored by the same committed code
+
+
+def test_third_screening_holdout_matches_its_checksum_and_is_disjoint_from_the_second():
+    import json
+
+    path = ROOT / "holdout" / "screening_holdout_v3.json"
+    recorded = (ROOT / "holdout" / "screening_holdout_v3.sha256").read_text().strip()
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == recorded
+
+    def ids(p):
+        return {q["true_id"] for q in json.loads(p.read_text())["queries"] if q.get("true_id")}
+
+    assert not ids(path) & ids(HOLDOUT2)
