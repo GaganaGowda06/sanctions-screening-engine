@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. The matcher, evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring) is built and evaluated. The evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -22,16 +22,28 @@ Profile of dataset version 20261006074704-hib (full output in `reports/stage1_pr
 - 56% of targets with a name (39,330 of 69,637) have at least one non-Latin name. Only 1,317 have no purely Latin name at all.
 - FollowTheMoney types `programId` as an identifier, but it holds a sanctions programme, not an ID for the entity. The report gives identifier coverage both with and without it. For people, own-identifier coverage is 79.6% with it and 49.7% without.
 
+## Known limitations of the baseline matcher
+
+These come from the measurements in `reports/stage2_candidates.json` and `reports/stage2_scoring.json`.
+
+- Organisation names that are translated, not transliterated, are often missed. An Arabic company name such as the Arabic for "Wafa Humanitarian Organization" shares no spelling with its English name, so no transliteration key can connect them. Looking up a Latin name against Arabic-script entries finds 94.8% of people but only 63.5% of organisations.
+- Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. Cross-script candidate recall for these scripts is close to zero.
+- Arabic is written without short vowels, so Arabic-derived names are compared as consonant skeletons. That finds the right entity but also lets unrelated names through, which raises false positives.
+- Names that are subsets of a longer listed name (a two-word query against a three-word listing) score high with token-based fuzzy matching, and common first names make this worse.
+
 ## How to run
 
-Developed and tested on Python 3.14. The data pipeline uses only the standard library. Do not install followthemoney: version 4.x depends on PyICU, which needs system ICU libraries to build.
+Developed and tested on Python 3.14. The data pipeline and candidate index use only the standard library, and scoring uses rapidfuzz. Do not install followthemoney: version 4.x depends on PyICU, which needs system ICU libraries to build.
 
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt     # pytest and ruff only
+pip install -r requirements.txt     # rapidfuzz for scoring, pytest and ruff for development
 python src/download_data.py         # about 350 MB, verifies SHA1, skips if already current
 python src/profile_data.py          # writes reports/stage1_profile.json
+python src/profile_normaliser.py    # normalisation report, reports/stage2_normaliser.json
+python src/evaluate_candidates.py   # candidate recall, reports/stage2_candidates.json
+python src/evaluate_scoring.py      # precision, recall, false positives, reports/stage2_scoring.json
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
@@ -45,8 +57,12 @@ src/
   download_data.py       download and verify the OpenSanctions entities file
   profile_data.py        stream the file and write the profile report
   ftm_props.json         FollowTheMoney identifier and country property map
+  normalise.py           transliterate Cyrillic and Arabic, strip accents and punctuation
+  candidates.py          inverted index over folded tokens, consonant skeletons and joined tokens
+  scoring.py             fuzzy name score adjusted by birth date and country
+  profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py   measurement scripts
 tests/
-  test_profile_data.py   profiler tests against a hand-built fixture
+  test_*.py              unit tests on small hand-built data, one file per module
 reports/
   stage1_profile.json    profile of the downloaded data
 data/                    downloaded data (not committed)

@@ -31,7 +31,7 @@ from pathlib import Path
 
 from candidates import CandidateIndex
 from normalise import is_clean, normalise
-from profile_data import DEFAULT_INPUT, NAME_PROPS, name_scripts
+from profile_data import COUNTRY_PROPS, DEFAULT_INPUT, NAME_PROPS, name_scripts
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "reports" / "stage2_candidates.json"
@@ -89,7 +89,14 @@ def load_named_entities(path: Path) -> list[dict]:
                 continue
             if names:
                 entities.append(
-                    {"id": ent["id"], "schema": ent.get("schema"), "target": ent.get("target") is True, "names": names}
+                    {
+                        "id": ent["id"],
+                        "schema": ent.get("schema"),
+                        "target": ent.get("target") is True,
+                        "names": names,
+                        "birth_dates": [v for v in props.get("birthDate") or () if isinstance(v, str) and v],
+                        "countries": [v for p in COUNTRY_PROPS for v in props.get(p) or () if isinstance(v, str) and v],
+                    }
                 )
     return entities
 

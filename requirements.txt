@@ -1,5 +1,8 @@
-# Data pipeline (src/download_data.py, src/profile_data.py) is standard-library only.
+# Data pipeline (download, profile, normalise, candidates) is standard-library only.
 # Do not add followthemoney: v4.x pulls in rigour -> PyICU, which needs system ICU.
+
+# Scoring
+rapidfuzz==3.14.6
 
 # Dev dependencies (tests and lint only)
 pytest==9.1.1
