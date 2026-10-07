@@ -29,7 +29,7 @@ def entities():
 
 
 def engine(thresholds=None):
-    config = ScreeningConfig(0.4, 0.3, 1.0, dict(thresholds or LOW))
+    config = ScreeningConfig(0.4, 0.3, 1.0, dict(thresholds or LOW), per_script=True)
     return ScreeningEngine.from_entities(entities(), config)
 
 
@@ -56,6 +56,7 @@ def test_config_defaults_when_the_file_is_missing(tmp_path):
     config = ScreeningConfig.load(tmp_path / "nope.json")
     assert set(config.thresholds) == {"Latin", "Cyrillic", "Arabic", "other"}
     assert len(set(config.thresholds.values())) == 1
+    assert config.per_script is False
 
 
 def test_config_loads_from_file(tmp_path):
@@ -67,10 +68,15 @@ def test_config_loads_from_file(tmp_path):
     config = ScreeningConfig.load(path)
     assert (config.skeleton_floor, config.skeleton_lift, config.blend) == (0.3, 0.2, 0.5)
     assert config.thresholds == {"Latin": 0.8, "Cyrillic": 0.7, "Arabic": 0.95, "other": 0.6}
+    assert config.per_script is False  # off unless the file says otherwise
+    assert config.threshold_for("Arabic") == config.global_threshold
 
 
-def test_the_shipped_config_has_a_threshold_for_every_script():
-    assert set(ScreeningConfig.load().thresholds) == {"Latin", "Cyrillic", "Arabic", "other"}
+def test_the_shipped_config_has_a_threshold_for_every_script_and_one_global_threshold_on():
+    config = ScreeningConfig.load()
+    assert set(config.thresholds) == {"Latin", "Cyrillic", "Arabic", "other"}
+    assert config.per_script is False
+    assert {config.threshold_for(s) for s in config.thresholds} == {config.global_threshold}
 
 
 def test_explanation_for_agreeing_attributes():
@@ -119,6 +125,15 @@ def test_threshold_depends_on_the_script_of_the_query():
     assert cyrillic[0].explanation.script == "Cyrillic" and cyrillic[0].explanation.threshold == 0.5
 
 
+def test_per_script_thresholds_are_ignored_unless_switched_on():
+    # The same query is alerted or not depending on per_script, with one global threshold of 0.95.
+    low = dict.fromkeys(("Latin", "Cyrillic", "Arabic", "other"), 0.5)
+    off = ScreeningConfig(0.4, 0.3, 1.0, dict(low), global_threshold=0.95)
+    on = ScreeningConfig(0.4, 0.3, 1.0, dict(low), global_threshold=0.95, per_script=True)
+    assert ScreeningEngine.from_entities(entities(), off).screen("Ivan Petrovich") == []
+    assert [m.entity_id for m in ScreeningEngine.from_entities(entities(), on).screen("Ivan Petrovich")] == ["e2"]
+
+
 def test_legal_forms_do_not_stop_an_organisation_matching():
     assert engine().screen("Zorblax Holdings Limited")[0].entity_id == "e3"
 
@@ -162,7 +177,7 @@ def write_ftm(path):
 def test_engine_from_file_screens_only_target_entities(tmp_path):
     path = tmp_path / "entities.ftm.json"
     write_ftm(path)
-    eng = ScreeningEngine.from_file(path, ScreeningConfig(0.4, 0.3, 1.0, dict(LOW)))
+    eng = ScreeningEngine.from_file(path, ScreeningConfig(0.4, 0.3, 1.0, dict(LOW), per_script=True))
     assert [m.entity_id for m in eng.screen("Ivan Petrov")] == ["t1"]
     assert eng.screen("Maria Garcia") == []  # on the file, but not a target
 

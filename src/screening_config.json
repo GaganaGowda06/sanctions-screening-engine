@@ -2,12 +2,13 @@
   "skeleton_floor": 0.6,
   "skeleton_lift": 0.2,
   "blend": 0.5,
+  "global_threshold": 0.86,
+  "per_script": false,
   "thresholds": {
     "Latin": 0.86,
     "Cyrillic": 0.88,
     "Arabic": 0.86,
     "other": 0.86
   },
-  "tuned_on": "dev: scoring parameters on the deployed candidate pool; per-script thresholds for the lowest false positive rate at no loss of recall; other scripts use the global threshold",
-  "global_threshold": 0.86
+  "frozen": "Step 4 closed. One global threshold; the per-script thresholds are kept for reference and are off."
 }

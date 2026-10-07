@@ -16,8 +16,10 @@ def test_final_holdout_matches_its_recorded_checksum():
     assert hashlib.sha256(HOLDOUT.read_bytes()).hexdigest() == recorded
 
 
-def test_only_the_generator_touches_the_final_holdout_file():
-    # evaluate_scoring.py writes it once. Nothing else may name the file, so nothing else can read or score it.
+def test_only_the_generator_and_the_final_evaluation_name_the_final_holdout_file():
+    # evaluate_scoring.py wrote it once, and evaluate_final.py scores it once. Nothing else may name the file,
+    # so nothing else can read it, tune on it or score it.
+    allowed = {"evaluate_scoring.py", "evaluate_final.py"}
     for path in (ROOT / "src").glob("*.py"):
-        if path.name != "evaluate_scoring.py":
+        if path.name not in allowed:
             assert "final_holdout.json" not in path.read_text(), path.name

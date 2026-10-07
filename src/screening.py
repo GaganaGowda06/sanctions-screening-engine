@@ -12,9 +12,10 @@ query, best first. Each match carries an explanation:
   country           agree, conflict or missing
   matched_name      the entity's own spelling that the query matched best
 
-The alert threshold depends on the script of the query (Latin, Cyrillic, Arabic, other) and comes
-from src/screening_config.json, written by src/evaluate_screening.py. The list screened against is
-the named target entities of the downloaded OpenSanctions file, built once on first use.
+The alert threshold is one global value from src/screening_config.json. Per-script thresholds (Latin,
+Cyrillic, Arabic, other) are kept in the same file and switched on with per_script, but are off.
+The list screened against is the named target entities of the downloaded OpenSanctions file, built
+once on first use.
 """
 
 import json
@@ -56,14 +57,25 @@ def query_script(name: str) -> str:
 
 @dataclass(frozen=True)
 class ScreeningConfig:
+    """Scoring parameters and alert thresholds.
+
+    By default one global threshold applies to every query. The per-script thresholds are kept in the
+    configuration and used only when per_script is True: they gave no useful gain (see README).
+    """
+
     skeleton_floor: float = DEFAULT_SKELETON_FLOOR
     skeleton_lift: float = DEFAULT_SKELETON_LIFT
     blend: float = DEFAULT_BLEND
     thresholds: dict[str, float] = field(default_factory=lambda: dict.fromkeys(SCRIPTS, DEFAULT_THRESHOLD))
+    global_threshold: float = DEFAULT_THRESHOLD
+    per_script: bool = False
+
+    def threshold_for(self, script: str) -> float:
+        return self.thresholds[script] if self.per_script else self.global_threshold
 
     @classmethod
     def load(cls, path: Path = CONFIG_PATH) -> "ScreeningConfig":
-        """The tuned configuration, or the global defaults if the file does not exist."""
+        """The saved configuration, or the defaults if the file does not exist."""
         if not path.exists():
             return cls()
         data = json.loads(path.read_text())
@@ -72,6 +84,8 @@ class ScreeningConfig:
             data["skeleton_lift"],
             data["blend"],
             {script: data["thresholds"][script] for script in SCRIPTS},
+            data.get("global_threshold", DEFAULT_THRESHOLD),
+            data.get("per_script", False),
         )
 
 
@@ -124,7 +138,7 @@ class ScreeningEngine:
     ) -> list[ScreenMatch]:
         config, screener = self.config, self.screener
         script = query_script(name)
-        threshold = config.thresholds[script]
+        threshold = config.threshold_for(script)
         query = scoring_form(name)
         matches = []
         for c in screener.components(name, birth_date, country, keep=10_000, blends=(config.blend,)):

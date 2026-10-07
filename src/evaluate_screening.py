@@ -262,9 +262,10 @@ def main() -> None:
                 "skeleton_lift": lift,
                 "blend": blend,
                 "thresholds": thresholds,
+                "global_threshold": global_t,
+                "per_script": False,
                 "tuned_on": "dev: scoring parameters on the deployed candidate pool; per-script thresholds for the "
                 "lowest false positive rate at no loss of recall; other scripts use the global threshold",
-                "global_threshold": global_t,
             },
             indent=2,
         )
