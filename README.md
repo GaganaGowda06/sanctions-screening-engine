@@ -293,6 +293,8 @@ Diagnosis on dev (`reports/stage3_arabic_diagnosis.json`): 89% of Arabic false a
 
 First fix, on by default: the skeleton similarity is a rarity-weighted token overlap (`skeleton_idf` in `src/scoring.py`) instead of a whole-string ratio. It lowers the Arabic false positive rate and raises Arabic recall (dev 32.6% to 27.6% and 60.7% to 66.0%; test 38.6% to 32.3% and 65.0% to 67.0%), but it does not improve the Arabic to Latin ratio, because the Latin rate falls too (`reports/stage3_skeleton_idf.json`). It missed the acceptance bar I set for a clear drop, and was kept for the gain it does give.
 
+Second fix, tried and rejected: leave Arabic particles (al, el, bin, ibn, bint, abu, umm) and one-consonant tokens out of the skeleton comparison (`skeleton_particles`, off by default). It raised Arabic false positives (dev 27.6% to 40.2%, test 32.3% to 43.7%, McNemar p below 0.001) and Latin ones too (test 5.5% to 8.5%), because a name stripped of its particles shrinks to one token that then matches in full ('Bin Al Khalidi' against 'Khalidi' goes from 0.46 to 1.0). A full match on common tokens still scores 1.0 either way. Arabic recall rose (dev 66.0% to 74.0%), the Arabic to Latin ratio did not move. See `reports/stage3_skeleton_particles.json`.
+
 ## Known limitations
 
 These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.

@@ -1,0 +1,515 @@
+{
+ "engine": "frozen config, threshold 0.86, rarity-weighted skeleton",
+ "change": "particles and one-consonant tokens left out of the skeleton",
+ "dev": {
+  "current": {
+   "overall": {
+    "recall": 0.75,
+    "precision": 0.7303,
+    "f1": 0.74,
+    "false_positive_rate": 0.1221
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.0517,
+     "ci95": [
+      0.0366,
+      0.0724
+     ],
+     "k": 31,
+     "n": 600
+    },
+    "Cyrillic": {
+     "value": 0.0347,
+     "ci95": [
+      0.0204,
+      0.0584
+     ],
+     "k": 13,
+     "n": 375
+    },
+    "Arabic": {
+     "value": 0.2756,
+     "ci95": [
+      0.2432,
+      0.3105
+     ],
+     "k": 186,
+     "n": 675
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7414,
+     "ci95": [
+      0.7077,
+      0.7725
+     ],
+     "k": 519,
+     "n": 700
+    },
+    "Cyrillic": {
+     "value": 0.88,
+     "ci95": [
+      0.8183,
+      0.9227
+     ],
+     "k": 132,
+     "n": 150
+    },
+    "Arabic": {
+     "value": 0.66,
+     "ci95": [
+      0.581,
+      0.731
+     ],
+     "k": 99,
+     "n": 150
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 5.33,
+     "ratio_ci95": [
+      3.85,
+      7.96
+     ],
+     "difference_points": 22.4,
+     "difference_ci95": [
+      18.6,
+      26.3
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 7.95,
+     "ratio_ci95": [
+      4.92,
+      16.11
+     ],
+     "difference_points": 24.1,
+     "difference_ci95": [
+      20.1,
+      27.9
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  },
+  "new": {
+   "overall": {
+    "recall": 0.77,
+    "precision": 0.6672,
+    "f1": 0.7149,
+    "false_positive_rate": 0.1768
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.0717,
+     "ci95": [
+      0.0536,
+      0.0951
+     ],
+     "k": 43,
+     "n": 600
+    },
+    "Cyrillic": {
+     "value": 0.0453,
+     "ci95": [
+      0.0285,
+      0.0714
+     ],
+     "k": 17,
+     "n": 375
+    },
+    "Arabic": {
+     "value": 0.4015,
+     "ci95": [
+      0.3652,
+      0.4389
+     ],
+     "k": 271,
+     "n": 675
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7529,
+     "ci95": [
+      0.7196,
+      0.7834
+     ],
+     "k": 527,
+     "n": 700
+    },
+    "Cyrillic": {
+     "value": 0.88,
+     "ci95": [
+      0.8183,
+      0.9227
+     ],
+     "k": 132,
+     "n": 150
+    },
+    "Arabic": {
+     "value": 0.74,
+     "ci95": [
+      0.6644,
+      0.8036
+     ],
+     "k": 111,
+     "n": 150
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 5.6,
+     "ratio_ci95": [
+      4.25,
+      7.87
+     ],
+     "difference_points": 33.0,
+     "difference_ci95": [
+      28.8,
+      37.2
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 8.86,
+     "ratio_ci95": [
+      5.85,
+      16.06
+     ],
+     "difference_points": 35.6,
+     "difference_ci95": [
+      31.2,
+      40.0
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  },
+  "mcnemar": {
+   "fpr_synthetic": {
+    "Latin": {
+     "only_current": 2,
+     "only_new": 14,
+     "p_value": 0.0042
+    },
+    "Cyrillic": {
+     "only_current": 0,
+     "only_new": 4,
+     "p_value": 0.125
+    },
+    "Arabic": {
+     "only_current": 5,
+     "only_new": 90,
+     "p_value": 0.0
+    }
+   },
+   "recall": {
+    "Latin": {
+     "only_current": 3,
+     "only_new": 11,
+     "p_value": 0.0574
+    },
+    "Cyrillic": {
+     "only_current": 0,
+     "only_new": 0,
+     "p_value": 1.0
+    },
+    "Arabic": {
+     "only_current": 0,
+     "only_new": 12,
+     "p_value": 0.0005
+    }
+   }
+  }
+ },
+ "test": {
+  "current": {
+   "overall": {
+    "recall": 0.7485,
+    "precision": 0.8501,
+    "f1": 0.7961,
+    "false_positive_rate": 0.0895
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.055,
+     "ci95": [
+      0.0412,
+      0.073
+     ],
+     "k": 44,
+     "n": 800
+    },
+    "Cyrillic": {
+     "value": 0.0571,
+     "ci95": [
+      0.0373,
+      0.0866
+     ],
+     "k": 20,
+     "n": 350
+    },
+    "Arabic": {
+     "value": 0.3229,
+     "ci95": [
+      0.276,
+      0.3735
+     ],
+     "k": 113,
+     "n": 350
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7357,
+     "ci95": [
+      0.712,
+      0.7581
+     ],
+     "k": 1030,
+     "n": 1400
+    },
+    "Cyrillic": {
+     "value": 0.8867,
+     "ci95": [
+      0.8458,
+      0.9178
+     ],
+     "k": 266,
+     "n": 300
+    },
+    "Arabic": {
+     "value": 0.67,
+     "ci95": [
+      0.6149,
+      0.7208
+     ],
+     "k": 201,
+     "n": 300
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 5.87,
+     "ratio_ci95": [
+      4.29,
+      8.3
+     ],
+     "difference_points": 26.8,
+     "difference_ci95": [
+      21.8,
+      31.9
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 5.65,
+     "ratio_ci95": [
+      3.74,
+      9.64
+     ],
+     "difference_points": 26.6,
+     "difference_ci95": [
+      20.9,
+      32.0
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  },
+  "new": {
+   "overall": {
+    "recall": 0.7615,
+    "precision": 0.8054,
+    "f1": 0.7828,
+    "false_positive_rate": 0.1275
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.085,
+     "ci95": [
+      0.0676,
+      0.1064
+     ],
+     "k": 68,
+     "n": 800
+    },
+    "Cyrillic": {
+     "value": 0.0771,
+     "ci95": [
+      0.0536,
+      0.1099
+     ],
+     "k": 27,
+     "n": 350
+    },
+    "Arabic": {
+     "value": 0.4371,
+     "ci95": [
+      0.3861,
+      0.4895
+     ],
+     "k": 153,
+     "n": 350
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7457,
+     "ci95": [
+      0.7223,
+      0.7678
+     ],
+     "k": 1044,
+     "n": 1400
+    },
+    "Cyrillic": {
+     "value": 0.89,
+     "ci95": [
+      0.8495,
+      0.9206
+     ],
+     "k": 267,
+     "n": 300
+    },
+    "Arabic": {
+     "value": 0.7067,
+     "ci95": [
+      0.6528,
+      0.7553
+     ],
+     "k": 212,
+     "n": 300
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 5.14,
+     "ratio_ci95": [
+      4.04,
+      6.73
+     ],
+     "difference_points": 35.2,
+     "difference_ci95": [
+      29.9,
+      40.8
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 5.67,
+     "ratio_ci95": [
+      4.0,
+      8.72
+     ],
+     "difference_points": 36.0,
+     "difference_ci95": [
+      30.0,
+      41.7
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  },
+  "mcnemar": {
+   "fpr_synthetic": {
+    "Latin": {
+     "only_current": 1,
+     "only_new": 25,
+     "p_value": 0.0
+    },
+    "Cyrillic": {
+     "only_current": 0,
+     "only_new": 7,
+     "p_value": 0.0156
+    },
+    "Arabic": {
+     "only_current": 7,
+     "only_new": 47,
+     "p_value": 0.0
+    }
+   },
+   "recall": {
+    "Latin": {
+     "only_current": 4,
+     "only_new": 18,
+     "p_value": 0.0043
+    },
+    "Cyrillic": {
+     "only_current": 0,
+     "only_new": 1,
+     "p_value": 1.0
+    },
+    "Arabic": {
+     "only_current": 3,
+     "only_new": 14,
+     "p_value": 0.0127
+    }
+   }
+  }
+ },
+ "acceptance": {
+  "dev": {
+   "arabic_fpr_clearly_down": false,
+   "arabic_recall_at_least_65": true,
+   "Latin_fpr_synthetic_unchanged": true,
+   "Latin_recall_unchanged": true,
+   "Cyrillic_fpr_synthetic_unchanged": true,
+   "Cyrillic_recall_unchanged": true,
+   "all_pass": false
+  },
+  "test": {
+   "arabic_fpr_clearly_down": false,
+   "arabic_recall_at_least_65": true,
+   "Latin_fpr_synthetic_unchanged": true,
+   "Latin_recall_unchanged": true,
+   "Cyrillic_fpr_synthetic_unchanged": true,
+   "Cyrillic_recall_unchanged": true,
+   "all_pass": false
+  }
+ },
+ "hunch_full_match_on_common_tokens": {
+  "toy_pairs_skeleton_similarity": {
+   "particles and one consonant: 'Ali Abu' vs 'Abu Ali'": {
+    "current": 1.0,
+    "new": 0.0
+   },
+   "particles around a rare name: 'Bin Al Khalidi' vs 'Khalidi'": {
+    "current": 0.459,
+    "new": 1.0
+   },
+   "common tokens, no particles: 'Mohammed Ahmed' vs 'Ahmed Mohammed'": {
+    "current": 1.0,
+    "new": 1.0
+   }
+  },
+  "real_dev_clean_names": {
+   "Latin": {
+    "clean_names": 793,
+    "alert_with_skeleton_1.0_current": 12,
+    "alert_current": 33,
+    "alert_new": 48,
+    "alert_with_skeleton_1.0_new": 27
+   },
+   "Cyrillic": {
+    "clean_names": 430,
+    "alert_with_skeleton_1.0_current": 1,
+    "alert_current": 13,
+    "alert_new": 17,
+    "alert_with_skeleton_1.0_new": 1
+   },
+   "Arabic": {
+    "clean_names": 677,
+    "alert_with_skeleton_1.0_current": 104,
+    "alert_current": 186,
+    "alert_new": 271,
+    "alert_with_skeleton_1.0_new": 181
+   }
+  }
+ }
+}

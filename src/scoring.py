@@ -123,6 +123,21 @@ def skeleton_form(normalised: str) -> str:
     return " ".join(sk for token in normalised.split() if (sk := skeleton(fold(token))))
 
 
+PARTICLES = frozenset({"al", "el", "bin", "ibn", "bint", "abu", "umm"})  # Arabic particles: not evidence of identity
+PARTICLE_SKELETONS = frozenset({"bn", "bnt"})  # bin/ibn and bint; al, el, abu and umm already skeleton to one consonant
+
+
+def evidence_skeleton_form(normalised: str) -> str:
+    """Skeleton form without Arabic particles and without one-consonant tokens, which carry no evidence."""
+    tokens = (t for t in normalised.split() if t not in PARTICLES)
+    kept = []
+    for token in tokens:
+        sk = skeleton(fold(token))
+        if sk and not (sk.isascii() and (len(sk) == 1 or sk in PARTICLE_SKELETONS)):
+            kept.append(sk)
+    return " ".join(kept)
+
+
 def has_arabic(text: str) -> bool:
     return _ARABIC.search(text) is not None
 
@@ -311,6 +326,7 @@ class Screener:
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
         idf_table: tuple[Mapping[str, int], int] | None = None,
         skeleton_idf: bool = True,
+        skeleton_particles: bool = False,
     ) -> None:
         """`idf_table` is (document frequency, documents) to use instead of counting the records here, so training
         and serving can share one table (see idf_table.py).
@@ -335,9 +351,11 @@ class Screener:
         self.skeleton_idf = skeleton_idf
         self._skeleton_idf_cache: dict[str, float] = {}
         self._skeleton_df: Counter[str] = Counter()
+        self.skeleton_particles = skeleton_particles
+        self._evidence_forms: dict[int, tuple[str, ...]] = {}
         if skeleton_idf:
             for record in records.values():
-                self._skeleton_df.update({t for form in record.skeletons for t in form.split()})
+                self._skeleton_df.update({t for form in self._forms(record) for t in form.split()})
 
     def skeleton_token_idf(self, token: str) -> float:
         """Inverse document frequency of a skeleton token over the entities in the index (never below 0.1)."""
@@ -346,14 +364,26 @@ class Screener:
             self._skeleton_idf_cache[token] = max(0.1, math.log((len(self.records) + 1) / (df + 1)))
         return self._skeleton_idf_cache[token]
 
+    def _forms(self, record: EntityRecord) -> tuple[str, ...]:
+        """The skeleton forms to compare: the record's own, or with particles and one-consonant tokens left out."""
+        if not self.skeleton_particles:
+            return record.skeletons
+        key = id(record)
+        if key not in self._evidence_forms:
+            self._evidence_forms[key] = tuple(
+                dict.fromkeys(f for f in map(evidence_skeleton_form, record.norms) if f)
+            )
+        return self._evidence_forms[key]
+
     def skeleton_similarity(self, query_skeleton: str, record: EntityRecord) -> float:
+        forms = self._forms(record)
         if not self.skeleton_idf:
-            return best_similarity(query_skeleton, record.skeletons)
+            return best_similarity(query_skeleton, forms)
         query_tokens = query_skeleton.split()
         return max(
             (
                 weighted_token_score(query_tokens, form.split(), frozenset(form.split()), self.skeleton_token_idf)
-                for form in record.skeletons
+                for form in forms
             ),
             default=0.0,
         )
@@ -374,12 +404,16 @@ class Screener:
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
         idf_table: tuple[Mapping[str, int], int] | None = None,
         skeleton_idf: bool = True,
+        skeleton_particles: bool = False,
     ) -> "Screener":
         """Build from dicts with id, names and optionally birth_dates and countries."""
         entities = list(entities)
         index = CandidateIndex.build(((e["id"], e["names"]) for e in entities), max_df=max_df)
         records = {e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities}
-        return cls(index, records, adjustments or Adjustments(), blend, length_penalty, idf_table, skeleton_idf)
+        return cls(
+            index, records, adjustments or Adjustments(), blend, length_penalty, idf_table,
+            skeleton_idf, skeleton_particles,
+        )  # fmt: skip
 
     def components(
         self,
@@ -397,7 +431,7 @@ class Screener:
         """
         blends = tuple(blends) if blends is not None else (self.blend,)
         query = scoring_form(name)
-        query_skeleton = skeleton_form(query)
+        query_skeleton = evidence_skeleton_form(query) if self.skeleton_particles else skeleton_form(query)
         query_arabic = has_arabic(name)
         scored = []
         for entity_id, _ in self.index.query(name):
