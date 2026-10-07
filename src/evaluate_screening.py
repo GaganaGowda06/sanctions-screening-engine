@@ -1,20 +1,21 @@
-"""Tune per-script alert thresholds on dev, report on test, and write the screening configuration.
+"""Tune the screening configuration on dev, report on test, and write the configuration file.
 
-The scoring parameters are those chosen in step 3c (skeleton floor 0.4, lift 0.3, rarity-weighted
-name score). Only the alert threshold changes: one per query script (Latin, Cyrillic, Arabic, other).
+Step 1, scoring parameters on the deployed candidate pool. Step 3c tuned them on a pool that kept a
+candidate if any blend scored it at least 0.2, which the deployed engine does not do. Here each
+blend is scored on its own, so the pool is the one the engine would really keep. Skeleton floor and
+lift, the blend of character ratio and rarity-weighted score, and one global alert threshold are
+chosen for the best dev F1.
 
-Equalising false positive rates:
-  target   the pooled dev false positive rate of Latin, Cyrillic and Arabic at the single global
-           threshold of step 3c, so the overall alert volume stays about where it was
-  rule     for each script, the lowest threshold whose dev false positive rate is at or under the
-           target (a threshold of 1.0 alerts only on a perfect score)
-Dev negatives for this are the step 3c dev negatives plus extra synthetic ones, since Arabic and
-"other" have few. "Other" scripts (Han, kana, Hebrew, Thai) get synthetic negatives built the same way
-as the rest, drawn evenly from those four. Everything is reported on the step 3c test queries, plus
-"other" negatives and same-script "other" positives that step 3c did not have.
+Step 2, per-script thresholds for Latin, Cyrillic and Arabic queries. For each script, on dev:
+  - recall must stay at or above that script's recall at the global threshold, and
+  - within that, take the threshold with the lowest false positive rate (ties go to the lower
+    threshold, which keeps more recall at the same false positive rate).
+The grid stops at 0.99, so no script is left alerting only on a perfect score. "Other" scripts
+(Han, kana, Hebrew, Thai and the rest) use the global threshold: their sample is too small to tune.
 
-The final hold-out is not read or scored. Its entities are regenerated in memory only, to keep new
-queries away from them, and checked against the frozen checksum.
+Everything is reported on the step 3c test queries, plus "other" negatives and same-script "other"
+positives that step 3c did not have. The final hold-out is not read or scored. Its entities are
+regenerated in memory only, to keep new queries away from them, and checked against the frozen checksum.
 
 Run:
     python src/evaluate_screening.py
@@ -23,6 +24,7 @@ Writes reports/stage2_screening.json and src/screening_config.json.
 
 import argparse
 import hashlib
+import itertools
 import json
 import platform
 import random
@@ -39,33 +41,53 @@ from screening import CONFIG_PATH, SCRIPTS, ScreeningConfig, ScreeningEngine, qu
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "reports" / "stage2_screening.json"
-FLOOR, LIFT, BLEND = 0.4, 0.3, 1.0  # step 3c
-GLOBAL_THRESHOLD = 0.87  # step 3c
-PARAMS = ev.Params(FLOOR, LIFT, 0)
-BLENDS = (BLEND,)
-SCRIPT_THRESHOLDS = [*ev.THRESHOLDS, 1.0]
+BLENDS = (0.0, 0.5, 1.0)
+TUNED_SCRIPTS = ("Latin", "Cyrillic", "Arabic")
 EXTRA_PLAN = {"other_same_script": [("dev", 100), ("test", 200)]}
+# Step 4 as first reported (floor 0.4, lift 0.3, blend 1.0, one threshold of 0.87), on the deployed pool.
+STEP_4_BASELINE = {"recall": 0.7045, "precision": 0.8182, "false_positive_rate": 0.079}
 
 
-def run_queries(screener: Screener, queries: list[dict]) -> list[float]:
-    latencies = []
+def run_queries(screener: Screener, queries: list[dict], blend: float) -> list[float]:
+    """Score components for each query with one blend, so the candidate pool is the deployed one."""
+    key, latencies = f"comps_{blend}", []
     for q in queries:
         start = time.perf_counter()
-        q["comps"] = screener.components(q["name"], q["dob"], q["country"], always=q["true_id"], blends=BLENDS)
+        q[key] = screener.components(q["name"], q["dob"], q["country"], always=q["true_id"], blends=(blend,))
         latencies.append(time.perf_counter() - start)
     return latencies
 
 
-def rate(rows: list[tuple], threshold: float) -> float:
+def view(queries: list[dict], blend: float) -> list[dict]:
+    """The queries with the components of one blend in place, for ev.final_scores."""
+    return [{**q, "comps": q[f"comps_{blend}"]} for q in queries]
+
+
+def recall_at(pos_rows: list[tuple], script: str, threshold: float) -> float:
+    rows = [r for r in pos_rows if r[0] in ev.HEADLINE_GROUPS and r[5] == script]
+    return sum(r[2] is not None and r[2] >= threshold for r in rows) / len(rows) if rows else 0.0
+
+
+def fpr_at(neg_rows: list[tuple], script: str, threshold: float) -> float:
+    rows = [r for r in neg_rows if r[5] == script]
     return sum(r[3] >= threshold for r in rows) / len(rows) if rows else 0.0
 
 
-def choose_thresholds(dev_neg_rows: list[tuple], target: float) -> dict[str, float]:
-    """For each script, the lowest threshold whose dev false positive rate is at or under the target."""
-    chosen = {}
-    for script in SCRIPTS:
-        rows = [r for r in dev_neg_rows if r[5] == script]
-        chosen[script] = next((t for t in SCRIPT_THRESHOLDS if rate(rows, t) <= target), SCRIPT_THRESHOLDS[-1])
+def choose_script_thresholds(
+    pos_rows: list[tuple], neg_rows: list[tuple], global_threshold: float
+) -> dict[str, float]:
+    """Per script: lowest false positive rate with recall no lower than at the global threshold.
+
+    "Other" gets the global threshold. A script with no positives keeps the global threshold too.
+    """
+    chosen = dict.fromkeys(SCRIPTS, global_threshold)
+    for script in TUNED_SCRIPTS:
+        if not any(r[0] in ev.HEADLINE_GROUPS and r[5] == script for r in pos_rows):
+            continue
+        floor_recall = recall_at(pos_rows, script, global_threshold)
+        feasible = [t for t in ev.THRESHOLDS if recall_at(pos_rows, script, t) >= floor_recall]
+        lowest = min(fpr_at(neg_rows, script, t) for t in feasible)
+        chosen[script] = next(t for t in feasible if fpr_at(neg_rows, script, t) == lowest)
     return chosen
 
 
@@ -96,8 +118,7 @@ def main() -> None:
     # Keep new queries off the final hold-out's entities. Regenerated in memory, never read from disk.
     final_queries, final_kept = ev.build_final_holdout(entities, targets, dob_pool, country_pool, used)
     frozen = (ROOT / "holdout" / "final_holdout.sha256").read_text().strip()
-    regenerated = hashlib.sha256(ev.holdout_text(final_queries, final_kept).encode()).hexdigest()
-    if regenerated != frozen:
+    if hashlib.sha256(ev.holdout_text(final_queries, final_kept).encode()).hexdigest() != frozen:
         sys.exit("The regenerated final hold-out does not match the frozen checksum; refusing to continue.")
     reserved = used | {q.get("true_id") or q.get("entity") for q in final_queries}
 
@@ -106,97 +127,120 @@ def main() -> None:
     extra_pos, extra_kept = ev.build_positives(
         targets, extra_rng, EXTRA_PLAN, exclude=reserved, key="{seed}-extra-{group}"
     )
-    extra_neg = ev.build_synthetic(
-        entities, targets, dob_pool, country_pool, extra_rng, ("dev_extra", "test_other")
-    )
+    extra_neg = ev.build_synthetic(entities, targets, dob_pool, country_pool, extra_rng, ("dev_extra", "test_other"))
     for q in extra_neg:
         if q["split"] == "test_other":
             q["split"] = "test"
-    print(
-        f"queries: {len(positives)} + {len(extra_pos)} positive, {len(synthetic)} + {len(extra_neg)} synthetic,"
-        f" {len(near)} near-miss",
-        file=sys.stderr,
-    )
 
     all_positives = positives + extra_pos
     negatives = synthetic + near + extra_neg
     for q in all_positives + negatives:
         q["script"] = query_script(q["name"])
+    print(
+        f"queries: {len(positives)} + {len(extra_pos)} positive, {len(synthetic) + len(extra_neg)} synthetic,"
+        f" {len(near)} near-miss",
+        file=sys.stderr,
+    )
 
-    # Components: positives against a list with their own names held out, negatives against the full list.
     held = {**kept, **extra_kept}
-    held_list = [{**e, "names": held.get(e["id"], e["names"])} for e in targets]
-    screener = Screener.build(held_list, max_df=args.max_df, blend=BLEND)
-    latencies = run_queries(screener, all_positives)
-    del screener, held_list
-    full = Screener.build(targets, max_df=args.max_df, blend=BLEND)
-    run_queries(full, negatives)
+    held_screener = Screener.build([{**e, "names": held.get(e["id"], e["names"])} for e in targets], max_df=args.max_df)
+    full = Screener.build(targets, max_df=args.max_df)
 
-    dev_pos = [q for q in all_positives if q["split"] == "dev"]
-    test_pos = [q for q in all_positives if q["split"] == "test"]
-    dev_neg = [q for q in negatives if q["split"] in ("dev", "dev_extra")]
-    test_neg = [q for q in negatives if q["split"] == "test"]
-    rows = {name: ev.final_scores(qs, PARAMS, True, True) for name, qs in
-            (("dev_pos", dev_pos), ("test_pos", test_pos), ("dev_neg", dev_neg), ("test_neg", test_neg))}  # fmt: skip
+    def pick(queries: list[dict], *splits: str, headline: bool = False) -> list[dict]:
+        return [q for q in queries if q["split"] in splits and (not headline or q["group"] in ev.HEADLINE_GROUPS)]
 
-    # Target and per-script thresholds, from dev only.
-    dev_core = [r for q, r in zip(dev_neg, rows["dev_neg"], strict=True) if q["split"] == "dev"]
-    dev_core_head = [r for r in dev_core if r[1] in ev.HEADLINE_NEG_SCRIPTS]
-    target = rate(dev_core_head, GLOBAL_THRESHOLD)
-    thresholds = choose_thresholds(rows["dev_neg"], target)
+    # ---- Step 1: floor, lift, blend and the global threshold, on dev, one blend's pool at a time.
+    dev_pos, dev_neg = pick(all_positives, "dev", headline=True), pick(negatives, "dev")
+    best = (0.0, 0.0, 0.0, 0.0, -1.0)  # blend, floor, lift, threshold, F1
+    marginals: dict[str, dict[str, float]] = {"blend": {}, "skeleton_floor": {}, "skeleton_lift": {}}
+    for blend in BLENDS:
+        run_queries(held_screener, dev_pos, blend)
+        run_queries(full, dev_neg, blend)
+        pos_view, neg_view = view(dev_pos, blend), view(dev_neg, blend)
+        for floor, lift in itertools.product(ev.SKELETON_FLOORS, ev.SKELETON_LIFTS):
+            params = ev.Params(floor, lift, 0)
+            pos_rows = ev.final_scores(pos_view, params, True, True)
+            neg_rows = ev.final_scores(neg_view, params, True, True)
+            top = -1.0
+            for t in ev.THRESHOLDS:
+                f1 = ev.metrics_at(pos_rows, neg_rows, t)["f1"]
+                top = max(top, f1)
+                if f1 >= best[4]:
+                    best = (blend, floor, lift, t, f1)
+            for name, value in (("blend", blend), ("skeleton_floor", floor), ("skeleton_lift", lift)):
+                marginals[name][str(value)] = max(marginals[name].get(str(value), -1.0), top)
+        print(f"blend {blend} tuned on its own pool; best so far {best}", file=sys.stderr)
+    blend, floor, lift, global_t, dev_f1 = best
+    params = ev.Params(floor, lift, 0)
 
-    def report(pos_rows: list[tuple], neg_rows: list[tuple], threshold: float | dict[str, float]) -> dict:
-        return ev.metrics_at(pos_rows, neg_rows, threshold)
+    # ---- Step 2: the rest of the queries, scored with the chosen blend only.
+    rest_pos = [q for q in all_positives if f"comps_{blend}" not in q]
+    rest_neg = [q for q in negatives if f"comps_{blend}" not in q]
+    latencies = run_queries(held_screener, rest_pos, blend)
+    run_queries(full, rest_neg, blend)
 
-    before = report(rows["test_pos"], rows["test_neg"], GLOBAL_THRESHOLD)
-    after = report(rows["test_pos"], rows["test_neg"], thresholds)
-    dev_before = report(rows["dev_pos"], rows["dev_neg"], GLOBAL_THRESHOLD)
-    dev_after = report(rows["dev_pos"], rows["dev_neg"], thresholds)
+    def rows(queries: list[dict]) -> list[tuple]:
+        return ev.final_scores(view(queries, blend), params, True, True)
 
-    # The engine itself: same scores as the evaluation, and how long a call takes.
-    config = ScreeningConfig(FLOOR, LIFT, BLEND, thresholds)
+    dev_pos_rows, dev_neg_rows = rows(pick(all_positives, "dev")), rows(pick(negatives, "dev", "dev_extra"))
+    test_pos_rows, test_neg_rows = rows(pick(all_positives, "test")), rows(pick(negatives, "test"))
+    thresholds = choose_script_thresholds(dev_pos_rows, dev_neg_rows, global_t)
+
+    single = ev.metrics_at(test_pos_rows, test_neg_rows, global_t)
+    per_script = ev.metrics_at(test_pos_rows, test_neg_rows, thresholds)
+    dev_detail = {
+        s: {
+            "recall_at_global": round(recall_at(dev_pos_rows, s, global_t), 4),
+            "recall_at_chosen": round(recall_at(dev_pos_rows, s, thresholds[s]), 4),
+            "fpr_at_global": round(fpr_at(dev_neg_rows, s, global_t), 4),
+            "fpr_at_chosen": round(fpr_at(dev_neg_rows, s, thresholds[s]), 4),
+        }
+        for s in TUNED_SCRIPTS
+    }
+
+    # ---- The engine itself: same scores as the evaluation, and how long a call takes.
+    config = ScreeningConfig(floor, lift, blend, thresholds)
     engine = ScreeningEngine(full, config)
+    test_neg = pick(negatives, "test")
     sample = random.Random(1).sample(range(len(test_neg)), 300)
     mismatches, engine_ms = 0, []
     for i in sample:
-        q, row = test_neg[i], rows["test_neg"][i]
+        q, row = test_neg[i], test_neg_rows[i]
         start = time.perf_counter()
         result = engine.screen(q["name"], q["dob"], q["country"])
         engine_ms.append((time.perf_counter() - start) * 1000)
-        expected_alert = row[3] >= thresholds[row[5]]
-        top = result[0].score if result else None
-        if expected_alert != bool(result) or (result and abs(top - row[3]) > 1e-9):
+        if (row[3] >= thresholds[row[5]]) != bool(result) or (result and abs(result[0].score - row[3]) > 1e-9):
             mismatches += 1
-
-    examples = {
-        "Vladimir Putin, 1952-10-07, ru": [m.as_dict() for m in engine.screen("Vladimir Putin", "1952-10-07", "ru", 2)],
-        "Vladimir Putin, no birth date or country": [m.as_dict() for m in engine.screen("Vladimir Putin", limit=2)],
-    }
 
     result = {
         "python_version": platform.python_version(),
-        "scoring": {"skeleton_floor": FLOOR, "skeleton_lift": LIFT, "blend": BLEND},
-        "global_threshold_step_3c": GLOBAL_THRESHOLD,
-        "target_fpr_from_dev": round(target, 4),
+        "tuned_on_deployed_candidate_pool": {
+            "blend": blend,
+            "skeleton_floor": floor,
+            "skeleton_lift": lift,
+            "global_threshold": global_t,
+            "dev_f1": dev_f1,
+            "dev_best_f1_by_parameter_value": marginals,
+        },
         "thresholds": thresholds,
-        "dev_negatives_per_script": {s: sum(r[5] == s for r in rows["dev_neg"]) for s in SCRIPTS},
-        "test_negatives_per_script": {s: sum(r[5] == s for r in rows["test_neg"]) for s in SCRIPTS},
-        "fpr_by_script": {
-            "dev_global": dev_before["fpr_by_script"],
-            "dev_per_script": dev_after["fpr_by_script"],
-            "test_global": before["fpr_by_script"],
-            "test_per_script": after["fpr_by_script"],
+        "dev_per_script": dev_detail,
+        "dev_negatives_per_script": {s: sum(r[5] == s for r in dev_neg_rows) for s in SCRIPTS},
+        "dev_positives_per_script": {
+            s: sum(r[5] == s and r[0] in ev.HEADLINE_GROUPS for r in dev_pos_rows) for s in SCRIPTS
         },
-        "fpr_spread_latin_cyrillic_arabic": {
-            "test_global": spread(before["fpr_by_script"], ev.HEADLINE_NEG_SCRIPTS),
-            "test_per_script": spread(after["fpr_by_script"], ev.HEADLINE_NEG_SCRIPTS),
+        "test_negatives_per_script": {s: sum(r[5] == s for r in test_neg_rows) for s in SCRIPTS},
+        "fpr_by_script_test": {"single_threshold": single["fpr_by_script"], "per_script": per_script["fpr_by_script"]},
+        "recall_by_script_test": {
+            "single_threshold": single["recall_by_script"],
+            "per_script": per_script["recall_by_script"],
         },
-        "fpr_spread_all_four_scripts": {
-            "test_global": spread(before["fpr_by_script"], SCRIPTS),
-            "test_per_script": spread(after["fpr_by_script"], SCRIPTS),
+        "fpr_spread_latin_cyrillic_arabic_test": {
+            "single_threshold": spread(single["fpr_by_script"], TUNED_SCRIPTS),
+            "per_script": spread(per_script["fpr_by_script"], TUNED_SCRIPTS),
         },
-        "test_overall_global_threshold": before,
-        "test_overall_per_script_thresholds": after,
+        "step_4_baseline_as_reported": STEP_4_BASELINE,
+        "test_overall_single_threshold": single,
+        "test_overall_per_script_thresholds": per_script,
         "engine": {
             "calls_checked_against_evaluation": len(sample),
             "mismatches": mismatches,
@@ -207,7 +251,6 @@ def main() -> None:
             "median": round(percentile(latencies, 0.5) * 1000, 2),
             "p95": round(percentile(latencies, 0.95) * 1000, 2),
         },
-        "examples": examples,
         "final_holdout": {"checked_against_checksum": frozen[:12], "scored": False},
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -215,12 +258,13 @@ def main() -> None:
     args.config.write_text(
         json.dumps(
             {
-                "skeleton_floor": FLOOR,
-                "skeleton_lift": LIFT,
-                "blend": BLEND,
+                "skeleton_floor": floor,
+                "skeleton_lift": lift,
+                "blend": blend,
                 "thresholds": thresholds,
-                "tuned_on": "dev, to equalise the false positive rate across scripts",
-                "target_fpr": round(target, 4),
+                "tuned_on": "dev: scoring parameters on the deployed candidate pool; per-script thresholds for the "
+                "lowest false positive rate at no loss of recall; other scripts use the global threshold",
+                "global_threshold": global_t,
             },
             indent=2,
         )

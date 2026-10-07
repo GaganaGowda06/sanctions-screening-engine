@@ -1,13 +1,13 @@
 {
-  "skeleton_floor": 0.4,
-  "skeleton_lift": 0.3,
-  "blend": 1.0,
+  "skeleton_floor": 0.6,
+  "skeleton_lift": 0.2,
+  "blend": 0.5,
   "thresholds": {
     "Latin": 0.86,
-    "Cyrillic": 0.85,
-    "Arabic": 1.0,
-    "other": 0.71
+    "Cyrillic": 0.88,
+    "Arabic": 0.86,
+    "other": 0.86
   },
-  "tuned_on": "dev, to equalise the false positive rate across scripts",
-  "target_fpr": 0.069
+  "tuned_on": "dev: scoring parameters on the deployed candidate pool; per-script thresholds for the lowest false positive rate at no loss of recall; other scripts use the global threshold",
+  "global_threshold": 0.86
 }

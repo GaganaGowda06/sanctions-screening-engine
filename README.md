@@ -39,7 +39,7 @@ for match in screen("Vladimir Putin", birth_date="1952-10-07", country="ru"):
 - `birth_date` is `agree`, `conflict`, `close` (one year apart, no effect) or `missing`, and `country` is `agree`, `conflict` or `missing`, each with the adjustment it made.
 - `matched_name` is the entity's own spelling that the query matched best.
 
-The thresholds are per query script (Latin, Cyrillic, Arabic, other) and live in `src/screening_config.json`, which `src/evaluate_screening.py` writes. They were tuned on a dev sample to bring the false positive rate of the scripts close together, and reported on a separate test sample.
+The thresholds are per query script (Latin, Cyrillic, Arabic, other) and live in `src/screening_config.json`, which `src/evaluate_screening.py` writes. For each script the threshold is the one with the lowest false positive rate on a dev sample that does not lose recall against the single global threshold, and results are reported on a separate test sample. In practice that leaves the thresholds close to the global one (0.86 to 0.88), so the false positive rate still differs a lot by script.
 
 The same function is available from the command line:
 
@@ -54,7 +54,7 @@ These come from the measurements in `reports/stage2_candidates.json` and `report
 
 - Organisation names that are translated, not transliterated, are often missed. An Arabic company name such as the Arabic for "Wafa Humanitarian Organization" shares no spelling with its English name, so no transliteration key can connect them. Looking up a Latin name against Arabic-script entries finds 94.8% of people but only 63.5% of organisations.
 - Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. Cross-script candidate recall for these scripts is close to zero.
-- Arabic is written without short vowels, so for any pair involving Arabic the consonant skeleton may stand in for the name score in full. That makes Arabic names produce more false alerts than other scripts, and the per-script threshold for Arabic-script queries ends up at 1.0 (a perfect score) to bring the Arabic false positive rate down to about 10%. The price is recall: an Arabic-script query finds only about 28% of the entities that list the same name in Latin spelling. Elsewhere the skeleton only confirms a name that already matches moderately.
+- Arabic is written without short vowels, so for any pair involving Arabic the consonant skeleton may stand in for the name score in full. That keeps Arabic recall up (about 65% for an Arabic-script query against Latin entries) but makes Arabic names raise far more false alerts: about 38% of synthetic Arabic names alert, against about 5% for Latin and Cyrillic. Raising the Arabic threshold lowers that only by losing recall, and no per-script threshold removes the gap. Elsewhere the skeleton only confirms a name that already matches moderately.
 - Names are scored with rarity weighting, so a shared rare surname counts for far more than a shared first name such as Mohammed. A query that matches only a common token scores low, and so does a true alias that shares only a common token.
 
 ## How to run

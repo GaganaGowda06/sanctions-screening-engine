@@ -48,12 +48,12 @@ MAX_SKELETON_LIFT = 0.5  # largest lift and smallest floor the tuning grid allow
 MIN_SKELETON_FLOOR = 0.2
 TOKEN_MATCH_CUTOFF = 70  # fuzz.ratio a token pair needs, out of 100, to count as the same token
 WEIGHTED_MIN_RATIO = 0.2  # the weighted score is only worked out for names at least this similar by ratio
-# Defaults are the values tuned on dev in src/evaluate_scoring.py.
-DEFAULT_SKELETON_FLOOR = 0.4
-DEFAULT_SKELETON_LIFT = 0.3
-DEFAULT_BLEND = 1.0
+# Defaults are the values tuned on dev on the deployed candidate pool in src/evaluate_screening.py.
+DEFAULT_SKELETON_FLOOR = 0.6  # dev F1 is flat across 0.2 to 0.6; the tie goes to the top
+DEFAULT_SKELETON_LIFT = 0.2
+DEFAULT_BLEND = 0.5
 DEFAULT_LENGTH_PENALTY = 0.0
-DEFAULT_THRESHOLD = 0.87
+DEFAULT_THRESHOLD = 0.86
 _ARABIC = re.compile("[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]")
 
 # Tokens that mark a company legal form. Only stripped from names that contain at least one of them,
