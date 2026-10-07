@@ -1,0 +1,800 @@
+{
+  "python_version": "3.14.7",
+  "max_df": 1000,
+  "split": "test",
+  "unresolvable": {
+    "named_entities": 76065,
+    "targets_named": 69637,
+    "no_clean_name": 137,
+    "no_clean_name_share": 0.0018,
+    "no_clean_name_targets": 6,
+    "no_clean_name_targets_share": 0.0001,
+    "by_schema": {
+      "Organization": 90,
+      "LegalEntity": 42,
+      "Person": 4,
+      "Company": 1
+    },
+    "by_script_entity_counts": {
+      "Greek": 87,
+      "Hebrew": 35,
+      "Han": 15,
+      "Japanese kana": 3,
+      "Cyrillic": 2
+    },
+    "only_cheap_to_add_scripts_greek_georgian_armenian_hangul_hebrew": 120
+  },
+  "full_index": {
+    "entities": 76065,
+    "keys": 1178106,
+    "postings": 2680139,
+    "mean_posting_length": 2.27,
+    "keys_over_max_df_1000": 135,
+    "largest_keys": {
+      "s:kmpn": 9854,
+      "t:kompany": 9729,
+      "s:l": 9595,
+      "s:bst": 7840,
+      "t:obssestwo": 7744,
+      "s:trst": 7459,
+      "t:towaristwo": 7330,
+      "t:towarystwo": 7316,
+      "s:lmtd": 7201,
+      "t:limited": 7151
+    },
+    "load_entities_seconds": 1.42,
+    "build_seconds": 4.15,
+    "index_memory_mb_tracemalloc": 216.9,
+    "build_peak_memory_mb_tracemalloc": 216.9,
+    "process_peak_rss_mb": 1172.5
+  },
+  "conditions": {
+    "Cyrillic_to_latin": {
+      "queries": 2000,
+      "candidate_recall": 0.9895,
+      "candidate_recall_person": 0.9952,
+      "candidate_recall_non_person": 0.98,
+      "queries_person": 1249,
+      "candidate_set_size": {
+        "median": 616,
+        "p95": 1639
+      },
+      "query_ms": {
+        "median": 0.278,
+        "p95": 1.262
+      },
+      "missed_examples": [
+        {
+          "query": "ГЗК",
+          "normalised": "gzk",
+          "entity_names": [
+            "ARMAMENT INDUS TRIES GROUP (AIG)",
+            "アーマメント・インダストリーズ・グループ",
+            "ARMAMENT INDUSTRIES GROUP (AIG)",
+            "Grupa Przemysłowa ds. Uzbrojenia"
+          ]
+        },
+        {
+          "query": "ООО “Байкитская нефтегазоразведочная экспедиция”",
+          "normalised": "ooo baykitskaya neftegazorazvedochnaya ekspeditsiya",
+          "entity_names": [
+            "ООО “Байкитская нефтегазоразведочная экспедиция”",
+            "LLC “Bngre”",
+            "Baikit Oil and Gas Exploration Expedition LLC",
+            "LLC \"Bngre\""
+          ]
+        },
+        {
+          "query": "Джордж СИГУЛЕР",
+          "normalised": "dzhordzh siguler",
+          "entity_names": [
+            "Джордж СИГУЛЕР",
+            "George Siguier"
+          ]
+        },
+        {
+          "query": "Майкл ПЛЕН",
+          "normalised": "maykl plen",
+          "entity_names": [
+            "Michael T. Plehn",
+            "Майкл ПЛЕН"
+          ]
+        },
+        {
+          "query": "Общество С Ограниченной Ответственностью Цифровой Центр Гиперспэйс",
+          "normalised": "obshchestvo s ogranichennoy otvetstvennostyu tsifrovoy tsentr giperspeys",
+          "entity_names": [
+            "LIMITED LIABILITY COMPANY DIGITAL CENTER HYPERSPACE",
+            "Общество С Ограниченной Ответственностью Цифровой Центр Гиперспэйс"
+          ]
+        },
+        {
+          "query": "Дэвид ДЖОЙС",
+          "normalised": "devid dzhoys",
+          "entity_names": [
+            "Дэвид ДЖОЙС",
+            "David Patrick Joyce"
+          ]
+        },
+        {
+          "query": "Джон БЕЛЛИНДЖЕР",
+          "normalised": "dzhon bellindzher",
+          "entity_names": [
+            "John B. Bellinger III",
+            "Джон БЕЛЛИНДЖЕР"
+          ]
+        },
+        {
+          "query": "Товариство з обмеженою відповідальністю \"Т-АйТі\"",
+          "normalised": "tovaristvo z obmezhenoyu vidpovidalnistyu t ayti",
+          "entity_names": [
+            "Товариство з обмеженою відповідальністю \"Т-АйТі\"",
+            "Limited Liability Company \"T-IT\"",
+            "Общество с ограниченной ответственностью \"Т-АйТи\"",
+            "Tovarystvo z obmezhenoiu vidpovidalnistiu \"T-AiTi\""
+          ]
+        }
+      ],
+      "eligible_entities": 28462,
+      "dev_sweep_by_max_df": {
+        "100": {
+          "candidate_recall": 0.991,
+          "median_set_size": 50,
+          "p95_set_size": 163
+        },
+        "300": {
+          "candidate_recall": 0.995,
+          "median_set_size": 163,
+          "p95_set_size": 503
+        },
+        "1000": {
+          "candidate_recall": 0.997,
+          "median_set_size": 651,
+          "p95_set_size": 1608
+        },
+        "3000": {
+          "candidate_recall": 0.998,
+          "median_set_size": 1273,
+          "p95_set_size": 3835
+        },
+        "10000": {
+          "candidate_recall": 0.999,
+          "median_set_size": 2075,
+          "p95_set_size": 10488
+        }
+      }
+    },
+    "Cyrillic_from_latin": {
+      "queries": 2000,
+      "candidate_recall": 0.9535,
+      "candidate_recall_person": 0.9809,
+      "candidate_recall_non_person": 0.9121,
+      "queries_person": 1204,
+      "candidate_set_size": {
+        "median": 547,
+        "p95": 1639
+      },
+      "query_ms": {
+        "median": 0.251,
+        "p95": 1.388
+      },
+      "missed_examples": [
+        {
+          "query": "Ilja Andrejevitj GAMBATJIDZE",
+          "normalised": "ilja andrejevitj gambatjidze",
+          "entity_names": [
+            "GAMBASHIDZE, Ilya Andreevich",
+            "Ilja Andrejevitj GAMBATJIDZE",
+            "Ilya Andreevich Gambashidze",
+            "Илья Андреевич Гамбашидзе"
+          ]
+        },
+        {
+          "query": "LIMITED LIABILITY COMPANY INVESTMENT DECISIONS 6",
+          "normalised": "limited liability company investment decisions 6",
+          "entity_names": [
+            "Общество С Ограниченной Ответственностью Инвестиционные Решения 6",
+            "LIMITED LIABILITY COMPANY INVESTMENT DECISIONS 6",
+            "INVESTMENT 6"
+          ]
+        },
+        {
+          "query": "Anastasija Vasiljevna ATJALOVA",
+          "normalised": "anastasija vasiljevna atjalova",
+          "entity_names": [
+            "Анастасия Васильевна АЧАЛОВА",
+            "Anastasiya ACHALAVA",
+            "Anastasia Vasilievna ACHALOVA",
+            "Anastasija Vasiljeuna ATJALAVA"
+          ]
+        },
+        {
+          "query": "Ministry of Internal Affairs of the Russian Federation",
+          "normalised": "ministry of internal affairs of the russian federation",
+          "entity_names": [
+            "Ministry of Internal Affairs of the Russian Federation",
+            "Министерство внутренних дел (МВД)"
+          ]
+        },
+        {
+          "query": "Federal Archival Agency",
+          "normalised": "federal archival agency",
+          "entity_names": [
+            "Федеральное архивное агентство",
+            "Федеральне архівне агентство",
+            "Federal Archival Agency",
+            "Росархив"
+          ]
+        },
+        {
+          "query": "Aleksandr Jevgenjevitj TJMYCHALOV",
+          "normalised": "aleksandr jevgenjevitj tjmychalov",
+          "entity_names": [
+            "Aleksandr Jevgenjevitj TJMYCHALOV",
+            "Chmyhalov Aleksandr Evgenevich",
+            "Чмихалов Александр Евгеньевич",
+            "Чмихалов Олександр Євгенович"
+          ]
+        },
+        {
+          "query": "ABH Financial Limited",
+          "normalised": "abh financial limited",
+          "entity_names": [
+            "ABH Financial Limited",
+            "ЕйБіЕйч Файненшл Лімітед",
+            "EiBiEich Fainenshl Limited"
+          ]
+        },
+        {
+          "query": "Sean Michael Moore",
+          "normalised": "sean michael moore",
+          "entity_names": [
+            "Шон Майкл МУР",
+            "Sean Michael Moore"
+          ]
+        }
+      ],
+      "eligible_entities": 28462,
+      "dev_sweep_by_max_df": {
+        "100": {
+          "candidate_recall": 0.934,
+          "median_set_size": 47,
+          "p95_set_size": 161
+        },
+        "300": {
+          "candidate_recall": 0.942,
+          "median_set_size": 158,
+          "p95_set_size": 516
+        },
+        "1000": {
+          "candidate_recall": 0.955,
+          "median_set_size": 611,
+          "p95_set_size": 1639
+        },
+        "3000": {
+          "candidate_recall": 0.961,
+          "median_set_size": 1278,
+          "p95_set_size": 4396
+        },
+        "10000": {
+          "candidate_recall": 0.965,
+          "median_set_size": 1947,
+          "p95_set_size": 11627
+        }
+      },
+      "ablation": {
+        "folds_only": {
+          "candidate_recall": 0.951,
+          "median_set_size": 522
+        },
+        "joins_only": {
+          "candidate_recall": 0.8995,
+          "median_set_size": 411
+        }
+      }
+    },
+    "Arabic_to_latin": {
+      "queries": 2000,
+      "candidate_recall": 0.9445,
+      "candidate_recall_person": 0.9663,
+      "candidate_recall_non_person": 0.8087,
+      "queries_person": 1723,
+      "candidate_set_size": {
+        "median": 1280,
+        "p95": 2532
+      },
+      "query_ms": {
+        "median": 0.489,
+        "p95": 1.105
+      },
+      "missed_examples": [
+        {
+          "query": "محمود الزهار",
+          "normalised": "mhmwd alzhar",
+          "entity_names": [
+            "Mahmoud Khaled ZAHHAR",
+            "Mahmoud ZAHAR",
+            "Mahmoud Al-Zahar",
+            "マフムード・ハーレド・ザハール"
+          ]
+        },
+        {
+          "query": "شركة سبايدر للتجارة العامة",
+          "normalised": "shrka sbaydr lltjara alama",
+          "entity_names": [
+            "Spider Gayrimenkul Ve Genel Ticaret Limited Sirketi",
+            "SPİDER GAYRİMENKUL VE GENEL TİCARET LİMİTED ŞİRKETİ",
+            "Spider Real Estate and General Trade Limited Company",
+            "Spider General Trading and Money Transfer Company"
+          ]
+        },
+        {
+          "query": "ابو عبد الله",
+          "normalised": "abw bd allh",
+          "entity_names": [
+            "Baraa Qasem Jasim",
+            "براء قاسم جاسم",
+            "ابو عبد الله",
+            "Abu Abdullah"
+          ]
+        },
+        {
+          "query": "ايفوريت ستراتيجي كونسالتينج ذ م م-منطقة حرة",
+          "normalised": "ayfwryt stratyjy kwnsaltynj dh m m mntqa hra",
+          "entity_names": [
+            "Evorit Strategy Consulting LLC-FZ",
+            "ايفوريت ستراتيجي كونسالتينج ذ م م-منطقة حرة"
+          ]
+        },
+        {
+          "query": "انس",
+          "normalised": "ans",
+          "entity_names": [
+            "سعد صباح حسين علي",
+            "Saad Sabah Hussein Ali",
+            "Anas",
+            "انس"
+          ]
+        },
+        {
+          "query": "ابو عبيدة",
+          "normalised": "abw byda",
+          "entity_names": [
+            "عبد الله محمود نجم عبد الله",
+            "Abdullah Mahmoud Najm Abdullah",
+            "Abu Ubaida",
+            "ابو عبيدة"
+          ]
+        },
+        {
+          "query": "ابو صفية",
+          "normalised": "abw sfya",
+          "entity_names": [
+            "عبد الله احمد خلف شكارة الحمداني",
+            "Abdullah Ahmad Khalaf Shakara Al-Hamdani",
+            "ابو صفية",
+            "Abu Safiyah"
+          ]
+        },
+        {
+          "query": "محمد رضائي",
+          "normalised": "mhmd rdaiy",
+          "entity_names": [
+            "Mohammad Rezai",
+            "REZAI, Mohammad",
+            "محمد رضائي",
+            "Mohammad Ahmad Rezai"
+          ]
+        }
+      ],
+      "eligible_entities": 8955,
+      "dev_sweep_by_max_df": {
+        "100": {
+          "candidate_recall": 0.882,
+          "median_set_size": 114,
+          "p95_set_size": 265
+        },
+        "300": {
+          "candidate_recall": 0.909,
+          "median_set_size": 359,
+          "p95_set_size": 757
+        },
+        "1000": {
+          "candidate_recall": 0.94,
+          "median_set_size": 1276,
+          "p95_set_size": 2571
+        },
+        "3000": {
+          "candidate_recall": 0.962,
+          "median_set_size": 3000,
+          "p95_set_size": 6482
+        },
+        "10000": {
+          "candidate_recall": 0.964,
+          "median_set_size": 5765,
+          "p95_set_size": 13424
+        }
+      }
+    },
+    "Arabic_from_latin": {
+      "queries": 2000,
+      "candidate_recall": 0.905,
+      "candidate_recall_person": 0.9483,
+      "candidate_recall_non_person": 0.6354,
+      "queries_person": 1723,
+      "candidate_set_size": {
+        "median": 1262,
+        "p95": 2764
+      },
+      "query_ms": {
+        "median": 0.679,
+        "p95": 1.395
+      },
+      "missed_examples": [
+        {
+          "query": "Shahadeh",
+          "normalised": "shahadeh",
+          "entity_names": [
+            "Rafeeq Chahada",
+            "Rafiq Shahadeh",
+            "Rafeeq Shahade",
+            "Rafeeq Shahadeh"
+          ]
+        },
+        {
+          "query": "Nazirullah Aanafi Waliullah",
+          "normalised": "nazirullah aanafi waliullah",
+          "entity_names": [
+            "ナジルッラー・ハナフィー・ワリウッラー",
+            "Maulavi Nazirullah Anafi",
+            "נד'יר אללה חנפי ולי אללה",
+            "Nazirullah Aanafi Waliullah"
+          ]
+        },
+        {
+          "query": "Abou Fares al Libi",
+          "normalised": "abou fares al libi",
+          "entity_names": [
+            "Sofiane Ben Goumo",
+            "Sufyan bin Qumu",
+            "Sofiane BEN GOUMO",
+            "ספיאן בן ע'ומו"
+          ]
+        },
+        {
+          "query": "IRGC Intelligence Organization",
+          "normalised": "irgc intelligence organization",
+          "entity_names": [
+            "Islamic Revolutionary Guard Corps Intelligence Organisation",
+            "Islamic Revolutionary Guard Corps Intelligence Organization",
+            "IRGC-IO",
+            "سازمان اطلاعات سپاه پاسداران انقلاب اسلامی"
+          ]
+        },
+        {
+          "query": "ICIIC",
+          "normalised": "iciic",
+          "entity_names": [
+            "IRAN CHEMICAL INDUSTRIES INVESTMENT COMPANY PUBLIC JOINT STOCK",
+            "‫شرکت سرمایه گذاری صنایع شیمیایی ایران‬",
+            "IRAN CHEMICAL INDUSTRIES INVESTMENT COMPANY",
+            "ICIIC"
+          ]
+        },
+        {
+          "query": "KANG, Ryong",
+          "normalised": "kang ryong",
+          "entity_names": [
+            "كانغ ريونغ",
+            "Ryong Kang",
+            "Kang Ryong",
+            "KANG RYONG"
+          ]
+        },
+        {
+          "query": "Novin Energy",
+          "normalised": "novin energy",
+          "entity_names": [
+            "Novin Energy",
+            "Novin Energy Company",
+            "Pars Novin",
+            "ノヴィン・エナジー・カンパニー"
+          ]
+        },
+        {
+          "query": "KEVIN GUIAVARCH",
+          "normalised": "kevin guiavarch",
+          "entity_names": [
+            "كيفين جويافارش",
+            "כיוין ג'ויאפארש",
+            "KEVIN GUIAVARCH"
+          ]
+        }
+      ],
+      "eligible_entities": 8955,
+      "dev_sweep_by_max_df": {
+        "100": {
+          "candidate_recall": 0.835,
+          "median_set_size": 135,
+          "p95_set_size": 301
+        },
+        "300": {
+          "candidate_recall": 0.867,
+          "median_set_size": 393,
+          "p95_set_size": 867
+        },
+        "1000": {
+          "candidate_recall": 0.9,
+          "median_set_size": 1370,
+          "p95_set_size": 2795
+        },
+        "3000": {
+          "candidate_recall": 0.931,
+          "median_set_size": 3179,
+          "p95_set_size": 7090
+        },
+        "10000": {
+          "candidate_recall": 0.936,
+          "median_set_size": 9893,
+          "p95_set_size": 14886
+        }
+      },
+      "ablation": {
+        "folds_only": {
+          "candidate_recall": 0.8635,
+          "median_set_size": 1041
+        },
+        "joins_only": {
+          "candidate_recall": 0.8995,
+          "median_set_size": 1116
+        }
+      }
+    },
+    "other_to_latin": {
+      "queries": 2000,
+      "candidate_recall": 0.004,
+      "candidate_recall_person": 0.0,
+      "candidate_recall_non_person": 0.0087,
+      "queries_person": 1085,
+      "candidate_set_size": {
+        "median": 1,
+        "p95": 54
+      },
+      "query_ms": {
+        "median": 0.005,
+        "p95": 0.025
+      },
+      "missed_examples": [
+        {
+          "query": "科电工程有限公司",
+          "normalised": "科电工程有限公司",
+          "entity_names": [
+            "ESE",
+            "Товариство з обмеженою відповідальністю \"Електронний науковий інжиніринг\"",
+            "ELECTRONIC SCIENTIFIC ENGINEERING LTD",
+            "Electronic Scientific Engineering Ltd"
+          ]
+        },
+        {
+          "query": "株式会社研究製造コンツェルン・バール",
+          "normalised": "株式会社研究製造コンツェルン バール",
+          "entity_names": [
+            "Joint-Stock Company Research And Production Concern \"BARL\"",
+            "Акціонерне товариство наукововиробничий концерн \"БАРЛ\"",
+            "株式会社研究製造コンツェルン・バール",
+            "Акционерное общество научнопроизводственный концерн \"БАРЛ\""
+          ]
+        },
+        {
+          "query": "連邦国家予算学術機関ロシア連邦科学アカデミー分光法高等教育研究所",
+          "normalised": "連邦国家予算学術機関ロシア連邦科学アカデミー分光法高等教育研究所",
+          "entity_names": [
+            "連邦国家予算学術機関ロシア連邦科学アカデミー分光法高等教育研究所",
+            "Федеральное государственное бюджетное учреждение науки Институт спектроскопии Российской академии наук",
+            "Федеральна державна бюджетна установа науки Інститут спектроскопії Російської академії наук",
+            "Federal State Budgetary Institution of Science Institute of Spectroscopy of the Russian Academy of Sciences"
+          ]
+        },
+        {
+          "query": "エカテリーナ・イグナトヴァ",
+          "normalised": "エカテリーナ イグナトヴァ",
+          "entity_names": [
+            "Екатерина Сергеевна Игнатова",
+            "Yekaterina Ignatova",
+            "Yekaterina Sergeyevna IGNATOVA",
+            "Ekaterina Sergeevna IGNATOVA"
+          ]
+        },
+        {
+          "query": "ヤヒヤ・アブダッラー・アル・ウベイディ",
+          "normalised": "ヤヒヤ アブダッラー アル ウベイディ",
+          "entity_names": [
+            "AL-UBAIDI, Yahia Abdallah",
+            "Yahia Abdallah Al-Ubaidi",
+            "ヤヒヤ・アブダッラー・アル・ウベイディ",
+            "YAHIA ABDALLAH AL-UBAIDI"
+          ]
+        },
+        {
+          "query": "有限会社軍事産業会社",
+          "normalised": "有限会社軍事産業会社",
+          "entity_names": [
+            "ООО Военно-промышленная компания",
+            "LLC Military Industrial Company",
+            "Military Industrial Company Limited Liability Company",
+            "Wojskowe Przedsiębiorstwo Przemysłowe Sp. z o.o."
+          ]
+        },
+        {
+          "query": "防衛省第 33研究開発センター",
+          "normalised": "防衛省第 33研究開発センター",
+          "entity_names": [
+            "33. Centralny Instytut Badań Naukowych i Testów przy Ministerstwie Obrony Federacji Rosyjskiej",
+            "Rusijos Federacijos Gynybos ministerijos 33-iasis centrinis mokslinių tyrimų ir bandymų institutas",
+            "33e institut central de recherche scientifique et d’essais du ministère russe de la défense",
+            "第33科学研究試験所"
+          ]
+        },
+        {
+          "query": "アブドゥル・ジャリール・ハッカーニ",
+          "normalised": "アブドゥル ジャリール ハッカーニ",
+          "entity_names": [
+            "عبد الجليل حقاني ولي محمد",
+            "アブドゥル・ジャリール・ハッカーニ・ワリ・モハンマド",
+            "عبد الجليل حقّاني",
+            "Abdul Jalil Haqqani Wali Mohammad"
+          ]
+        }
+      ],
+      "eligible_entities": 5402,
+      "dev_sweep_by_max_df": {
+        "100": {
+          "candidate_recall": 0.0,
+          "median_set_size": 1,
+          "p95_set_size": 45
+        },
+        "300": {
+          "candidate_recall": 0.0,
+          "median_set_size": 1,
+          "p95_set_size": 50
+        },
+        "1000": {
+          "candidate_recall": 0.0,
+          "median_set_size": 1,
+          "p95_set_size": 50
+        },
+        "3000": {
+          "candidate_recall": 0.0,
+          "median_set_size": 1,
+          "p95_set_size": 50
+        },
+        "10000": {
+          "candidate_recall": 0.0,
+          "median_set_size": 1,
+          "p95_set_size": 50
+        }
+      }
+    },
+    "other_from_latin": {
+      "queries": 2000,
+      "candidate_recall": 0.001,
+      "candidate_recall_person": 0.0,
+      "candidate_recall_non_person": 0.0022,
+      "queries_person": 1105,
+      "candidate_set_size": {
+        "median": 644,
+        "p95": 1939
+      },
+      "query_ms": {
+        "median": 0.245,
+        "p95": 1.08
+      },
+      "missed_examples": [
+        {
+          "query": "JSC Research & Design Institute Morteplotekhnika",
+          "normalised": "jsc research design institute morteplotekhnika",
+          "entity_names": [
+            "Акціонерне товариство \"Науково-дослідний інститут морської теплотехніки\"",
+            "Акционерное общество \"Научно-исследовательский институт морской теплотехники\"",
+            "Joint Stock Company Research and Design Institute Sea Thermal Engineering",
+            "Tactical Missile Corporation Joint Stock Company “Scientific Research Institute of Marine Heat Engineering”"
+          ]
+        },
+        {
+          "query": "FAKRULLOH TEHMAE",
+          "normalised": "fakrulloh tehmae",
+          "entity_names": [
+            "FAKRULLOH TEHMAE",
+            "ฟักรูลเลาะห์ เต๊ะแม"
+          ]
+        },
+        {
+          "query": "Joint Stock Company Battery Company “Rigel”",
+          "normalised": "joint stock company battery company rigel",
+          "entity_names": [
+            "株式会社バッテリー会社リゲリ",
+            "Акционерное общество \"Аккумуляторная компания \"Ригель\"",
+            "Société par actions Battery Company Rigel",
+            "Battery Company Rigel JSC (société par actions Battery Company Rigel)"
+          ]
+        },
+        {
+          "query": "MHI Special Vehicles Parts Supply & Technical Service Co., Ltd.",
+          "normalised": "mhi special vehicles parts supply technical service co ltd",
+          "entity_names": [
+            "MHI Special Vehicles Parts Supply & Technical Service Co., Ltd.",
+            "菱重特殊车辆服务株式会社"
+          ]
+        },
+        {
+          "query": "Lased Ben Heni",
+          "normalised": "lased ben heni",
+          "entity_names": [
+            "Mohamed Ben Belgacem Awani",
+            "MOHAMED LAKHAL",
+            "محمد لكحل",
+            "BEN HENI, Lased"
+          ]
+        },
+        {
+          "query": "Kevin Jordan Axel Guiavarch",
+          "normalised": "kevin jordan axel guiavarch",
+          "entity_names": [
+            "Kevin Jordan Axel Guiavarch",
+            "קווין ג'ורדן אקסל גובארך",
+            "KEVIN JORDAN AXEL GUIAVARCH",
+            "Kévin Jordan Axel GUIAVARCH"
+          ]
+        },
+        {
+          "query": "Michail Vladimirovitj KIZEJEV",
+          "normalised": "michail vladimirovitj kizejev",
+          "entity_names": [
+            "KISELEV, Mikhail Sergeyevich",
+            "Michail Sergejevitj KISELJOV",
+            "Mikhail Sergeevich Kiselev",
+            "Mikhail Sergeevich KISELEV"
+          ]
+        },
+        {
+          "query": "Adam Elfateh Abdullah Idris",
+          "normalised": "adam elfateh abdullah idris",
+          "entity_names": [
+            "Абу Лулу",
+            "AL-FATEH, Abdullah Idris",
+            "Eifateh Abdullah Idris",
+            "Adam Elfateh Abdullah Idris"
+          ]
+        }
+      ],
+      "eligible_entities": 5402,
+      "dev_sweep_by_max_df": {
+        "100": {
+          "candidate_recall": 0.002,
+          "median_set_size": 63,
+          "p95_set_size": 235
+        },
+        "300": {
+          "candidate_recall": 0.002,
+          "median_set_size": 194,
+          "p95_set_size": 569
+        },
+        "1000": {
+          "candidate_recall": 0.002,
+          "median_set_size": 677,
+          "p95_set_size": 1975
+        },
+        "3000": {
+          "candidate_recall": 0.002,
+          "median_set_size": 1452,
+          "p95_set_size": 4925
+        },
+        "10000": {
+          "candidate_recall": 0.002,
+          "median_set_size": 2078,
+          "p95_set_size": 11365
+        }
+      }
+    }
+  }
+}
