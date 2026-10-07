@@ -1,0 +1,511 @@
+{
+  "python_version": "3.14.7",
+  "dataset_version": "20261006074704-hib",
+  "names_normalised": 305910,
+  "timing_seconds": {
+    "read_and_extract_names": 1.38,
+    "normalise_only": 0.41,
+    "total": 1.79,
+    "normalise_names_per_second": 754709
+  },
+  "output_shape": {
+    "all": {
+      "Latin only": {
+        "names": 210405,
+        "clean": 210405
+      },
+      "Cyrillic (with or without Latin)": {
+        "names": 70955,
+        "clean": 70953,
+        "unresolved": 2
+      },
+      "other non-Latin": {
+        "names": 11931,
+        "unresolved": 11931
+      },
+      "Arabic (with or without Latin)": {
+        "names": 12617,
+        "clean": 12617
+      },
+      "no letters": {
+        "names": 2,
+        "clean": 2
+      }
+    },
+    "targets": {
+      "Latin only": {
+        "names": 203684,
+        "clean": 203684
+      },
+      "Cyrillic (with or without Latin)": {
+        "names": 68469,
+        "clean": 68467,
+        "unresolved": 2
+      },
+      "other non-Latin": {
+        "names": 11774,
+        "unresolved": 11774
+      },
+      "Arabic (with or without Latin)": {
+        "names": 12586,
+        "clean": 12586
+      },
+      "no letters": {
+        "names": 2,
+        "clean": 2
+      }
+    }
+  },
+  "fallthrough_scripts": {
+    "Japanese kana": {
+      "names": 7429,
+      "examples": [
+        [
+          "イリーナ・コステンコ",
+          "イリーナ コステンコ"
+        ],
+        [
+          "ジ・サンジュン",
+          "ジ サンジュン"
+        ],
+        [
+          "チ・サンチュン",
+          "チ サンチュン"
+        ]
+      ]
+    },
+    "Han": {
+      "names": 4005,
+      "examples": [
+        [
+          "星龍興業有限公司",
+          "星龍興業有限公司"
+        ],
+        [
+          "株式会社測量技術学術生産団体",
+          "株式会社測量技術学術生産団体"
+        ],
+        [
+          "株式会社測量機器学術生産団体",
+          "株式会社測量機器学術生産団体"
+        ]
+      ]
+    },
+    "Hebrew": {
+      "names": 1462,
+      "examples": [
+        [
+          "חברת ספר אנרג'י ג'האן נאמה פארס",
+          "חברת ספר אנרגי גהאן נאמה פארס"
+        ],
+        [
+          "אלאיב ליבי",
+          "אלאיב ליבי"
+        ],
+        [
+          "עבד אלחי סאלכ",
+          "עבד אלחי סאלכ"
+        ]
+      ]
+    },
+    "Greek": {
+      "names": 469,
+      "examples": [
+        [
+          "Κέντρο κράτησης MSS του διοικητικού διαμερίσματος Onsong",
+          "κέντρο κράτησησ mss του διοικητικού διαμερίσματοσ onsong"
+        ],
+        [
+          "Ανώτατο Εκλογικό Συμβούλιο",
+          "ανώτατο εκλογικό συμβούλιο"
+        ],
+        [
+          "Υπουργείο Εσωτερικών",
+          "υπουργείο εσωτερικών"
+        ]
+      ]
+    },
+    "Thai": {
+      "names": 400,
+      "examples": [
+        [
+          "บริษัท สยาม แอโร่ รีแพร์ จำกัด",
+          "บริษัท สยาม แอโร่ รีแพร์ จํากัด"
+        ],
+        [
+          "บริษัท เอ็กโซร่า จำกัด",
+          "บริษัท เอ็กโซร่า จํากัด"
+        ],
+        [
+          "คาโนปัส เทรดดิ้ง กรุ๊ป จำกัด",
+          "คาโนปัส เทรดดิ้ง กรุ๊ป จํากัด"
+        ]
+      ]
+    },
+    "Hangul": {
+      "names": 148,
+      "examples": [
+        [
+          "박화성",
+          "박화성"
+        ],
+        [
+          "화성 박",
+          "화성 박"
+        ],
+        [
+          "광철 노",
+          "광철 노"
+        ]
+      ]
+    },
+    "Georgian": {
+      "names": 58,
+      "examples": [
+        [
+          "გიორგი ირემაძე",
+          "გიორგი ირემაძე"
+        ],
+        [
+          "გიორგი ირიმაძე",
+          "გიორგი ირიმაძე"
+        ],
+        [
+          "ალიკ ტაბოევი",
+          "ალიკ ტაბოევი"
+        ]
+      ]
+    },
+    "Armenian": {
+      "names": 7,
+      "examples": [
+        [
+          "ՄԻԼՈՐ ԷԼԵՔԹՐՈՆԻՔՍ ՍՊԸ",
+          "միլոր էլեքթրոնիքս սպը"
+        ],
+        [
+          "սահմանափակ պատասխանատվության ընկերություն \"Վայլդբերրիզ\"",
+          "սահմանափակ պատասխանատվության ընկերություն վայլդբերրիզ"
+        ],
+        [
+          "ՏԱԿՈ ՍՊԸ",
+          "տակո սպը"
+        ]
+      ]
+    },
+    "Khmer": {
+      "names": 6,
+      "examples": [
+        [
+          "ធាន ស៊ូ អ៊ិនធើណេសិនណល ថេកណឡជី ម.ក.",
+          "ធាន ស៊ូ អ៊ិនធើណេសិនណល ថេកណឡជី ម ក"
+        ],
+        [
+          "លេជេន អ៊ិននើវេសិន ឯ.ក",
+          "លេជេន អ៊ិននើវេសិន ឯ ក"
+        ],
+        [
+          "ស្វាយ ជុងទិព្យោ",
+          "ស្វាយ ជុងទិព្យោ"
+        ]
+      ]
+    },
+    "Myanmar": {
+      "names": 6,
+      "examples": [
+        [
+          "ကင်း(င်)ရွိုင်ရယ်(လ်) တက်ကနော်လော်ဂျီ(စ်) ကုမ္ပဏီ လီမိတက်",
+          "ကင်း င် ရွိုင်ရယ် လ် တက်ကနော်လော်ဂျီ စ် ကုမ္ပဏီ လီမိတက်"
+        ],
+        [
+          "စိန်ဝင်း",
+          "စိန်ဝင်း"
+        ],
+        [
+          "စောအိလိထူး",
+          "စောအိလိထူး"
+        ]
+      ]
+    },
+    "Ethiopic": {
+      "names": 4,
+      "examples": [
+        [
+          "ፍትዊ ዓብዱረዛቕ",
+          "ፍትዊ ዓብዱረዛቕ"
+        ],
+        [
+          "ፍትዊ ዓብዱረዛቕ (Tigrinya)",
+          "ፍትዊ ዓብዱረዛቕ tigrinya"
+        ],
+        [
+          "ኤርሚኣስ ግርማይ",
+          "ኤርሚኣስ ግርማይ"
+        ]
+      ]
+    },
+    "Lao": {
+      "names": 1,
+      "examples": [
+        [
+          "ທະນາຄານຮ່ວມພັດທະນາ ມະຫາຊົນ",
+          "ທະນາຄານຮ່ວມພັດທະນາ ມະຫາຊົນ"
+        ]
+      ]
+    },
+    "Coptic": {
+      "names": 1,
+      "examples": [
+        [
+          "Оϭщество с ограниченной ответственностью Небанковская кредитная организация Русское финансовое общество",
+          "oϭshchestvo s ogranichennoy otvetstvennostyu nebankovskaya kreditnaya organizatsiya russkoe finansovoe obshchestvo"
+        ]
+      ]
+    },
+    "Cyrillic": {
+      "names": 1,
+      "examples": [
+        [
+          "ԜАJDI YASIΝ ABDALLAΗ ALSADI",
+          "ԝajdi yasiν abdallaη alsadi"
+        ]
+      ]
+    }
+  },
+  "unmapped_chars_in_cyrillic_and_arabic_names": {
+    "Cyrillic": {
+      "ׅ": 2
+    },
+    "Arabic": {}
+  },
+  "agreement_with_same_entity_latin_name": {
+    "Cyrillic": {
+      "all_names": {
+        "full_string": {
+          "pairs": 66486,
+          "median": 0.9,
+          "share_at_least_0.8": 0.706,
+          "share_below_0.5": 0.072
+        },
+        "consonant_skeleton": {
+          "pairs": 66486,
+          "median": 1.0,
+          "share_at_least_0.8": 0.756,
+          "share_below_0.5": 0.045
+        }
+      },
+      "names_up_to_4_tokens": {
+        "full_string": {
+          "pairs": 47849,
+          "median": 0.906,
+          "share_at_least_0.8": 0.779,
+          "share_below_0.5": 0.02
+        },
+        "consonant_skeleton": {
+          "pairs": 47849,
+          "median": 1.0,
+          "share_at_least_0.8": 0.841,
+          "share_below_0.5": 0.018
+        }
+      }
+    },
+    "Arabic": {
+      "all_names": {
+        "full_string": {
+          "pairs": 12264,
+          "median": 0.63,
+          "share_at_least_0.8": 0.139,
+          "share_below_0.5": 0.233
+        },
+        "consonant_skeleton": {
+          "pairs": 12264,
+          "median": 0.868,
+          "share_at_least_0.8": 0.676,
+          "share_below_0.5": 0.079
+        }
+      },
+      "names_up_to_4_tokens": {
+        "full_string": {
+          "pairs": 6581,
+          "median": 0.698,
+          "share_at_least_0.8": 0.234,
+          "share_below_0.5": 0.173
+        },
+        "consonant_skeleton": {
+          "pairs": 6581,
+          "median": 0.947,
+          "share_at_least_0.8": 0.733,
+          "share_below_0.5": 0.083
+        }
+      }
+    }
+  },
+  "samples": [
+    {
+      "before": "Baha'a Abu al-Ata",
+      "after": "bahaa abu al ata",
+      "same_entity_latin_name": ""
+    },
+    {
+      "before": "Limited Liability Company \"Promtekhresurs\"",
+      "after": "limited liability company promtekhresurs",
+      "same_entity_latin_name": ""
+    },
+    {
+      "before": "Tovarystvo z obmezhenoiu vidpovidalnistiu \"Transresurs\"",
+      "after": "tovarystvo z obmezhenoiu vidpovidalnistiu transresurs",
+      "same_entity_latin_name": ""
+    },
+    {
+      "before": "ISLAMIC CHARITABLE SOCIETY FOR AL-AQSA",
+      "after": "islamic charitable society for al aqsa",
+      "same_entity_latin_name": ""
+    },
+    {
+      "before": "Limited Liability Company \"Specialized Developer \"LSR. Luchi\"",
+      "after": "limited liability company specialized developer lsr luchi",
+      "same_entity_latin_name": ""
+    },
+    {
+      "before": "AG ALHOUSSEINI, Houka Houka",
+      "after": "ag alhousseini houka houka",
+      "same_entity_latin_name": ""
+    },
+    {
+      "before": "АО «МАШ»",
+      "after": "ao mash",
+      "same_entity_latin_name": "Aktsionerne tovarystvo «Mizhnarodnyi aeroport Sheremetievo»  (similarity 0.16)"
+    },
+    {
+      "before": "Акционерное общество \"Специализированное опытноконструкторское бюро систем и средств измерений \"Вектор\"",
+      "after": "aktsionernoe obshchestvo spetsializirovannoe opytnokonstruktorskoe byuro sistem i sredstv izmereniy vektor",
+      "same_entity_latin_name": "Spetsializirovannoe Opytno-Konstruktorskoe Byuro Sistem I Sredstv Izmereni Vektor  (similarity 0.79)"
+    },
+    {
+      "before": "НАКДІ Мохаммад-Реза",
+      "after": "nakdi mokhammad reza",
+      "same_entity_latin_name": "NAKDI Mokhammad-Reza  (similarity 1.00)"
+    },
+    {
+      "before": "Карташов Артем Сергеевич",
+      "after": "kartashov artem sergeevich",
+      "same_entity_latin_name": "Kartashov Artem Serhiiovych  (similarity 0.83)"
+    },
+    {
+      "before": "Мірошниченко Євген Вікторович",
+      "after": "miroshnichenko yevgen viktorovich",
+      "same_entity_latin_name": "Miroshnychenko Yevhen Viktorovych  (similarity 0.91)"
+    },
+    {
+      "before": "Товариство з обмеженою відповідальністю \"Вектор Груп\"",
+      "after": "tovaristvo z obmezhenoyu vidpovidalnistyu vektor grup",
+      "same_entity_latin_name": "Tovarystvo z obmezhenoiu vidpovidalnistiu \"Vektor Hrup\"  (similarity 0.92)"
+    },
+    {
+      "before": "Акционерное Общество “Судоходная Компания ‘Волжское Пароходство’”",
+      "after": "aktsionernoe obshchestvo sudokhodnaya kompaniya volzhskoe parokhodstvo",
+      "same_entity_latin_name": "Aktsionerne tovarystvo «Sudokhodna kompaniia «Volzke parokhodstvo»  (similarity 0.78)"
+    },
+    {
+      "before": "بهمن ریحانی",
+      "after": "bhmn ryhany",
+      "same_entity_latin_name": "Bahman Reyhani  (similarity 0.80)"
+    },
+    {
+      "before": "علي محمد احمد عبد الله الجحيشي",
+      "after": "ly mhmd ahmd bd allh aljhyshy",
+      "same_entity_latin_name": "Ali Muhammad Ahmad Abdullah Al-Juhaishi  (similarity 0.47)"
+    },
+    {
+      "before": "محمد مصطفى قدو مصطفى الحمداني",
+      "after": "mhmd mstfa qdw mstfa alhmdany",
+      "same_entity_latin_name": "Mohammad Mustafa Qadu Mustafa Al-Hamdani  (similarity 0.78)"
+    },
+    {
+      "before": "هاوس أوف شيبينج انفستمنت ش م ح",
+      "after": "haws awf shybynj anfstmnt sh m h",
+      "same_entity_latin_name": "HOUSE OF SHIPPING INVESTMENT FZCO  (similarity 0.37)"
+    },
+    {
+      "before": "ابو زينب",
+      "after": "abw zynb",
+      "same_entity_latin_name": "Abu Zaynab  (similarity 0.78)"
+    },
+    {
+      "before": "سيد محمد حقاني",
+      "after": "syd mhmd hqany",
+      "same_entity_latin_name": "SAYYED MOHAMMED HAQQANI  (similarity 0.70)"
+    },
+    {
+      "before": "وميض فوزي يوسف علي الدليمي",
+      "after": "wmyd fwzy ywsf ly aldlymy",
+      "same_entity_latin_name": "Wameed Fawzi Youssef Ali al-Dulaimi  (similarity 0.57)"
+    }
+  ],
+  "lowest_agreement_pairs": {
+    "Cyrillic": [
+      [
+        "Фонд «Своїх не кидаємо»",
+        "fond svoyikh ne kidayemo",
+        "Fond \"Svoyikh ne kydaiemo\" (Fond dopomohy bizhentsiam, spivvitchyznykam i rosiiskomovnomu naselenniu \"Svoyikh ne kydaiemo\", Fond pomoshchy bezhentsam, sootechestvennykam y russkoiazychnomu naselenyiu \"Svoykh ne brosaem\")",
+        0.04
+      ],
+      [
+        "ООО",
+        "ooo",
+        "Limited Liability Company Multimedia Information Centre \"Izvestia\", MIC Izvestia LLC",
+        0.07
+      ],
+      [
+        "Общество с Ограниченной Ответственностью Нейт",
+        "obshchestvo s ogranichennoy otvetstvennostyu neyt",
+        "LIMITED LIABILITY COMPANY NEIT",
+        0.08
+      ],
+      [
+        "их семьям и лицам",
+        "ikh semyam i litsam",
+        "Krymska rehionalna hromadska orhanizatsiia po nadanniu dopomohy viiskovosluzhbovtsiam, yikh simiam i osobam, postrazhdalym v zoni ATO \"Bratstvo Novorosiyi\"",
+        0.08
+      ],
+      [
+        "Туил",
+        "tuil",
+        "Abderrahmane Djabali",
+        0.08
+      ]
+    ],
+    "Arabic": [
+      [
+        "العدالة الواحدة",
+        "aldala alwahda",
+        "ONE JUSTICE",
+        0.08
+      ],
+      [
+        "لؤلؤة البتروکیماویات ش م ح",
+        "lulua albtrwkymawyat sh m h",
+        "PEARL PETROCHEMICAL FZE",
+        0.08
+      ],
+      [
+        "برايت سبوت لتجارة السلع بالجملة ش.ذ.م.م",
+        "brayt sbwt ltjara alsl baljmla sh dh m m",
+        "BRIGHT SPOT GOODS WHOLESALERS L.L.C",
+        0.08
+      ],
+      [
+        "الشركة المحدودة المسؤولية في بلجيكا وهولندا ولكسمبرغ التابعة لشركة جمهورية إيران الإسلامية للنقل البحري",
+        "alshrka almhdwda almsuwlya fy bljyka whwlnda wlksmbrgh altaba lshrka jmhwrya ayran alaslamya llnql albhry",
+        "IRISL Benelux NV",
+        0.08
+      ],
+      [
+        "أحمد محمد عبدالله محمد الشيبة النعيمي",
+        "ahmd mhmd bdallh mhmd alshyba alnymy",
+        "IMA6INE LTD",
+        0.09
+      ]
+    ]
+  }
+}
