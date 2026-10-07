@@ -295,6 +295,8 @@ First fix, on by default: the skeleton similarity is a rarity-weighted token ove
 
 Second fix, tried and rejected: leave Arabic particles (al, el, bin, ibn, bint, abu, umm) and one-consonant tokens out of the skeleton comparison (`skeleton_particles`, off by default). It raised Arabic false positives (dev 27.6% to 40.2%, test 32.3% to 43.7%, McNemar p below 0.001) and Latin ones too (test 5.5% to 8.5%), because a name stripped of its particles shrinks to one token that then matches in full ('Bin Al Khalidi' against 'Khalidi' goes from 0.46 to 1.0). A full match on common tokens still scores 1.0 either way. Arabic recall rose (dev 66.0% to 74.0%), the Arabic to Latin ratio did not move. See `reports/stage3_skeleton_particles.json`.
 
+Third fix, tried and rejected: hold a skeleton match back from a full alert, into a "needs secondary identifier" tier, when it carried the match and every matched skeleton token is common (`common_df`, off by default). On dev it removed 16 of 186 Arabic false alerts and cost Arabic recall 12 points (66% to 54%; test 67% to 53%), below the 65% floor, with the Arabic to Latin ratio unchanged. 93% of the clean dev queries supply a birth date or country, which the rule exempts. Before it, 156 of 186 Arabic false alerts were full-name collisions (every skeleton token matched) and 139 of them rest only on common tokens. See `reports/stage3_common_tier.json`.
+
 ## Known limitations
 
 These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.

@@ -85,6 +85,7 @@ class Components(NamedTuple):
     dob: float
     country: float
     arabic: bool = False  # Arabic-involved pair: the skeleton may stand in for the name score
+    common_only: bool = False  # the skeleton match rests only on common skeleton tokens (see Screener)
 
 
 class Match(NamedTuple):
@@ -314,6 +315,22 @@ def combine(
     return min(1.0, max(0.0, score))
 
 
+def needs_secondary_identifier(
+    c: Components, threshold: float, secondary_supplied: bool, blend_index: int = 0, **skeleton: float
+) -> bool:
+    """True if the match should be held back from a full alert for want of a secondary identifier.
+
+    The skeleton carried the match (without it the entity would not reach the threshold), every skeleton token
+    that matched is common, and the query gave neither a birth date nor a country. With either supplied, the
+    match is scored as normal.
+    """
+    if secondary_supplied or not c.common_only:
+        return False
+    with_skeleton = combine(c, blend_index=blend_index, **skeleton)
+    without = min(1.0, max(0.0, c.names[blend_index] + c.dob + c.country))
+    return with_skeleton >= threshold > without
+
+
 class Screener:
     """Candidate index plus the entity records and token statistics needed to score candidates."""
 
@@ -327,6 +344,7 @@ class Screener:
         idf_table: tuple[Mapping[str, int], int] | None = None,
         skeleton_idf: bool = True,
         skeleton_particles: bool = False,
+        common_df: int | None = None,
     ) -> None:
         """`idf_table` is (document frequency, documents) to use instead of counting the records here, so training
         and serving can share one table (see idf_table.py).
@@ -352,6 +370,7 @@ class Screener:
         self._skeleton_idf_cache: dict[str, float] = {}
         self._skeleton_df: Counter[str] = Counter()
         self.skeleton_particles = skeleton_particles
+        self.common_df = common_df  # skeleton tokens in this many entities or more are common; None: not flagged
         self._evidence_forms: dict[int, tuple[str, ...]] = {}
         if skeleton_idf:
             for record in records.values():
@@ -374,6 +393,38 @@ class Screener:
                 dict.fromkeys(f for f in map(evidence_skeleton_form, record.norms) if f)
             )
         return self._evidence_forms[key]
+
+    def skeleton_match(self, query_skeleton: str, record: EntityRecord) -> tuple[list[tuple[str, str]], int]:
+        """Query skeleton tokens paired with their partner on the entity's best-matching skeleton form.
+
+        Returns the (query token, entity token) pairs, partners needing fuzz.ratio of at least TOKEN_MATCH_CUTOFF,
+        and the number of query skeleton tokens.
+        """
+        query_tokens = query_skeleton.split()
+        best_form, best = "", -1.0
+        for form in self._forms(record):
+            if self.skeleton_idf:
+                value = weighted_token_score(
+                    query_tokens, form.split(), frozenset(form.split()), self.skeleton_token_idf
+                )
+            else:
+                value = best_similarity(query_skeleton, (form,))
+            if value > best:
+                best_form, best = form, value
+        entity_tokens = best_form.split()
+        pairs = []
+        for token in query_tokens:
+            partner = process.extractOne(token, entity_tokens, scorer=fuzz.ratio, score_cutoff=TOKEN_MATCH_CUTOFF)
+            if partner:
+                pairs.append((token, partner[0]))
+        return pairs, len(query_tokens)
+
+    def is_common_only(self, query_skeleton: str, record: EntityRecord) -> bool:
+        """True if at least one skeleton token matched and every matched entity token is common."""
+        if self.common_df is None:
+            return False
+        pairs, _ = self.skeleton_match(query_skeleton, record)
+        return bool(pairs) and all(self._skeleton_df.get(t, 0) >= self.common_df for _, t in pairs)
 
     def skeleton_similarity(self, query_skeleton: str, record: EntityRecord) -> float:
         forms = self._forms(record)
@@ -405,6 +456,7 @@ class Screener:
         idf_table: tuple[Mapping[str, int], int] | None = None,
         skeleton_idf: bool = True,
         skeleton_particles: bool = False,
+        common_df: int | None = None,
     ) -> "Screener":
         """Build from dicts with id, names and optionally birth_dates and countries."""
         entities = list(entities)
@@ -412,7 +464,7 @@ class Screener:
         records = {e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities}
         return cls(
             index, records, adjustments or Adjustments(), blend, length_penalty, idf_table,
-            skeleton_idf, skeleton_particles,
+            skeleton_idf, skeleton_particles, common_df,
         )  # fmt: skip
 
     def components(
@@ -439,14 +491,21 @@ class Screener:
             names = name_scores(query, record, self.idf, blends, self.length_penalty)
             if max(names) < MIN_NAME_SCORE:
                 continue
+            skeleton_score = self.skeleton_similarity(query_skeleton, record)
+            common_only = (
+                self.common_df is not None
+                and skeleton_score > max(names)  # only a skeleton that can raise the name score matters
+                and self.is_common_only(query_skeleton, record)
+            )
             scored.append(
                 Components(
                     entity_id,
                     names,
-                    self.skeleton_similarity(query_skeleton, record),
+                    skeleton_score,
                     date_adjustment(birth_date, record.birth_dates, self.adjustments),
                     country_adjustment(country, record.countries, self.adjustments),
                     query_arabic or record.arabic,
+                    common_only,
                 )
             )
 
