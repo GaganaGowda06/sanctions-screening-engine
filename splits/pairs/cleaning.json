@@ -1,0 +1,43 @@
+{
+  "dataset_sha256": "4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1",
+  "assignment_sha256": "186248a0047d3ed2f7323057b68d1c9a9bf077a64ea6e57598bcc2880a83ef98",
+  "lines": 755540,
+  "entity_pair_lines": 474950,
+  "dropped": {
+    "conflicting_label_lines": 228,
+    "duplicate_lines": 29378,
+    "not_an_entity_pair": 280590
+  },
+  "conflicting_unordered_pairs": 14,
+  "unordered_pairs_that_appear_more_than_once_before": 8236,
+  "kept": 445344,
+  "mask_sha256": "8be018c6f989a499249ca517223bd1085556d5e97c7367f6b424446076c0e4e0",
+  "final_holdout_kept_line_numbers_sha256": "e1d3cd5d09df33e33fad33d446f6228780b7685a210a341bcbdef9b9bcf738de",
+  "by_split_after_cleaning": {
+    "train": {
+      "pairs": 310762,
+      "positive": 191290,
+      "positive_share": 0.6156
+    },
+    "dev": {
+      "pairs": 44719,
+      "positive": 27492,
+      "positive_share": 0.6148
+    },
+    "test": {
+      "pairs": 44482,
+      "positive": 27343,
+      "positive_share": 0.6147
+    },
+    "final": {
+      "pairs": 24858,
+      "positive": 8802,
+      "positive_share": 0.3541
+    },
+    "final_clean": {
+      "pairs": 20523,
+      "positive": 19040,
+      "positive_share": 0.9277
+    }
+  }
+}

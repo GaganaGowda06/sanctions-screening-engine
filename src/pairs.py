@@ -64,11 +64,22 @@ def load_assignment(split_dir: Path = SPLIT_DIR) -> tuple[str, dict]:
     return codes, manifest
 
 
+def load_clean_mask(split_dir: Path = SPLIT_DIR) -> str:
+    """One character per pair in file order: "1" kept by the cleaning step, "0" dropped. Checksum verified."""
+    info = json.loads((split_dir / "cleaning.json").read_text())
+    with gzip.open(split_dir / "clean_mask.txt.gz", "rt") as fh:
+        mask = fh.read().strip()
+    if hashlib.sha256(mask.encode()).hexdigest() != info["mask_sha256"]:
+        raise ValueError("The cleaning mask does not match its recorded checksum.")
+    return mask
+
+
 def iter_split(
     split: str,
     *,
     allow_final: bool = False,
     in_scope_only: bool = False,
+    clean: bool = False,
     path: Path = PAIRS_PATH,
     split_dir: Path = SPLIT_DIR,
 ) -> Iterator[tuple[int, dict]]:
@@ -76,10 +87,12 @@ def iter_split(
 
     Only the final evaluation may pass allow_final. The whole file is read, and at the end the order of
     its pair ids is checked against the manifest, so an assignment cannot be applied to a different file.
+    clean=True keeps only what the cleaning step kept: entity pairs, no conflicting labels, no duplicates.
     """
     if split in FINAL_SPLITS and not allow_final:
         raise PermissionError(f"The {split!r} split is the frozen final hold-out and is only for the final evaluation.")
     codes, manifest = load_assignment(split_dir)
+    mask = load_clean_mask(split_dir) if clean else None
     wanted = SPLIT_MEMBERS[split]
     digest = hashlib.sha256()
     count = 0
@@ -88,7 +101,7 @@ def iter_split(
         count += 1
         if count > len(codes):
             raise ValueError("The pairs file has more pairs than the split assignment.")
-        if codes[index] in wanted and (not in_scope_only or in_scope(record)):
+        if codes[index] in wanted and (not in_scope_only or in_scope(record)) and (mask is None or mask[index] == "1"):
             yield index, record
     if count != len(codes) or digest.hexdigest() != manifest["pair_keys_sha256"]:
         raise ValueError("The pairs file is not the one the split assignment was made for.")

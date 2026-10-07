@@ -130,12 +130,12 @@ def statistics(keys: list[tuple[str, str]], codes: str, positive: bytearray, sco
     return out
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--input", type=Path, default=PAIRS_PATH)
     parser.add_argument("--split-dir", type=Path, default=SPLIT_DIR)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     print(f"Python {platform.python_version()}", file=sys.stderr)
 
     keys: list[tuple[str, str]] = []

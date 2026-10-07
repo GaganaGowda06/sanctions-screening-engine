@@ -1,0 +1,1130 @@
+{
+  "python_version": "3.14.7",
+  "limit": null,
+  "features": {
+    "scores": [
+      "name_score",
+      "skeleton_score",
+      "weighted_score",
+      "phonetic_score",
+      "arabic_score"
+    ],
+    "states": [
+      "birth_state",
+      "country_state",
+      "identifier_state"
+    ]
+  },
+  "idf_entities": 323212,
+  "tables": {
+    "train": {
+      "pairs": 310762,
+      "positive": 191290,
+      "shares_entity": 0,
+      "positive_share": 0.6156,
+      "sha256": "6f78e313f41be1dc67383d3e02e7a28930910fb64d236e0fe5fb9738153229f9",
+      "seconds": 25
+    },
+    "dev": {
+      "pairs": 44719,
+      "positive": 27492,
+      "shares_entity": 24709,
+      "positive_share": 0.6148,
+      "sha256": "f1453536a905ed9641148f81108ce0f65bc2cdf07dd6efcbd69fa699ccf95672",
+      "seconds": 13
+    },
+    "test": {
+      "pairs": 44482,
+      "positive": 27343,
+      "shares_entity": 24575,
+      "positive_share": 0.6147,
+      "sha256": "275d4373b78df268f60a77014293bf3326c47a567b5b88b3849c65243f661024",
+      "seconds": 12
+    }
+  },
+  "train_match_rate_by_state": {
+    "birth_state": {
+      "agree": 0.9632,
+      "missing": 0.5236,
+      "conflict": 0.0084,
+      "close": 0.0651
+    },
+    "country_state": {
+      "agree": 0.6586,
+      "missing": 0.8498,
+      "conflict": 0.0431
+    },
+    "identifier_state": {
+      "agree": 0.9306,
+      "missing": 0.7288,
+      "conflict": 0.082
+    }
+  },
+  "separation_on_dev": {
+    "all": {
+      "pairs": 44719,
+      "positive": 27492,
+      "negative": 17227,
+      "name_score": {
+        "auc": 0.9525,
+        "mean_match": 0.9709,
+        "mean_non_match": 0.4944
+      },
+      "skeleton_score": {
+        "auc": 0.948,
+        "mean_match": 0.9748,
+        "mean_non_match": 0.6255
+      },
+      "weighted_score": {
+        "auc": 0.9536,
+        "mean_match": 0.9679,
+        "mean_non_match": 0.3982
+      },
+      "phonetic_score": {
+        "auc": 0.9482,
+        "mean_match": 0.9749,
+        "mean_non_match": 0.6414
+      },
+      "arabic_score": {
+        "auc": 0.9498,
+        "mean_match": 0.9739,
+        "mean_non_match": 0.5983
+      },
+      "birth_state": {
+        "auc_of_train_match_rate": 0.8147,
+        "by_state": {
+          "agree": {
+            "pairs": 15089,
+            "match_share": 0.9619
+          },
+          "close": {
+            "pairs": 322,
+            "match_share": 0.0839
+          },
+          "conflict": {
+            "pairs": 4747,
+            "match_share": 0.0088
+          },
+          "missing": {
+            "pairs": 24561,
+            "match_share": 0.5256
+          }
+        }
+      },
+      "country_state": {
+        "auc_of_train_match_rate": 0.6786,
+        "by_state": {
+          "agree": {
+            "pairs": 33459,
+            "match_share": 0.6583
+          },
+          "conflict": {
+            "pairs": 5048,
+            "match_share": 0.0398
+          },
+          "missing": {
+            "pairs": 6212,
+            "match_share": 0.8477
+          }
+        }
+      },
+      "identifier_state": {
+        "auc_of_train_match_rate": 0.7642,
+        "by_state": {
+          "agree": {
+            "pairs": 4652,
+            "match_share": 0.9299
+          },
+          "conflict": {
+            "pairs": 9252,
+            "match_share": 0.0799
+          },
+          "missing": {
+            "pairs": 30815,
+            "match_share": 0.7278
+          }
+        }
+      }
+    },
+    "shares_entity_with_train": {
+      "pairs": 24709,
+      "positive": 8768,
+      "negative": 15941,
+      "name_score": {
+        "auc": 0.9772,
+        "mean_match": 0.9854,
+        "mean_non_match": 0.4806
+      },
+      "skeleton_score": {
+        "auc": 0.9726,
+        "mean_match": 0.9885,
+        "mean_non_match": 0.6174
+      },
+      "weighted_score": {
+        "auc": 0.9779,
+        "mean_match": 0.9844,
+        "mean_non_match": 0.3809
+      },
+      "phonetic_score": {
+        "auc": 0.9733,
+        "mean_match": 0.989,
+        "mean_non_match": 0.6335
+      },
+      "arabic_score": {
+        "auc": 0.9739,
+        "mean_match": 0.9868,
+        "mean_non_match": 0.5884
+      },
+      "birth_state": {
+        "auc_of_train_match_rate": 0.8065,
+        "by_state": {
+          "agree": {
+            "pairs": 4792,
+            "match_share": 0.8942
+          },
+          "close": {
+            "pairs": 300,
+            "match_share": 0.0267
+          },
+          "conflict": {
+            "pairs": 4682,
+            "match_share": 0.0041
+          },
+          "missing": {
+            "pairs": 14935,
+            "match_share": 0.2984
+          }
+        }
+      },
+      "country_state": {
+        "auc_of_train_match_rate": 0.7287,
+        "by_state": {
+          "agree": {
+            "pairs": 16646,
+            "match_share": 0.365
+          },
+          "conflict": {
+            "pairs": 4729,
+            "match_share": 0.0108
+          },
+          "missing": {
+            "pairs": 3334,
+            "match_share": 0.7924
+          }
+        }
+      },
+      "identifier_state": {
+        "auc_of_train_match_rate": 0.7804,
+        "by_state": {
+          "agree": {
+            "pairs": 1936,
+            "match_share": 0.8476
+          },
+          "conflict": {
+            "pairs": 8231,
+            "match_share": 0.0205
+          },
+          "missing": {
+            "pairs": 14542,
+            "match_share": 0.4785
+          }
+        }
+      }
+    },
+    "no_entity_in_train": {
+      "pairs": 20010,
+      "positive": 18724,
+      "negative": 1286,
+      "name_score": {
+        "auc": 0.82,
+        "mean_match": 0.9641,
+        "mean_non_match": 0.6661
+      },
+      "skeleton_score": {
+        "auc": 0.8176,
+        "mean_match": 0.9683,
+        "mean_non_match": 0.7258
+      },
+      "weighted_score": {
+        "auc": 0.8213,
+        "mean_match": 0.9603,
+        "mean_non_match": 0.612
+      },
+      "phonetic_score": {
+        "auc": 0.8169,
+        "mean_match": 0.9683,
+        "mean_non_match": 0.739
+      },
+      "arabic_score": {
+        "auc": 0.8177,
+        "mean_match": 0.9679,
+        "mean_non_match": 0.7219
+      },
+      "birth_state": {
+        "auc_of_train_match_rate": 0.7536,
+        "by_state": {
+          "agree": {
+            "pairs": 10297,
+            "match_share": 0.9934
+          },
+          "close": {
+            "pairs": 22,
+            "match_share": 0.8636
+          },
+          "conflict": {
+            "pairs": 65,
+            "match_share": 0.3538
+          },
+          "missing": {
+            "pairs": 9626,
+            "match_share": 0.8781
+          }
+        }
+      },
+      "country_state": {
+        "auc_of_train_match_rate": 0.5246,
+        "by_state": {
+          "agree": {
+            "pairs": 16813,
+            "match_share": 0.9487
+          },
+          "conflict": {
+            "pairs": 319,
+            "match_share": 0.4702
+          },
+          "missing": {
+            "pairs": 2878,
+            "match_share": 0.9117
+          }
+        }
+      },
+      "identifier_state": {
+        "auc_of_train_match_rate": 0.695,
+        "by_state": {
+          "agree": {
+            "pairs": 2716,
+            "match_share": 0.9886
+          },
+          "conflict": {
+            "pairs": 1021,
+            "match_share": 0.5583
+          },
+          "missing": {
+            "pairs": 16273,
+            "match_share": 0.9506
+          }
+        }
+      }
+    }
+  },
+  "score_correlations_on_dev": {
+    "name_score": {
+      "name_score": 1.0,
+      "skeleton_score": 0.955,
+      "weighted_score": 0.993,
+      "phonetic_score": 0.955,
+      "arabic_score": 0.983
+    },
+    "skeleton_score": {
+      "name_score": 0.955,
+      "skeleton_score": 1.0,
+      "weighted_score": 0.934,
+      "phonetic_score": 0.962,
+      "arabic_score": 0.963
+    },
+    "weighted_score": {
+      "name_score": 0.993,
+      "skeleton_score": 0.934,
+      "weighted_score": 1.0,
+      "phonetic_score": 0.932,
+      "arabic_score": 0.957
+    },
+    "phonetic_score": {
+      "name_score": 0.955,
+      "skeleton_score": 0.962,
+      "weighted_score": 0.932,
+      "phonetic_score": 1.0,
+      "arabic_score": 0.963
+    },
+    "arabic_score": {
+      "name_score": 0.983,
+      "skeleton_score": 0.963,
+      "weighted_score": 0.957,
+      "phonetic_score": 0.963,
+      "arabic_score": 1.0
+    }
+  },
+  "separation_on_dev_by_script_class": {
+    "all": {
+      "Latin on both sides only": {
+        "pairs": 16876,
+        "positive": 11206,
+        "negative": 5670,
+        "name_score": {
+          "auc": 0.9339,
+          "mean_match": 0.967,
+          "mean_non_match": 0.5207
+        },
+        "skeleton_score": {
+          "auc": 0.9291,
+          "mean_match": 0.9715,
+          "mean_non_match": 0.6181
+        },
+        "weighted_score": {
+          "auc": 0.9343,
+          "mean_match": 0.9626,
+          "mean_non_match": 0.4459
+        },
+        "phonetic_score": {
+          "auc": 0.9294,
+          "mean_match": 0.9714,
+          "mean_non_match": 0.631
+        },
+        "arabic_score": {
+          "auc": 0.9311,
+          "mean_match": 0.9712,
+          "mean_non_match": 0.6002
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.7697,
+          "by_state": {
+            "agree": {
+              "pairs": 5298,
+              "match_share": 0.9792
+            },
+            "close": {
+              "pairs": 53,
+              "match_share": 0.1132
+            },
+            "conflict": {
+              "pairs": 994,
+              "match_share": 0.0131
+            },
+            "missing": {
+              "pairs": 10531,
+              "match_share": 0.5697
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.6272,
+          "by_state": {
+            "agree": {
+              "pairs": 13356,
+              "match_share": 0.7159
+            },
+            "conflict": {
+              "pairs": 1514,
+              "match_share": 0.0786
+            },
+            "missing": {
+              "pairs": 2006,
+              "match_share": 0.7607
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.8029,
+          "by_state": {
+            "agree": {
+              "pairs": 1599,
+              "match_share": 0.9944
+            },
+            "conflict": {
+              "pairs": 3630,
+              "match_share": 0.0961
+            },
+            "missing": {
+              "pairs": 11647,
+              "match_share": 0.7957
+            }
+          }
+        }
+      },
+      "non-Latin on both sides": {
+        "pairs": 17452,
+        "positive": 9112,
+        "negative": 8340,
+        "name_score": {
+          "auc": 0.9808,
+          "mean_match": 0.994,
+          "mean_non_match": 0.4961
+        },
+        "skeleton_score": {
+          "auc": 0.9769,
+          "mean_match": 0.995,
+          "mean_non_match": 0.6418
+        },
+        "weighted_score": {
+          "auc": 0.9813,
+          "mean_match": 0.9939,
+          "mean_non_match": 0.3879
+        },
+        "phonetic_score": {
+          "auc": 0.9769,
+          "mean_match": 0.9952,
+          "mean_non_match": 0.6605
+        },
+        "arabic_score": {
+          "auc": 0.9785,
+          "mean_match": 0.9942,
+          "mean_non_match": 0.6142
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.8419,
+          "by_state": {
+            "agree": {
+              "pairs": 5464,
+              "match_share": 0.9478
+            },
+            "close": {
+              "pairs": 202,
+              "match_share": 0.0644
+            },
+            "conflict": {
+              "pairs": 2767,
+              "match_share": 0.0058
+            },
+            "missing": {
+              "pairs": 9019,
+              "match_share": 0.4329
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.6778,
+          "by_state": {
+            "agree": {
+              "pairs": 13317,
+              "match_share": 0.5339
+            },
+            "conflict": {
+              "pairs": 1933,
+              "match_share": 0.0269
+            },
+            "missing": {
+              "pairs": 2202,
+              "match_share": 0.8856
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.7757,
+          "by_state": {
+            "agree": {
+              "pairs": 2703,
+              "match_share": 0.8835
+            },
+            "conflict": {
+              "pairs": 4387,
+              "match_share": 0.0718
+            },
+            "missing": {
+              "pairs": 10362,
+              "match_share": 0.6185
+            }
+          }
+        }
+      },
+      "non-Latin on one side only": {
+        "pairs": 10391,
+        "positive": 7174,
+        "negative": 3217,
+        "name_score": {
+          "auc": 0.9378,
+          "mean_match": 0.9477,
+          "mean_non_match": 0.4437
+        },
+        "skeleton_score": {
+          "auc": 0.9348,
+          "mean_match": 0.9542,
+          "mean_non_match": 0.5965
+        },
+        "weighted_score": {
+          "auc": 0.9409,
+          "mean_match": 0.9434,
+          "mean_non_match": 0.3407
+        },
+        "phonetic_score": {
+          "auc": 0.9353,
+          "mean_match": 0.9546,
+          "mean_non_match": 0.61
+        },
+        "arabic_score": {
+          "auc": 0.9356,
+          "mean_match": 0.9524,
+          "mean_non_match": 0.554
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.8275,
+          "by_state": {
+            "agree": {
+              "pairs": 4327,
+              "match_share": 0.9584
+            },
+            "close": {
+              "pairs": 67,
+              "match_share": 0.1194
+            },
+            "conflict": {
+              "pairs": 986,
+              "match_share": 0.0132
+            },
+            "missing": {
+              "pairs": 5011,
+              "match_share": 0.5999
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.7728,
+          "by_state": {
+            "agree": {
+              "pairs": 6786,
+              "match_share": 0.789
+            },
+            "conflict": {
+              "pairs": 1601,
+              "match_share": 0.0187
+            },
+            "missing": {
+              "pairs": 2004,
+              "match_share": 0.8932
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.6903,
+          "by_state": {
+            "agree": {
+              "pairs": 350,
+              "match_share": 0.9943
+            },
+            "conflict": {
+              "pairs": 1235,
+              "match_share": 0.0607
+            },
+            "missing": {
+              "pairs": 8806,
+              "match_share": 0.7666
+            }
+          }
+        }
+      }
+    },
+    "shares_entity_with_train": {
+      "Latin on both sides only": {
+        "pairs": 6201,
+        "positive": 1387,
+        "negative": 4814,
+        "name_score": {
+          "auc": 0.9639,
+          "mean_match": 0.9822,
+          "mean_non_match": 0.4981
+        },
+        "skeleton_score": {
+          "auc": 0.9582,
+          "mean_match": 0.9847,
+          "mean_non_match": 0.6021
+        },
+        "weighted_score": {
+          "auc": 0.9639,
+          "mean_match": 0.9795,
+          "mean_non_match": 0.4198
+        },
+        "phonetic_score": {
+          "auc": 0.9602,
+          "mean_match": 0.9853,
+          "mean_non_match": 0.6153
+        },
+        "arabic_score": {
+          "auc": 0.9612,
+          "mean_match": 0.985,
+          "mean_non_match": 0.5817
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.7221,
+          "by_state": {
+            "agree": {
+              "pairs": 542,
+              "match_share": 0.8284
+            },
+            "close": {
+              "pairs": 47,
+              "match_share": 0.0213
+            },
+            "conflict": {
+              "pairs": 972,
+              "match_share": 0.0031
+            },
+            "missing": {
+              "pairs": 4640,
+              "match_share": 0.2013
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.7178,
+          "by_state": {
+            "agree": {
+              "pairs": 4143,
+              "match_share": 0.2196
+            },
+            "conflict": {
+              "pairs": 1293,
+              "match_share": 0.0124
+            },
+            "missing": {
+              "pairs": 765,
+              "match_share": 0.6026
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.8362,
+          "by_state": {
+            "agree": {
+              "pairs": 284,
+              "match_share": 0.9965
+            },
+            "conflict": {
+              "pairs": 2989,
+              "match_share": 0.0097
+            },
+            "missing": {
+              "pairs": 2928,
+              "match_share": 0.3671
+            }
+          }
+        }
+      },
+      "non-Latin on both sides": {
+        "pairs": 11944,
+        "positive": 3910,
+        "negative": 8034,
+        "name_score": {
+          "auc": 0.9864,
+          "mean_match": 0.9909,
+          "mean_non_match": 0.4874
+        },
+        "skeleton_score": {
+          "auc": 0.9813,
+          "mean_match": 0.9925,
+          "mean_non_match": 0.6367
+        },
+        "weighted_score": {
+          "auc": 0.9873,
+          "mean_match": 0.9909,
+          "mean_non_match": 0.3772
+        },
+        "phonetic_score": {
+          "auc": 0.9813,
+          "mean_match": 0.9929,
+          "mean_non_match": 0.6554
+        },
+        "arabic_score": {
+          "auc": 0.9829,
+          "mean_match": 0.9913,
+          "mean_non_match": 0.6078
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.8387,
+          "by_state": {
+            "agree": {
+              "pairs": 2380,
+              "match_share": 0.8958
+            },
+            "close": {
+              "pairs": 190,
+              "match_share": 0.0158
+            },
+            "conflict": {
+              "pairs": 2745,
+              "match_share": 0.0029
+            },
+            "missing": {
+              "pairs": 6629,
+              "match_share": 0.2666
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.6916,
+          "by_state": {
+            "agree": {
+              "pairs": 8942,
+              "match_share": 0.3328
+            },
+            "conflict": {
+              "pairs": 1899,
+              "match_share": 0.0116
+            },
+            "missing": {
+              "pairs": 1103,
+              "match_share": 0.8268
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.7877,
+          "by_state": {
+            "agree": {
+              "pairs": 1381,
+              "match_share": 0.7886
+            },
+            "conflict": {
+              "pairs": 4037,
+              "match_share": 0.0216
+            },
+            "missing": {
+              "pairs": 6526,
+              "match_share": 0.4189
+            }
+          }
+        }
+      },
+      "non-Latin on one side only": {
+        "pairs": 6564,
+        "positive": 3471,
+        "negative": 3093,
+        "name_score": {
+          "auc": 0.9785,
+          "mean_match": 0.9805,
+          "mean_non_match": 0.4354
+        },
+        "skeleton_score": {
+          "auc": 0.975,
+          "mean_match": 0.9855,
+          "mean_non_match": 0.5912
+        },
+        "weighted_score": {
+          "auc": 0.9794,
+          "mean_match": 0.9789,
+          "mean_non_match": 0.3301
+        },
+        "phonetic_score": {
+          "auc": 0.976,
+          "mean_match": 0.9862,
+          "mean_non_match": 0.6048
+        },
+        "arabic_score": {
+          "auc": 0.9757,
+          "mean_match": 0.9824,
+          "mean_non_match": 0.5482
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.8008,
+          "by_state": {
+            "agree": {
+              "pairs": 1870,
+              "match_share": 0.9112
+            },
+            "close": {
+              "pairs": 63,
+              "match_share": 0.0635
+            },
+            "conflict": {
+              "pairs": 965,
+              "match_share": 0.0083
+            },
+            "missing": {
+              "pairs": 3666,
+              "match_share": 0.4787
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.8055,
+          "by_state": {
+            "agree": {
+              "pairs": 3561,
+              "match_share": 0.6147
+            },
+            "conflict": {
+              "pairs": 1537,
+              "match_share": 0.0085
+            },
+            "missing": {
+              "pairs": 1466,
+              "match_share": 0.8656
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.7026,
+          "by_state": {
+            "agree": {
+              "pairs": 271,
+              "match_share": 0.9926
+            },
+            "conflict": {
+              "pairs": 1205,
+              "match_share": 0.044
+            },
+            "missing": {
+              "pairs": 5088,
+              "match_share": 0.6189
+            }
+          }
+        }
+      }
+    },
+    "no_entity_in_train": {
+      "Latin on both sides only": {
+        "pairs": 10675,
+        "positive": 9819,
+        "negative": 856,
+        "name_score": {
+          "auc": 0.8416,
+          "mean_match": 0.9648,
+          "mean_non_match": 0.6481
+        },
+        "skeleton_score": {
+          "auc": 0.8381,
+          "mean_match": 0.9696,
+          "mean_non_match": 0.7081
+        },
+        "weighted_score": {
+          "auc": 0.8425,
+          "mean_match": 0.9602,
+          "mean_non_match": 0.5928
+        },
+        "phonetic_score": {
+          "auc": 0.8372,
+          "mean_match": 0.9694,
+          "mean_non_match": 0.7195
+        },
+        "arabic_score": {
+          "auc": 0.8382,
+          "mean_match": 0.9692,
+          "mean_non_match": 0.704
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.7346,
+          "by_state": {
+            "agree": {
+              "pairs": 4756,
+              "match_share": 0.9964
+            },
+            "close": {
+              "pairs": 6,
+              "match_share": 0.8333
+            },
+            "conflict": {
+              "pairs": 22,
+              "match_share": 0.4545
+            },
+            "missing": {
+              "pairs": 5891,
+              "match_share": 0.8598
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.5087,
+          "by_state": {
+            "agree": {
+              "pairs": 9213,
+              "match_share": 0.939
+            },
+            "conflict": {
+              "pairs": 221,
+              "match_share": 0.4661
+            },
+            "missing": {
+              "pairs": 1241,
+              "match_share": 0.8582
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.7083,
+          "by_state": {
+            "agree": {
+              "pairs": 1315,
+              "match_share": 0.9939
+            },
+            "conflict": {
+              "pairs": 641,
+              "match_share": 0.4992
+            },
+            "missing": {
+              "pairs": 8719,
+              "match_share": 0.9396
+            }
+          }
+        }
+      },
+      "non-Latin on both sides": {
+        "pairs": 5508,
+        "positive": 5202,
+        "negative": 306,
+        "name_score": {
+          "auc": 0.8018,
+          "mean_match": 0.9963,
+          "mean_non_match": 0.7225
+        },
+        "skeleton_score": {
+          "auc": 0.8008,
+          "mean_match": 0.9969,
+          "mean_non_match": 0.7744
+        },
+        "weighted_score": {
+          "auc": 0.802,
+          "mean_match": 0.9961,
+          "mean_non_match": 0.669
+        },
+        "phonetic_score": {
+          "auc": 0.8007,
+          "mean_match": 0.997,
+          "mean_non_match": 0.7929
+        },
+        "arabic_score": {
+          "auc": 0.8012,
+          "mean_match": 0.9965,
+          "mean_non_match": 0.7815
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.7418,
+          "by_state": {
+            "agree": {
+              "pairs": 3084,
+              "match_share": 0.988
+            },
+            "close": {
+              "pairs": 12,
+              "match_share": 0.8333
+            },
+            "conflict": {
+              "pairs": 22,
+              "match_share": 0.3636
+            },
+            "missing": {
+              "pairs": 2390,
+              "match_share": 0.8941
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.503,
+          "by_state": {
+            "agree": {
+              "pairs": 4375,
+              "match_share": 0.9449
+            },
+            "conflict": {
+              "pairs": 34,
+              "match_share": 0.8824
+            },
+            "missing": {
+              "pairs": 1099,
+              "match_share": 0.9445
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.7166,
+          "by_state": {
+            "agree": {
+              "pairs": 1322,
+              "match_share": 0.9826
+            },
+            "conflict": {
+              "pairs": 350,
+              "match_share": 0.6514
+            },
+            "missing": {
+              "pairs": 3836,
+              "match_share": 0.958
+            }
+          }
+        }
+      },
+      "non-Latin on one side only": {
+        "pairs": 3827,
+        "positive": 3703,
+        "negative": 124,
+        "name_score": {
+          "auc": 0.7578,
+          "mean_match": 0.9169,
+          "mean_non_match": 0.6509
+        },
+        "skeleton_score": {
+          "auc": 0.7583,
+          "mean_match": 0.9248,
+          "mean_non_match": 0.7285
+        },
+        "weighted_score": {
+          "auc": 0.7615,
+          "mean_match": 0.9101,
+          "mean_non_match": 0.6041
+        },
+        "phonetic_score": {
+          "auc": 0.7573,
+          "mean_match": 0.9251,
+          "mean_non_match": 0.74
+        },
+        "arabic_score": {
+          "auc": 0.7568,
+          "mean_match": 0.9244,
+          "mean_non_match": 0.6989
+        },
+        "birth_state": {
+          "auc_of_train_match_rate": 0.7944,
+          "by_state": {
+            "agree": {
+              "pairs": 2457,
+              "match_share": 0.9943
+            },
+            "close": {
+              "pairs": 4,
+              "match_share": 1.0
+            },
+            "conflict": {
+              "pairs": 21,
+              "match_share": 0.2381
+            },
+            "missing": {
+              "pairs": 1345,
+              "match_share": 0.9301
+            }
+          }
+        },
+        "country_state": {
+          "auc_of_train_match_rate": 0.6627,
+          "by_state": {
+            "agree": {
+              "pairs": 3225,
+              "match_share": 0.9814
+            },
+            "conflict": {
+              "pairs": 64,
+              "match_share": 0.2656
+            },
+            "missing": {
+              "pairs": 538,
+              "match_share": 0.9684
+            }
+          }
+        },
+        "identifier_state": {
+          "auc_of_train_match_rate": 0.5393,
+          "by_state": {
+            "agree": {
+              "pairs": 79,
+              "match_share": 1.0
+            },
+            "conflict": {
+              "pairs": 30,
+              "match_share": 0.7333
+            },
+            "missing": {
+              "pairs": 3718,
+              "match_share": 0.9688
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -96,7 +96,7 @@ A threshold cannot lower the Arabic false positive rate without losing Arabic re
 
 ## Training data: OpenSanctions Pairs
 
-The matcher so far is hand tuned. The next phase trains a logistic regression over explicit features, the approach nomenklatura's RegressionV1 takes, on the OpenSanctions Pairs dataset: 755,540 pairs of entities that analysts labelled as the same entity (positive) or different entities (negative). Nothing has been trained yet; this section records the data and how it was split.
+The matcher so far is hand tuned. The next phase trains a logistic regression over explicit features, the approach nomenklatura's RegressionV1 takes, on the OpenSanctions Pairs dataset: 755,540 pairs of entities that analysts labelled as the same entity (positive) or different entities (negative). Nothing has been trained yet; this section records the data, how it was cleaned and split, and the features built from it.
 
 Licence: non-commercial use only (CC-BY-NC-4.0 on the Hugging Face dataset card, "non-commercial use" on the OpenSanctions page). The paper is licensed separately and that licence does not apply to the data. Cite: Smith, Sesodia, Lindenberg and Schroeder de Witt (2026), OpenSanctions Pairs: Large-Scale Entity Matching with LLMs, arXiv:2603.11051, and OpenSanctions, Pairs: Cross-Referencing Training Data, snapshot 2025-12-09 (https://www.opensanctions.org/docs/opensource/pairs/). The file (390 MiB compressed) is downloaded with `src/download_pairs.py`, which checks the size, the MD5 published by OpenSanctions and the SHA-256 published by Hugging Face. It is not stored in this repository.
 
@@ -104,24 +104,50 @@ What is in it (full output in `reports/pairs_profile.json`):
 
 - 581,149 positive and 174,391 negative pairs (76.9% positive). The file is ordered by source, not shuffled: the share of positives runs from 1.9% in the last tenth of the file to 100% in the middle. Never take a slice of it as a sample.
 - 280,590 pairs (37.1%) label relationship and role records (Occupancy, Succession, Position, Ownership, Family and others), not named things. The 474,950 pairs of name-bearing entities (persons, companies, organisations, legal entities, vessels and a few others) are 63.8% positive, and those are the ones that matter for name matching.
-- Among those entity pairs, 44.9% have Latin names only, 30.9% have non-Latin names on both sides and 24.2% on one side. Cyrillic appears on either side in 183,661 pairs, Arabic in 91,796 and other scripts in 104,180.
-- Both sides of the entity pairs carry a birth date in 207,589 (43.7%), a country in 375,334 (79.0%) and an identifier in 225,042 (47.4%, or 28.8% leaving out programId). All three together: 16,891 (3.6%). The attributes are strongly tied to the labels: when both sides have a birth year and they share one, 97.1% of the pairs are positive, and 2.5% when they conflict.
+- Among those entity pairs, 36.4% have Latin names only, 42.1% have non-Latin names on both sides and 21.4% on one side. Cyrillic appears on either side in 217,497 pairs, Arabic in 113,008 and other scripts in 159,930.
+- Both sides of the entity pairs carry a birth date in 216,281 (45.5%), a country in 412,246 (86.8%) and an identifier in 296,430 (62.4%, or 38.1% leaving out programId). All three together: 36,610 (7.7%). The attributes are strongly tied to the labels: when both sides have a birth year and they share one, 96.6% of the pairs are positive, and 1.2% when they conflict.
+- An entity id does not identify a fixed record: of the ids that appear in more than one pair, 74% carry different properties in different pairs. Everything here is therefore computed from each pair's own copy of the entities, never cached by id.
 - 8,280 pairs appear more than once and 14 of those have conflicting labels. One connected group of entities holds 35.2% of all pairs, and one entity appears in 376 pairs.
 
-### Splits and the new final hold-out
+### Cleaning and splits
 
-The earlier hold-out belonged to the hand-tuned matcher and is spent. A fresh split was made by `src/build_pair_splits.py`: 70% train, 10% dev, 10% test and 10% final hold-out. The rule uses a hash of a group key and a fixed seed, so file order plays no part. Pairs in a small connected group (up to 100 pairs) are kept together with their whole group, so those entities appear in one split only. Pairs in the giant group are assigned one pair at a time, which keeps duplicates together but cannot keep entities apart.
+Decisions: train and evaluate on entity pairs only, drop the 14 pairs with conflicting labels (all 228 of their lines), and keep the first line of each duplicate. `src/clean_pairs.py` applies this as a frozen mask over the split, which it does not change: 280,590 relationship records, 29,378 duplicate lines and 228 conflicting lines are dropped, leaving 445,344 pairs.
 
-| Split | Pairs | Positive | Name-bearing entity pairs | Positive among those | Pairs sharing an entity with a train pair |
-|---|---|---|---|---|---|
-| train | 528,358 | 77.0% | 331,614 | 63.9% | not applicable |
-| dev | 75,548 | 76.9% | 47,623 | 63.8% | 35.8% |
-| test | 75,439 | 76.9% | 47,472 | 63.8% | 35.9% |
-| final hold-out | 76,195 | 76.7% | 48,241 | 63.6% | 35.6% |
+The earlier hold-out belonged to the hand-tuned matcher and is spent. A fresh split was made by `src/build_pair_splits.py`: 70% train, 10% dev, 10% test and 10% final hold-out, by a hash of a group key and a fixed seed, so file order plays no part. Pairs in a small connected group (up to 100 pairs) are kept together with their whole group. Pairs in the giant group are assigned one at a time, which keeps duplicates together but cannot keep entities apart.
 
-Cautions. About a third of the dev, test and hold-out pairs share an entity with a train pair, all of them from the large connected groups (mostly the giant one), so scores on them are somewhat optimistic compared with entirely unseen entities. The hold-out pairs that share no entity with any other split (48,936 pairs, 21,084 of them entity pairs) are marked, but they are 93.0% positive, so they can check for leakage and cannot measure false positives. Use the whole hold-out for headline figures.
+| Split | Pairs kept | Positive | Share an entity with a train pair |
+|---|---|---|---|
+| train | 310,762 | 61.6% | not applicable |
+| dev | 44,719 | 61.5% | 55.3% |
+| test | 44,482 | 61.5% | 55.2% |
+| final hold-out | 45,381 | 61.4% | not computed (not touched) |
 
-The assignment is frozen in `splits/pairs/` with the dataset checksum, a checksum of the pair ids in file order, and a checksum of the hold-out membership (`5439a1090adc...`). `pairs.iter_split()` refuses the hold-out unless it is asked for explicitly, and only the final evaluation may do that.
+About 55% of the dev and test pairs share an entity (by id) with a train pair, all of them from the large connected groups. After cleaning that is more than the third measured before it, because the relationship records and duplicates that were removed were mostly entity-disjoint. Every metric on this data is reported separately for the two kinds. They differ a lot: among dev pairs that share an entity with train 35% are matches, and among those that do not 94% are, with only 1,286 non-matches, so the second kind says little about false positives.
+
+The assignment and the cleaning mask are frozen in `splits/pairs/` with the dataset checksum, a checksum of the pair ids in file order, and a checksum of the hold-out membership (`5439a1090adc...`). `pairs.iter_split()` refuses the hold-out unless it is asked for explicitly, and only the final evaluation may do that.
+
+### Features
+
+`src/build_pair_features.py` builds one row per cleaned pair for train, dev and test (the hold-out is not featurised): five name scores in [0, 1] and three attribute states. The name scores take the best-matching pair of names of the two entities (at most 30 names each): the current engine's blended name score, the consonant-skeleton score, the rarity-weighted token score (weights from the train entities only), a Double Metaphone score, and a score after Arabic folding (articles, abd- compounds, bin/ibn, Mohammed and other name variants). Birth date is agree, close (a year apart), conflict or missing; country and identifier are agree, conflict or missing, with identifiers compared property by property. Tables are written to `data/pairs/features/` (not committed) and are identical from run to run.
+
+How well each feature separates matches from non-matches on dev, as the area under the ROC curve (the attribute states are scored by their match rate in train):
+
+| Feature | All dev pairs | Share an entity with train | No entity in train |
+|---|---|---|---|
+| Name score (current engine) | 0.953 | 0.977 | 0.820 |
+| Skeleton score | 0.948 | 0.973 | 0.818 |
+| Rarity-weighted token score | 0.954 | 0.978 | 0.821 |
+| Phonetic (Double Metaphone) score | 0.948 | 0.973 | 0.817 |
+| Arabic-normalised score | 0.950 | 0.974 | 0.818 |
+| Birth date state | 0.815 | 0.806 | 0.754 |
+| Country state | 0.679 | 0.729 | 0.525 |
+| Identifier state | 0.764 | 0.780 | 0.695 |
+
+The five name scores are close to one another and highly correlated (0.93 to 0.99 on dev), so the phonetic and Arabic scores are unlikely to add much on their own. Birth date is the strongest attribute: a conflict means 0.9% are matches. Missing values carry signal too (73% of pairs with no comparable identifier are matches, against 8% when identifiers conflict), which reflects which sources the pairs come from.
+
+### The screening hold-out
+
+The Pairs data measures whether two records are the same entity. Screening is a different question: given a customer name, does the engine alert on the right listed entity, and how often on innocent names. A second screening hold-out was built from our own list for the trained matcher, with the same design as the first (cross-script and variant positives, synthetic and near-miss negatives, plus negatives and same-script positives in other scripts): 4,800 queries on 2,900 entities used in no earlier set, frozen in `holdout/screening_holdout_v2.json` (SHA-256 `e5a9b7af6b94...`). It has not been scored.
 
 ## Known limitations
 
@@ -135,7 +161,7 @@ These come from the measurements in `reports/stage2_candidates.json`, `reports/s
 
 ## How to run
 
-Developed and tested on Python 3.14. The data pipeline and candidate index use only the standard library, and scoring uses rapidfuzz. Do not install followthemoney: version 4.x depends on PyICU, which needs system ICU libraries to build.
+Developed and tested on Python 3.14. The data pipeline and candidate index use only the standard library, scoring uses rapidfuzz, and the phonetic feature uses Metaphone. Do not install followthemoney: version 4.x depends on PyICU, which needs system ICU libraries to build.
 
 ```
 python3 -m venv venv
@@ -150,6 +176,9 @@ python src/evaluate_screening.py    # tuning on dev, test report, reports/stage2
 python src/download_pairs.py        # the Pairs training data, about 390 MiB, verified
 python src/profile_pairs.py         # reports/pairs_profile.json
 python src/build_pair_splits.py     # frozen train/dev/test/hold-out split in splits/pairs/
+python src/clean_pairs.py           # frozen cleaning mask: entity pairs, no conflicts, no duplicates
+python src/build_pair_features.py   # feature tables in data/pairs/features/, reports/pairs_features.json
+python src/build_screening_holdout.py   # the second screening hold-out, frozen once
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
@@ -174,17 +203,20 @@ src/
   entities.py            load named entities from the OpenSanctions file
   profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py, evaluate_screening.py   measurement scripts
   evaluate_final.py      the one-time final evaluation on the frozen hold-out
-  download_pairs.py, pairs.py, profile_pairs.py, build_pair_splits.py   the Pairs training data and its splits
+  download_pairs.py, pairs.py, profile_pairs.py, build_pair_splits.py, clean_pairs.py   the Pairs data, splits, cleaning
+  pair_features.py, arabic_names.py, build_pair_features.py   the eight pairwise features and the table builder
+  build_screening_holdout.py   the second screening hold-out
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/
   stage1_profile.json    profile of the downloaded data
   stage2_*.json          candidate, scoring and screening evaluations used to build it
   final_evaluation.json  the final hold-out evaluation
-  pairs_profile.json, pairs_splits.json   the Pairs data profile and split statistics
+  pairs_profile.json, pairs_splits.json, pairs_features.json   the Pairs data profile, splits and features
 holdout/
   final_holdout.json     frozen final hold-out queries of the hand-tuned matcher, scored once
-splits/pairs/            frozen split of the Pairs data: assignment, manifest with checksums
+  screening_holdout_v2.json   the second screening hold-out, for the trained matcher, not yet scored
+splits/pairs/            frozen split of the Pairs data: assignment, cleaning mask, manifests with checksums
 data/                    downloaded data (not committed)
 reference/yente/         yente source for study (not committed)
 .github/workflows/ci.yml lint and tests on every push and pull request

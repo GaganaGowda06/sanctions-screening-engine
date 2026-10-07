@@ -92,8 +92,10 @@ SYNTHETIC = {
     # step 4: extra negatives to tune per-script thresholds on, and "other"-script negatives for test
     "dev_extra": {"Latin": 200, "Cyrillic": 200, "Arabic": 500, "other": 300},
     "test_other": {"other": 400},
+    # the second screening hold-out, for the trained matcher: the same design plus "other" negatives
+    "holdout2": {"Latin": 800, "Cyrillic": 350, "Arabic": 350, "other": 400},
 }
-NEAR_MISS = {"dev": 250, "test": 500, "final": 500}
+NEAR_MISS = {"dev": 250, "test": 500, "final": 500, "holdout2": 500}
 MODES = {
     "neither": (False, False),
     "birth_date_only": (True, False),
@@ -451,23 +453,43 @@ def evaluate_at(
     return metrics_at(pos, neg, threshold)
 
 
-def holdout_text(queries: list[dict], kept_names: dict[str, list[str]]) -> str:
-    """The exact text frozen into the final hold-out file."""
+def holdout_text(queries: list[dict], kept_names: dict[str, list[str]], tag: str | None = None) -> str:
+    """The exact text frozen into a hold-out file. `tag` names a later hold-out; the first has none."""
     rows = [{k: v for k, v in q.items() if k != "comps"} for q in queries]
     payload = {"seed": SEED, "kept_names": kept_names, "queries": rows}
+    if tag is not None:
+        payload["tag"] = tag
     return json.dumps(payload, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
 
 
 def build_final_holdout(
-    entities: list[dict], targets: list[dict], dob_pool: list[str], country_pool: list[str], used: set[str]
+    entities: list[dict],
+    targets: list[dict],
+    dob_pool: list[str],
+    country_pool: list[str],
+    used: set[str],
+    tag: str = "final",
+    split: str = "final",
+    extra_groups: dict[str, int] | None = None,
 ) -> tuple[list[dict], dict[str, list[str]]]:
-    """The final hold-out queries: own random streams, entities disjoint from everything in `used`."""
-    final_rng = random.Random(f"{SEED}-final")
-    plan = {g: [("final", n_test)] for g, (_, n_test) in POSITIVE_GROUPS.items()}
-    positives, kept = build_positives(targets, final_rng, plan, exclude=used, key="{seed}-final-{group}")
+    """A hold-out set: its own random streams (named by `tag`), entities disjoint from everything in `used`.
+
+    The defaults rebuild the first final hold-out exactly. `split` labels the queries and must have entries
+    in SYNTHETIC and NEAR_MISS. `extra_groups` adds positive groups, name to count, drawn after the others.
+    """
+    final_rng = random.Random(f"{SEED}-{tag}")
+    key = f"{{seed}}-{tag}-{{group}}"
+    plan = {g: [(split, n_test)] for g, (_, n_test) in POSITIVE_GROUPS.items()}
+    positives, kept = build_positives(targets, final_rng, plan, exclude=used, key=key)
+    if extra_groups:
+        more, more_kept = build_positives(
+            targets, final_rng, {g: [(split, n)] for g, n in extra_groups.items()},
+            exclude=used | {q["true_id"] for q in positives}, key=key,
+        )  # fmt: skip
+        positives, kept = positives + more, {**kept, **more_kept}
     used_final = used | {q["true_id"] for q in positives}
-    near = build_near_misses(targets, used_final, country_pool, final_rng, ("final",), "near-final")
-    synthetic = build_synthetic(entities, targets, dob_pool, country_pool, final_rng, ("final",))
+    near = build_near_misses(targets, used_final, country_pool, final_rng, (split,), f"near-{tag}")
+    synthetic = build_synthetic(entities, targets, dob_pool, country_pool, final_rng, (split,))
     return positives + near + synthetic, kept
 
 

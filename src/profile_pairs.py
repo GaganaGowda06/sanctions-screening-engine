@@ -96,13 +96,12 @@ def pair_class(left: frozenset[str], right: frozenset[str]) -> str:
 def profile(path: Path) -> dict:
     ftm = json.loads(PROPS_PATH.read_text())["schemas"]
     identifier_props = {s: [p for p in v["identifier"] if p not in EXCLUDED_IDENTIFIERS] for s, v in ftm.items()}
-    cache: dict[str, Entity] = {}
+    seen_ids: set[str] = set()
 
     def entity(raw: dict) -> Entity:
-        eid = raw["id"]
-        if eid not in cache:
-            cache[eid] = Entity(raw, identifier_props)
-        return cache[eid]
+        # Built fresh for every pair: the same id carries different properties in different pairs.
+        seen_ids.add(raw["id"])
+        return Entity(raw, identifier_props)
 
     scopes = ("all", "entity_schemas")
     judgements = {sc: Counter() for sc in scopes}
@@ -174,7 +173,7 @@ def profile(path: Path) -> dict:
         return share(sum(chunk), len(chunk))
 
     by_tenth = {f"{i * 10} to {i * 10 + 10}%": positive_share_of_tenth(i) for i in range(10)}
-    components = Counter(uf.find(e) for e in cache)
+    components = Counter(uf.find(e) for e in seen_ids)
     sizes = sorted(components.values(), reverse=True)
     largest_root = max(components, key=components.get)
     pairs_in_largest = sum(1 for left_id, _ in keys if uf.find(left_id) == largest_root)
@@ -205,7 +204,7 @@ def profile(path: Path) -> dict:
         "pairs": total,
         "positive_share_by_tenth_of_file": by_tenth,
         "schemas_left_right": {f"{left}/{right}": n for (left, right), n in schemas.most_common()},
-        "unique_entities": len(cache),
+        "unique_entities": len(seen_ids),
         "entities_in_more_than_one_pair": sum(1 for n in degree.values() if n > 1),
         "most_pairs_for_one_entity": max(degree.values()),
         "duplicate_unordered_pairs": sum(1 for n in pair_counts.values() if n > 1),

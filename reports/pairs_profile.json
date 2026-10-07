@@ -80,129 +80,129 @@
     "positive_share": 0.7692,
     "script_class": {
       "Latin on both sides only": {
-        "pairs": 493336,
-        "positive": 413004,
-        "negative": 80332,
-        "positive_share": 0.8372
+        "pairs": 453090,
+        "positive": 394065,
+        "negative": 59025,
+        "positive_share": 0.8697
       },
       "non-Latin on both sides": {
-        "pairs": 147041,
-        "positive": 99932,
-        "negative": 47109,
-        "positive_share": 0.6796
+        "pairs": 200588,
+        "positive": 116963,
+        "negative": 83625,
+        "positive_share": 0.5831
       },
       "non-Latin on one side only": {
-        "pairs": 115163,
-        "positive": 68213,
-        "negative": 46950,
-        "positive_share": 0.5923
+        "pairs": 101862,
+        "positive": 70121,
+        "negative": 31741,
+        "positive_share": 0.6884
       }
     },
     "pairs_with_script_on_either_side": {
       "Latin": {
-        "pairs": 744014,
-        "positive": 571626,
-        "negative": 172388,
-        "positive_share": 0.7683
+        "pairs": 746731,
+        "positive": 572784,
+        "negative": 173947,
+        "positive_share": 0.7671
       },
       "Cyrillic": {
-        "pairs": 184033,
-        "positive": 118252,
-        "negative": 65781,
-        "positive_share": 0.6426
+        "pairs": 217870,
+        "positive": 132255,
+        "negative": 85615,
+        "positive_share": 0.607
       },
       "Arabic": {
-        "pairs": 91796,
-        "positive": 60181,
-        "negative": 31615,
-        "positive_share": 0.6556
+        "pairs": 113008,
+        "positive": 69487,
+        "negative": 43521,
+        "positive_share": 0.6149
       },
       "other": {
-        "pairs": 104349,
-        "positive": 69480,
-        "negative": 34869,
-        "positive_share": 0.6658
+        "pairs": 160099,
+        "positive": 92778,
+        "negative": 67321,
+        "positive_share": 0.5795
       }
     },
     "pairs_with_no_script_in_common": {
-      "pairs": 10949,
-      "positive": 7814,
-      "negative": 3135,
-      "positive_share": 0.7137
+      "pairs": 4551,
+      "positive": 4518,
+      "negative": 33,
+      "positive_share": 0.9927
     },
     "attribute_coverage_both_sides": {
       "birth_date": {
-        "pairs": 207589,
-        "positive": 157791,
-        "negative": 49798,
-        "positive_share": 0.7601,
-        "share_of_pairs": 0.2748
+        "pairs": 216281,
+        "positive": 161086,
+        "negative": 55195,
+        "positive_share": 0.7448,
+        "share_of_pairs": 0.2863
       },
       "country": {
-        "pairs": 401192,
-        "positive": 260047,
-        "negative": 141145,
-        "positive_share": 0.6482,
-        "share_of_pairs": 0.531
+        "pairs": 438230,
+        "positive": 273117,
+        "negative": 165113,
+        "positive_share": 0.6232,
+        "share_of_pairs": 0.58
       },
       "identifier": {
-        "pairs": 225042,
-        "positive": 104537,
-        "negative": 120505,
-        "positive_share": 0.4645,
-        "share_of_pairs": 0.2979
+        "pairs": 296430,
+        "positive": 136628,
+        "negative": 159802,
+        "positive_share": 0.4609,
+        "share_of_pairs": 0.3923
       },
       "identifier_without_programId": {
-        "pairs": 136702,
-        "positive": 65227,
-        "negative": 71475,
-        "positive_share": 0.4771,
-        "share_of_pairs": 0.1809
+        "pairs": 180808,
+        "positive": 82554,
+        "negative": 98254,
+        "positive_share": 0.4566,
+        "share_of_pairs": 0.2393
       },
       "birth_date_country_and_identifier_all_present": {
-        "pairs": 16891,
-        "positive": 7120,
-        "negative": 9771,
-        "positive_share": 0.4215,
-        "share_of_pairs": 0.0224
+        "pairs": 36610,
+        "positive": 15921,
+        "negative": 20689,
+        "positive_share": 0.4349,
+        "share_of_pairs": 0.0485
       }
     },
     "attribute_agreement_when_both_present": {
       "birth_year_conflict": {
-        "pairs": 46285,
-        "positive": 1148,
-        "negative": 45137,
-        "positive_share": 0.0248
+        "pairs": 50171,
+        "positive": 598,
+        "negative": 49573,
+        "positive_share": 0.0119
       },
       "birth_year_shared": {
-        "pairs": 161304,
-        "positive": 156643,
-        "negative": 4661,
-        "positive_share": 0.9711
+        "pairs": 166110,
+        "positive": 160488,
+        "negative": 5622,
+        "positive_share": 0.9662
       },
       "country_conflict": {
-        "pairs": 48231,
-        "positive": 2532,
-        "negative": 45699,
-        "positive_share": 0.0525
+        "pairs": 52721,
+        "positive": 2192,
+        "negative": 50529,
+        "positive_share": 0.0416
       },
       "country_shared": {
-        "pairs": 352961,
-        "positive": 257515,
-        "negative": 95446,
-        "positive_share": 0.7296
+        "pairs": 385509,
+        "positive": 270925,
+        "negative": 114584,
+        "positive_share": 0.7028
       },
       "identifier_differs": {
-        "pairs": 85083,
-        "positive": 14374,
-        "negative": 70709,
-        "positive_share": 0.1689
+        "pairs": 109763,
+        "positive": 14761,
+        "negative": 95002,
+        "positive_share": 0.1345
       },
       "identifier_shared": {
-        "pairs": 51619,
-        "positive": 50853,
-        "negative": 766,
-        "positive_share": 0.9852
+        "pairs": 71045,
+        "positive": 67793,
+        "negative": 3252,
+        "positive_share": 0.9542
       }
     }
   },
@@ -215,129 +215,129 @@
     "positive_share": 0.6383,
     "script_class": {
       "Latin on both sides only": {
-        "pairs": 213286,
-        "positive": 135559,
-        "negative": 77727,
-        "positive_share": 0.6356
+        "pairs": 173041,
+        "positive": 116621,
+        "negative": 56420,
+        "positive_share": 0.674
       },
       "non-Latin on both sides": {
-        "pairs": 146550,
-        "positive": 99460,
-        "negative": 47090,
-        "positive_share": 0.6787
+        "pairs": 200092,
+        "positive": 116486,
+        "negative": 83606,
+        "positive_share": 0.5822
       },
       "non-Latin on one side only": {
-        "pairs": 115114,
-        "positive": 68164,
-        "negative": 46950,
-        "positive_share": 0.5921
+        "pairs": 101817,
+        "positive": 70076,
+        "negative": 31741,
+        "positive_share": 0.6883
       }
     },
     "pairs_with_script_on_either_side": {
       "Latin": {
-        "pairs": 463889,
-        "positive": 294124,
-        "negative": 169765,
-        "positive_share": 0.634
+        "pairs": 466606,
+        "positive": 295282,
+        "negative": 171324,
+        "positive_share": 0.6328
       },
       "Cyrillic": {
-        "pairs": 183661,
-        "positive": 117880,
-        "negative": 65781,
-        "positive_share": 0.6418
+        "pairs": 217497,
+        "positive": 131882,
+        "negative": 85615,
+        "positive_share": 0.6064
       },
       "Arabic": {
-        "pairs": 91796,
-        "positive": 60181,
-        "negative": 31615,
-        "positive_share": 0.6556
+        "pairs": 113008,
+        "positive": 69487,
+        "negative": 43521,
+        "positive_share": 0.6149
       },
       "other": {
-        "pairs": 104180,
-        "positive": 69330,
-        "negative": 34850,
-        "positive_share": 0.6655
+        "pairs": 159930,
+        "positive": 92628,
+        "negative": 67302,
+        "positive_share": 0.5792
       }
     },
     "pairs_with_no_script_in_common": {
-      "pairs": 10913,
-      "positive": 7778,
-      "negative": 3135,
-      "positive_share": 0.7127
+      "pairs": 4515,
+      "positive": 4482,
+      "negative": 33,
+      "positive_share": 0.9927
     },
     "attribute_coverage_both_sides": {
       "birth_date": {
-        "pairs": 207589,
-        "positive": 157791,
-        "negative": 49798,
-        "positive_share": 0.7601,
-        "share_of_pairs": 0.4371
+        "pairs": 216281,
+        "positive": 161086,
+        "negative": 55195,
+        "positive_share": 0.7448,
+        "share_of_pairs": 0.4554
       },
       "country": {
-        "pairs": 375334,
-        "positive": 236699,
-        "negative": 138635,
-        "positive_share": 0.6306,
-        "share_of_pairs": 0.7903
+        "pairs": 412246,
+        "positive": 249716,
+        "negative": 162530,
+        "positive_share": 0.6057,
+        "share_of_pairs": 0.868
       },
       "identifier": {
-        "pairs": 225042,
-        "positive": 104537,
-        "negative": 120505,
-        "positive_share": 0.4645,
-        "share_of_pairs": 0.4738
+        "pairs": 296430,
+        "positive": 136628,
+        "negative": 159802,
+        "positive_share": 0.4609,
+        "share_of_pairs": 0.6241
       },
       "identifier_without_programId": {
-        "pairs": 136702,
-        "positive": 65227,
-        "negative": 71475,
-        "positive_share": 0.4771,
-        "share_of_pairs": 0.2878
+        "pairs": 180808,
+        "positive": 82554,
+        "negative": 98254,
+        "positive_share": 0.4566,
+        "share_of_pairs": 0.3807
       },
       "birth_date_country_and_identifier_all_present": {
-        "pairs": 16891,
-        "positive": 7120,
-        "negative": 9771,
-        "positive_share": 0.4215,
-        "share_of_pairs": 0.0356
+        "pairs": 36610,
+        "positive": 15921,
+        "negative": 20689,
+        "positive_share": 0.4349,
+        "share_of_pairs": 0.0771
       }
     },
     "attribute_agreement_when_both_present": {
       "birth_year_conflict": {
-        "pairs": 46285,
-        "positive": 1148,
-        "negative": 45137,
-        "positive_share": 0.0248
+        "pairs": 50171,
+        "positive": 598,
+        "negative": 49573,
+        "positive_share": 0.0119
       },
       "birth_year_shared": {
-        "pairs": 161304,
-        "positive": 156643,
-        "negative": 4661,
-        "positive_share": 0.9711
+        "pairs": 166110,
+        "positive": 160488,
+        "negative": 5622,
+        "positive_share": 0.9662
       },
       "country_conflict": {
-        "pairs": 46150,
-        "positive": 2523,
-        "negative": 43627,
-        "positive_share": 0.0547
+        "pairs": 50573,
+        "positive": 2183,
+        "negative": 48390,
+        "positive_share": 0.0432
       },
       "country_shared": {
-        "pairs": 329184,
-        "positive": 234176,
-        "negative": 95008,
-        "positive_share": 0.7114
+        "pairs": 361673,
+        "positive": 247533,
+        "negative": 114140,
+        "positive_share": 0.6844
       },
       "identifier_differs": {
-        "pairs": 85083,
-        "positive": 14374,
-        "negative": 70709,
-        "positive_share": 0.1689
+        "pairs": 109763,
+        "positive": 14761,
+        "negative": 95002,
+        "positive_share": 0.1345
       },
       "identifier_shared": {
-        "pairs": 51619,
-        "positive": 50853,
-        "negative": 766,
-        "positive_share": 0.9852
+        "pairs": 71045,
+        "positive": 67793,
+        "negative": 3252,
+        "positive_share": 0.9542
       }
     }
   }
