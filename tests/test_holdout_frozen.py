@@ -50,3 +50,18 @@ def test_only_the_builder_names_the_second_screening_holdout_file():
     for path in (ROOT / "src").glob("*.py"):
         if path.name != "build_screening_holdout.py":
             assert "screening_holdout_v2.json" not in path.read_text(), path.name
+
+
+def test_the_second_holdouts_were_each_scored_once_on_the_frozen_files():
+    import json
+
+    screening = json.loads((ROOT / "reports" / "screening_holdout_v2_evaluation.json").read_text())
+    assert screening["checksum"]["ok"] is True
+    assert screening["checksum"]["holdout_sha256"] == hashlib.sha256(HOLDOUT2.read_bytes()).hexdigest()
+    assert screening["engine_check"]["mismatches"] == 0
+
+    pairs_report = json.loads((ROOT / "reports" / "pairs_final_evaluation.json").read_text())
+    manifest = json.loads((ROOT / "splits" / "pairs" / "manifest.json").read_text())
+    assert pairs_report["frozen"]["holdout_membership_sha256"] == manifest["final_holdout_membership_sha256"]
+    assert pairs_report["frozen"]["dataset_sha256"] == manifest["dataset_sha256"]
+    assert pairs_report["code_commit"] == screening["code_commit"]  # scored by the same committed code

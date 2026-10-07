@@ -1,0 +1,548 @@
+{
+  "python_version": "3.14.7",
+  "code_commit": "77bcedbff31cd58617781897224494aa6d6864e5",
+  "checksum": {
+    "holdout_sha256": "e5a9b7af6b94836b7105fd7fceecbe25fbacde214936aa73e67cfd34b5ae90f8",
+    "recorded": "e5a9b7af6b94836b7105fd7fceecbe25fbacde214936aa73e67cfd34b5ae90f8",
+    "ok": true
+  },
+  "frozen_config": {
+    "skeleton_floor": 0.6,
+    "skeleton_lift": 0.2,
+    "blend": 0.5,
+    "global_threshold": 0.86,
+    "per_script_thresholds": false
+  },
+  "queries": {
+    "positive_headline": 2000,
+    "negative": 2000,
+    "positive_other_to_latin": 200
+  },
+  "overall": {
+    "recall": {
+      "value": 0.737,
+      "ci95": [
+        0.7173,
+        0.7558
+      ],
+      "k": 1474,
+      "n": 2000
+    },
+    "precision": {
+      "value": 0.8221,
+      "ci95": [
+        0.8037,
+        0.8391
+      ],
+      "k": 1474,
+      "n": 1793
+    },
+    "f1": {
+      "value": 0.7772,
+      "ci95": [
+        0.7613,
+        0.7935
+      ],
+      "method": "bootstrap"
+    },
+    "top1_accuracy": {
+      "value": 0.7905,
+      "ci95": [
+        0.7721,
+        0.8078
+      ],
+      "k": 1581,
+      "n": 2000
+    },
+    "false_positive_rate": {
+      "value": 0.0935,
+      "ci95": [
+        0.0815,
+        0.1071
+      ],
+      "k": 187,
+      "n": 2000
+    }
+  },
+  "versus_earlier_holdout": {
+    "recall": {
+      "earlier": 0.7465,
+      "earlier_ci95": [
+        0.727,
+        0.7651
+      ],
+      "now": 0.737,
+      "now_ci95": [
+        0.7173,
+        0.7558
+      ],
+      "difference": -0.0095,
+      "intervals_overlap": true
+    },
+    "precision": {
+      "earlier": 0.8088,
+      "earlier_ci95": [
+        0.7902,
+        0.8261
+      ],
+      "now": 0.8221,
+      "now_ci95": [
+        0.8037,
+        0.8391
+      ],
+      "difference": 0.0133,
+      "intervals_overlap": true
+    },
+    "f1": {
+      "earlier": 0.7764,
+      "earlier_ci95": [
+        0.7608,
+        0.7918
+      ],
+      "now": 0.7772,
+      "now_ci95": [
+        0.7613,
+        0.7935
+      ],
+      "difference": 0.0008,
+      "intervals_overlap": true
+    },
+    "top1_accuracy": {
+      "earlier": 0.7895,
+      "earlier_ci95": [
+        0.7711,
+        0.8068
+      ],
+      "now": 0.7905,
+      "now_ci95": [
+        0.7721,
+        0.8078
+      ],
+      "difference": 0.001,
+      "intervals_overlap": true
+    },
+    "false_positive_rate": {
+      "earlier": 0.113,
+      "earlier_ci95": [
+        0.0999,
+        0.1276
+      ],
+      "now": 0.0935,
+      "now_ci95": [
+        0.0815,
+        0.1071
+      ],
+      "difference": -0.0195,
+      "intervals_overlap": true
+    }
+  },
+  "by_direction": {
+    "variant": {
+      "value": 0.7638,
+      "ci95": [
+        0.7331,
+        0.7919
+      ],
+      "k": 611,
+      "n": 800
+    },
+    "cyr_to_latin": {
+      "value": 0.8933,
+      "ci95": [
+        0.8533,
+        0.9234
+      ],
+      "k": 268,
+      "n": 300
+    },
+    "latin_to_cyr": {
+      "value": 0.7367,
+      "ci95": [
+        0.6841,
+        0.7833
+      ],
+      "k": 221,
+      "n": 300
+    },
+    "ar_to_latin": {
+      "value": 0.65,
+      "ci95": [
+        0.5944,
+        0.7018
+      ],
+      "k": 195,
+      "n": 300
+    },
+    "latin_to_ar": {
+      "value": 0.5967,
+      "ci95": [
+        0.5403,
+        0.6506
+      ],
+      "k": 179,
+      "n": 300
+    },
+    "other_to_latin (known limitation, not in the headline)": {
+      "value": 0.0,
+      "ci95": [
+        0.0,
+        0.0188
+      ],
+      "k": 0,
+      "n": 200
+    }
+  },
+  "by_script": {
+    "Latin": {
+      "recall": {
+        "value": 0.7221,
+        "ci95": [
+          0.6981,
+          0.745
+        ],
+        "k": 1011,
+        "n": 1400
+      },
+      "false_positive_rate": {
+        "value": 0.0635,
+        "ci95": [
+          0.0508,
+          0.0791
+        ],
+        "k": 73,
+        "n": 1149
+      }
+    },
+    "Cyrillic": {
+      "recall": {
+        "value": 0.8933,
+        "ci95": [
+          0.8533,
+          0.9234
+        ],
+        "k": 268,
+        "n": 300
+      },
+      "false_positive_rate": {
+        "value": 0.0423,
+        "ci95": [
+          0.0278,
+          0.0637
+        ],
+        "k": 21,
+        "n": 497
+      }
+    },
+    "Arabic": {
+      "recall": {
+        "value": 0.65,
+        "ci95": [
+          0.5944,
+          0.7018
+        ],
+        "k": 195,
+        "n": 300
+      },
+      "false_positive_rate": {
+        "value": 0.2627,
+        "ci95": [
+          0.2196,
+          0.3109
+        ],
+        "k": 93,
+        "n": 354
+      }
+    }
+  },
+  "false_positives_per_1000": {
+    "clean_name_mix": "synthetic recombined names and near-miss namesakes, as sampled",
+    "all": {
+      "alerts_per_1000_clean_names": 93.5,
+      "ci95": [
+        81.5,
+        107.1
+      ],
+      "names": 2000
+    },
+    "synthetic": {
+      "alerts_per_1000_clean_names": 114.7,
+      "ci95": [
+        99.5,
+        131.8
+      ],
+      "names": 1500
+    },
+    "near_miss": {
+      "alerts_per_1000_clean_names": 30.0,
+      "ci95": [
+        18.3,
+        48.9
+      ],
+      "names": 500
+    },
+    "Latin queries": {
+      "alerts_per_1000_clean_names": 63.5,
+      "ci95": [
+        50.8,
+        79.1
+      ],
+      "names": 1149
+    },
+    "Cyrillic queries": {
+      "alerts_per_1000_clean_names": 42.3,
+      "ci95": [
+        27.8,
+        63.7
+      ],
+      "names": 497
+    },
+    "Arabic queries": {
+      "alerts_per_1000_clean_names": 262.7,
+      "ci95": [
+        219.6,
+        310.9
+      ],
+      "names": 354
+    }
+  },
+  "f1_dev_test_holdout": {
+    "dev": 0.7695,
+    "test": 0.7645,
+    "holdout": 0.7772
+  },
+  "test_vs_holdout": [
+    {
+      "figure": "recall",
+      "test": 0.7295,
+      "holdout": 0.737,
+      "difference": 0.0075,
+      "holdout_ci95": [
+        0.7173,
+        0.7558
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.5918
+    },
+    {
+      "figure": "precision",
+      "test": 0.803,
+      "holdout": 0.8221,
+      "difference": 0.0191,
+      "holdout_ci95": [
+        0.8037,
+        0.8391
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": null
+    },
+    {
+      "figure": "f1",
+      "test": 0.7645,
+      "holdout": 0.7772,
+      "difference": 0.0127,
+      "holdout_ci95": [
+        0.7613,
+        0.7935
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": null
+    },
+    {
+      "figure": "top-1 accuracy",
+      "test": 0.779,
+      "holdout": 0.7905,
+      "difference": 0.0115,
+      "holdout_ci95": [
+        0.7721,
+        0.8078
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.3762
+    },
+    {
+      "figure": "false positive rate",
+      "test": 0.1075,
+      "holdout": 0.0935,
+      "difference": -0.014,
+      "holdout_ci95": [
+        0.0815,
+        0.1071
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": 0.1409
+    },
+    {
+      "figure": "FPR, synthetic names",
+      "test": 0.1407,
+      "holdout": 0.1147,
+      "difference": -0.026,
+      "holdout_ci95": [
+        0.0995,
+        0.1318
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": 0.0329
+    },
+    {
+      "figure": "FPR, near-miss namesakes",
+      "test": 0.008,
+      "holdout": 0.03,
+      "difference": 0.022,
+      "holdout_ci95": [
+        0.0183,
+        0.0489
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": 0.0108
+    },
+    {
+      "figure": "recall, variant",
+      "test": 0.7625,
+      "holdout": 0.7638,
+      "difference": 0.0013,
+      "holdout_ci95": [
+        0.7331,
+        0.7919
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.9531
+    },
+    {
+      "figure": "recall, cyr_to_latin",
+      "test": 0.88,
+      "holdout": 0.8933,
+      "difference": 0.0133,
+      "holdout_ci95": [
+        0.8533,
+        0.9234
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.6065
+    },
+    {
+      "figure": "recall, latin_to_cyr",
+      "test": 0.68,
+      "holdout": 0.7367,
+      "difference": 0.0567,
+      "holdout_ci95": [
+        0.6841,
+        0.7833
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": 0.1268
+    },
+    {
+      "figure": "recall, ar_to_latin",
+      "test": 0.65,
+      "holdout": 0.65,
+      "difference": 0.0,
+      "holdout_ci95": [
+        0.5944,
+        0.7018
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 1.0
+    },
+    {
+      "figure": "recall, latin_to_ar",
+      "test": 0.62,
+      "holdout": 0.5967,
+      "difference": -0.0233,
+      "holdout_ci95": [
+        0.5403,
+        0.6506
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.5582
+    },
+    {
+      "figure": "recall, Latin queries",
+      "test": 0.7143,
+      "holdout": 0.7221,
+      "difference": 0.0078,
+      "holdout_ci95": [
+        0.6981,
+        0.745
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.644
+    },
+    {
+      "figure": "FPR, Latin queries",
+      "test": 0.0473,
+      "holdout": 0.0635,
+      "difference": 0.0162,
+      "holdout_ci95": [
+        0.0508,
+        0.0791
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": 0.0887
+    },
+    {
+      "figure": "recall, Cyrillic queries",
+      "test": 0.88,
+      "holdout": 0.8933,
+      "difference": 0.0133,
+      "holdout_ci95": [
+        0.8533,
+        0.9234
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.6065
+    },
+    {
+      "figure": "FPR, Cyrillic queries",
+      "test": 0.0522,
+      "holdout": 0.0423,
+      "difference": -0.0099,
+      "holdout_ci95": [
+        0.0278,
+        0.0637
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 0.4639
+    },
+    {
+      "figure": "recall, Arabic queries",
+      "test": 0.65,
+      "holdout": 0.65,
+      "difference": 0.0,
+      "holdout_ci95": [
+        0.5944,
+        0.7018
+      ],
+      "test_inside_holdout_ci": true,
+      "p_value": 1.0
+    },
+    {
+      "figure": "FPR, Arabic queries",
+      "test": 0.376,
+      "holdout": 0.2627,
+      "difference": -0.1133,
+      "holdout_ci95": [
+        0.2196,
+        0.3109
+      ],
+      "test_inside_holdout_ci": false,
+      "p_value": 0.0012
+    }
+  ],
+  "figures_with_test_value_outside_holdout_ci": [
+    "precision",
+    "false positive rate",
+    "FPR, synthetic names",
+    "FPR, near-miss namesakes",
+    "recall, latin_to_cyr",
+    "FPR, Latin queries",
+    "FPR, Arabic queries"
+  ],
+  "engine_check": {
+    "queries": 4800,
+    "mismatches": 0
+  },
+  "engine_call_ms": {
+    "median": 8.34,
+    "p95": 54.72
+  }
+}

@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. A logistic regression matcher has been trained on the OpenSanctions Pairs dataset. It beats the hand-tuned engine at deduplicating pairs but not at screening, even with the attribute weights constrained, so screening still uses the hand-tuned engine. The fuller evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. A logistic regression matcher has been trained on the OpenSanctions Pairs dataset. It beats the hand-tuned engine at deduplicating pairs but not at screening, even with the attribute weights constrained, so screening stays on the hand-tuned engine and the trained model is kept for deduplication only. All three hold-outs (the first screening hold-out, the second, and the Pairs hold-out) are now spent. The fuller evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -124,7 +124,7 @@ The earlier hold-out belonged to the hand-tuned matcher and is spent. A fresh sp
 
 About 55% of the dev and test pairs share an entity (by id) with a train pair, all of them from the large connected groups. After cleaning that is more than the third measured before it, because the relationship records and duplicates that were removed were mostly entity-disjoint. Every metric on this data is reported separately for the two kinds. They differ a lot: among dev pairs that share an entity with train 35% are matches, and among those that do not 94% are, with only 1,286 non-matches, so the second kind says little about false positives.
 
-The assignment and the cleaning mask are frozen in `splits/pairs/` with the dataset checksum, a checksum of the pair ids in file order, and a checksum of the hold-out membership (`5439a1090adc...`). `pairs.iter_split()` refuses the hold-out unless it is asked for explicitly, and only the final evaluation may do that.
+The assignment and the cleaning mask are frozen in `splits/pairs/` with the dataset checksum, a checksum of the pair ids in file order, and a checksum of the hold-out membership (`5439a1090adc...`). `pairs.iter_split()` refuses the hold-out unless it is asked for explicitly, and only the final evaluation (`src/evaluate_pairs_final.py`) may do that. It did, once; the hold-out is spent.
 
 ### Features
 
@@ -147,9 +147,11 @@ The five name scores are close to one another and highly correlated (0.93 to 0.9
 
 ### The screening hold-out
 
-The Pairs data measures whether two records are the same entity. Screening is a different question: given a customer name, does the engine alert on the right listed entity, and how often on innocent names. A second screening hold-out was built from our own list for the trained matcher, with the same design as the first (cross-script and variant positives, synthetic and near-miss negatives, plus negatives and same-script positives in other scripts): 4,800 queries on 2,900 entities used in no earlier set, frozen in `holdout/screening_holdout_v2.json` (SHA-256 `e5a9b7af6b94...`). It has not been scored.
+The Pairs data measures whether two records are the same entity. Screening is a different question: given a customer name, does the engine alert on the right listed entity, and how often on innocent names. A second screening hold-out was built from our own list for the trained matcher, with the same design as the first (cross-script and variant positives, synthetic and near-miss negatives, plus negatives and same-script positives in other scripts): 4,800 queries on 2,900 entities used in no earlier set, frozen in `holdout/screening_holdout_v2.json` (SHA-256 `e5a9b7af6b94...`). It was scored once, on the hand-tuned engine, and is spent (see the final results of the second hold-outs below).
 
 ## The trained matcher
+
+Outcome. For screening this is a negative result, and screening stays on the hand-tuned engine. For deduplication it is a win, and the constrained model (`models/pairs_lr_v2.json`) is kept as the deduplication matcher only. There is no hybrid. The model fails at screening for two reasons, in order. First, the Pairs data contains a missingness artefact: a pair with an attribute missing on either side is far more likely to be a match, because of which sources the pairs come from, so an unconstrained model learned that an agreeing country lowers the match probability. Constraining the attribute weights removed that and recovered most of the gap. Second, what remains is Arabic. The hand-tuned engine gets its Arabic recall from a screening-specific rule, the vowel-stripped skeleton standing in for the name score, and the Pairs data gives a model no reason to learn it (keeping the skeleton, phonetic and Arabic-folded scores as features made screening worse, not better). The sections below give the evidence in the order it was found.
 
 A logistic regression over the eight features, trained on the Pairs train split (`src/train_matcher.py`), as an alternative to the hand-tuned blend. Rarity weights come from one table built from the 69,637 named targets of the deployment list (131,898 name tokens, `models/idf_manifest.json`), the same table for training and serving. Training uses scikit-learn; serving needs only the coefficients in `models/pairs_lr_v1.json` and `src/matcher_model.py`.
 
@@ -241,7 +243,47 @@ On the screening test queries, recall / precision / false positive rate / top-1:
 
 It is far better than the first model (at the hand-tuned engine's dev false positive rate, overall recall rises from 33% to 60%), better than the hand-tuned engine on Latin queries against Cyrillic entries (77.3% against 68.0% recall), but still behind overall, and it fails on Arabic: recall 22.0% against 65.0%. The hand-tuned engine gets its Arabic recall from a screening-specific rule, the skeleton standing in for the name score on Arabic pairs, and the Pairs data gives a model no reason to learn it. Keeping all five name scores does not help: with the same constraints the five-score model is worse at the same dev false positive rate (overall recall 49.1% against 60.5%, Arabic 7.3% against 21.7%), and its best-F1 threshold on screening dev is 0.02, which alerts on nearly everything (`reports/pairs_comparison_v2_five_names.json`).
 
-The trained model is still not used for screening. It is better than the hand-tuned engine at telling whether two records are the same entity, and not at screening a name against the list.
+The trained model is not used for screening. It is better than the hand-tuned engine at telling whether two records are the same entity (see the second hold-outs below), and not at screening a name against the list.
+
+## Final results of the second hold-outs
+
+Both hold-outs of the trained-matcher work were scored once, after the code that scores them was committed, and are now spent. Neither was used for tuning.
+
+Screening, on the second screening hold-out (4,800 queries on 2,900 entities used in no earlier set, SHA-256 `e5a9b7af...`), with the frozen hand-tuned engine: one global threshold of 0.86, blend 0.5, skeleton lift 0.2, floor 0.6, unchanged. The headline figures use the same design as the first hold-out, 2,000 positive and 2,000 negative queries; `reports/screening_holdout_v2_evaluation.json` has the rest.
+
+| Figure | Hold-out 2 | 95% interval | Earlier hold-out | Test set |
+|---|---|---|---|---|
+| Recall | 73.7% | 71.7 to 75.6 | 74.7% | 73.0% |
+| Precision | 82.2% | 80.4 to 83.9 | 80.9% | 80.3% |
+| F1 | 0.777 | 0.761 to 0.793 | 0.776 | 0.764 |
+| Top-1 accuracy | 79.0% | 77.2 to 80.8 | 79.0% | 77.9% |
+| False positive rate | 9.3% | 8.2 to 10.7 | 11.3% | 10.8% |
+
+F1 is 0.777 against 0.776 on the earlier hold-out, and the intervals overlap for all five figures, so the hand-tuned engine's performance reproduced on fresh queries and entities. The false positive rate is lower than on the test set (9.3% against 10.8%), so there is no sign of overfitting to the test set. By script of the query:
+
+| Script of the query | Recall | 95% interval | False positive rate | 95% interval | Alerts per 1,000 clean names |
+|---|---|---|---|---|---|
+| Latin | 72.2% | 69.8 to 74.5 | 6.3% | 5.1 to 7.9 | 64 |
+| Cyrillic | 89.3% | 85.3 to 92.3 | 4.2% | 2.8 to 6.4 | 42 |
+| Arabic | 65.0% | 59.4 to 70.2 | 26.3% | 22.0 to 31.1 | 263 |
+
+Arabic remains the weak spot (recall 65%, 263 alerts per 1,000 clean Arabic-script names), as in the first hold-out. Han, kana and other scripts against Latin again found 0% of their entities.
+
+Deduplication, on the Pairs final hold-out (45,381 cleaned entity pairs, 27,842 of them matches, membership checksum `5439a109...`, checked before scoring). The constrained model is at the threshold chosen on Pairs dev, and the hand-tuned engine's rule, applied to two entities, at its frozen threshold:
+
+| Pairs hold-out | AUC (95% interval) | Recall | Precision | False positive rate |
+|---|---|---|---|---|
+| **All pairs** | | | | |
+| Constrained model (threshold 0.74) | 0.984 (0.983 to 0.985) | 94.1% | 97.5% | 3.9% |
+| Hand-tuned engine (threshold 0.86) | 0.957 (0.955 to 0.959) | 95.4% | 95.4% | 7.3% |
+| **Pairs sharing an entity with train** | | | | |
+| Constrained model (threshold 0.74) | 0.993 (0.992 to 0.994) | 96.8% | 95.3% | 2.6% |
+| Hand-tuned engine (threshold 0.86) | 0.979 (0.978 to 0.981) | 97.0% | 90.4% | 5.6% |
+| **Pairs with no entity in train** | | | | |
+| Constrained model (threshold 0.74) | 0.942 (0.936 to 0.947) | 92.9% | 98.5% | 17.8% |
+| Hand-tuned engine (threshold 0.86) | 0.875 (0.864 to 0.885) | 94.6% | 98.0% | 25.4% |
+
+The constrained model separates matches from non-matches much better than the hand-tuned rule (AUC 0.984 against 0.957) with a lower false positive rate (3.9% against 7.3%), at slightly lower recall (94.1% against 95.4%). Its test-set AUC was 0.985, so it generalised. The two kinds of pair differ as before: pairs that share an entity with train are easier (0.993 AUC) than those that do not (0.942), and the model's lead over the hand-tuned rule holds in both.
 
 ## Known limitations
 
@@ -302,7 +344,8 @@ src/
   screening_config.json  frozen scoring settings, global threshold, per-script thresholds (off)
   entities.py            load named entities from the OpenSanctions file
   profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py, evaluate_screening.py   measurement scripts
-  evaluate_final.py      the one-time final evaluation on the frozen hold-out
+  evaluate_final.py      the one-time final evaluation of a screening hold-out
+  evaluate_pairs_final.py   the one-time final evaluation on the Pairs hold-out
   download_pairs.py, pairs.py, profile_pairs.py, build_pair_splits.py, clean_pairs.py   the Pairs data, splits, cleaning
   pair_features.py, arabic_names.py, build_pair_features.py   the eight pairwise features and the table builder
   build_screening_holdout.py   the second screening hold-out
@@ -315,11 +358,12 @@ tests/
 reports/
   stage1_profile.json    profile of the downloaded data
   stage2_*.json          candidate, scoring and screening evaluations used to build it
-  final_evaluation.json  the final hold-out evaluation
+  final_evaluation.json  the first screening hold-out evaluation
+  screening_holdout_v2_evaluation.json, pairs_final_evaluation.json   the second hold-outs, scored once
   pairs_profile.json, pairs_splits.json, pairs_features.json   the Pairs data profile, splits and features
 holdout/
-  final_holdout.json     frozen final hold-out queries of the hand-tuned matcher, scored once
-  screening_holdout_v2.json   the second screening hold-out, for the trained matcher, not yet scored
+  final_holdout.json     the first screening hold-out, scored once, spent
+  screening_holdout_v2.json   the second screening hold-out, scored once on the hand-tuned engine, spent
 models/                  the trained coefficients and the rarity table manifest
 splits/pairs/            frozen split of the Pairs data: assignment, cleaning mask, manifests with checksums
 data/                    downloaded data (not committed)
