@@ -287,19 +287,46 @@ The constrained model separates matches from non-matches much better than the ha
 
 ## Stage 3: Arabic alert disparity
 
-Arabic-script names alert about five times as often as Latin or Cyrillic ones. The third screening hold-out (`holdout/screening_holdout_v3.json`, SHA-256 `963b278b...`) measured the baseline once: on synthetic clean names Arabic alerts 32.6% (95% interval 27.9 to 37.7), Latin 6.5% and Cyrillic 6.0%, a ratio of 5.1 (3.96 to 6.74) against both pooled. See `reports/fairness_baseline.json`.
+### The fairness metric
 
-Diagnosis on dev (`reports/stage3_arabic_diagnosis.json`): 89% of Arabic false alerts needed the skeleton, and 85% rested only on common skeleton tokens such as `b`, `mhmd`, `hmd` and `l`.
+A customer with an Arabic name should not carry more false alerts than one with a Latin or Cyrillic name. The metric is the false-alert rate by script: the share of clean names (names that match no listed entity) that raise an alert, split by the script of the query. Every alert on a clean name lands on a real customer, so this is the burden each group carries. It is reported two ways, because they can disagree: the ratio of Arabic to Latin and Cyrillic (how many times more often), and the absolute gap in percentage points (how many more customers per hundred). It is measured on synthetic recombined names, which is the like-for-like comparison, because the near-miss namesakes in the hold-out are almost all Latin or Cyrillic. Intervals are 95%: Wilson for each rate, bootstrap for ratios and gaps.
 
-First fix, on by default: the skeleton similarity is a rarity-weighted token overlap (`skeleton_idf` in `src/scoring.py`) instead of a whole-string ratio. It lowers the Arabic false positive rate and raises Arabic recall (dev 32.6% to 27.6% and 60.7% to 66.0%; test 38.6% to 32.3% and 65.0% to 67.0%), but it does not improve the Arabic to Latin ratio, because the Latin rate falls too (`reports/stage3_skeleton_idf.json`). It missed the acceptance bar I set for a clear drop, and was kept for the gain it does give.
+A third screening hold-out was built for this stage (`holdout/screening_holdout_v3.json`, SHA-256 `963b278b...`): same design as the second, 2,900 entities used in no earlier set. All diagnosis and tuning used dev, then test. The hold-out was read twice, once for the baseline and once for the final engine, and is now spent.
 
-Second fix, tried and rejected: leave Arabic particles (al, el, bin, ibn, bint, abu, umm) and one-consonant tokens out of the skeleton comparison (`skeleton_particles`, off by default). It raised Arabic false positives (dev 27.6% to 40.2%, test 32.3% to 43.7%, McNemar p below 0.001) and Latin ones too (test 5.5% to 8.5%), because a name stripped of its particles shrinks to one token that then matches in full ('Bin Al Khalidi' against 'Khalidi' goes from 0.46 to 1.0). A full match on common tokens still scores 1.0 either way. Arabic recall rose (dev 66.0% to 74.0%), the Arabic to Latin ratio did not move. See `reports/stage3_skeleton_particles.json`.
+### Baseline and final on the third hold-out
 
-Third fix, tried and rejected: hold a skeleton match back from a full alert, into a "needs secondary identifier" tier, when it carried the match and every matched skeleton token is common (`common_df`, off by default). On dev it removed 16 of 186 Arabic false alerts and cost Arabic recall 12 points (66% to 54%; test 67% to 53%), below the 65% floor, with the Arabic to Latin ratio unchanged. 93% of the clean dev queries supply a birth date or country, which the rule exempts. Before it, 156 of 186 Arabic false alerts were full-name collisions (every skeleton token matched) and 139 of them rest only on common tokens. See `reports/stage3_common_tier.json`.
+| Figure | Baseline | Final |
+|---|---|---|
+| Arabic alert rate on clean names | 32.6% (27.9 to 37.7) | 22.6% (18.5 to 27.2) |
+| Latin alert rate | 6.5% (5.0 to 8.4) | 5.1% (3.8 to 6.9) |
+| Cyrillic alert rate | 6.0% (4.0 to 9.0) | 3.7% (2.2 to 6.3) |
+| Gap, Arabic against Latin and Cyrillic pooled | 26.2 points (21.1 to 31.2) | 17.9 points (13.5 to 22.3) |
+| Ratio, same comparison | 5.1 (4.0 to 6.7) | 4.8 (3.5 to 6.7) |
+| Arabic recall | 67.7% | 72.7% |
 
-Fourth fix, tried and rejected: an orthographic skeleton for Arabic-involved pairs that keeps long vowels and the initial alif (`orthographic`, off by default), so Mohammed and Mahmoud stop colliding. Arabic false positives fell sharply (dev 27.6% to 9.6%, test 32.3% to 10.3%) and the Arabic to Latin ratio with them (dev 5.3 to 4.1, test 5.9 to 2.9, intervals overlapping), but Arabic recall halved (dev 66% to 33%, test 67% to 30%) and Latin recall fell too (test 73.6% to 65.3%), because spellings of one name no longer meet (Khaled and Khalid, Yusuf and Youssef). Birth date and country were not the cause: agreement pushed only 9 of 186 Arabic false alerts over the threshold, and 177 were over with neither. See `reports/stage3_orthographic.json` and `reports/stage3_arabic_secondary.json`.
+Baseline is the Stage 2 engine (`reports/fairness_baseline.json`); final is the same engine with the rarity-weighted skeleton (`reports/fairness_current.json`). Arabic names now carry fewer false alerts and the gap is 8 points smaller, with higher recall. The ratio barely moved, and its intervals overlap. The reason is that the fix helps every script: Latin and Cyrillic rates fell as well, because their skeleton-driven false alerts also rested on common tokens. A ratio only improves if Arabic falls faster than the others, and it did not. The absolute gap is the better guide to the burden, and it did fall. The Arabic rate is still more than four times the others, so the disparity is reduced, not closed.
 
-Fairness metric on the third hold-out, once before and once after (`reports/fairness_baseline.json`, `reports/fairness_current.json`), synthetic clean names, the engine now being the Stage 2 engine plus the rarity-weighted skeleton. Arabic alert rate 32.6% (27.9 to 37.7) to 22.6% (18.5 to 27.2); Latin 6.5% to 5.1%; Cyrillic 6.0% to 3.7%. The Arabic to Latin and Cyrillic pooled ratio is 5.1 (4.0 to 6.7) before and 4.8 (3.5 to 6.7) after, and the difference in points falls from 26.2 (21.1 to 31.2) to 17.9 (13.5 to 22.3). Arabic recall on that hold-out rises from 67.7% to 72.7%. So the burden on Arabic names is lower and the gap in points is smaller, but the ratio has not moved: Latin and Cyrillic fell too. Three further fixes (particles, a common-token tier, an orthographic skeleton) were each tried on dev and test and rejected.
+### The four fixes tried
+
+Each was tried on dev, judged on test, and held to one bar: Arabic false positive rate clearly down, Arabic recall at least 65%, Latin and Cyrillic unchanged within noise. McNemar tests compare each fix with the engine before it, on the same queries.
+
+1. Rarity-weighted skeleton (kept, on by default): the skeleton similarity is a rarity-weighted token overlap instead of a whole-string ratio. Arabic false positives fell (dev 32.6% to 27.6%, test 38.6% to 32.3%) and Arabic recall rose, but it did not clearly pass the bar and did not move the ratio, so it is kept for the gain it gives and no more (`reports/stage3_skeleton_idf.json`).
+2. Particle stripping (rejected, `skeleton_particles`): leaving al, el, bin, ibn, bint, abu, umm and one-consonant tokens out of the skeleton raised Arabic false positives (test 32.3% to 43.7%) and Latin ones, because names shrank to one token that then matched in full (`reports/stage3_skeleton_particles.json`).
+3. Common-token tier (rejected, `common_df`): holding skeleton matches on common tokens back from a full alert removed 16 of 186 Arabic false alerts and cut Arabic recall to 54% on dev, below the floor (`reports/stage3_common_tier.json`).
+4. Orthographic skeleton (rejected, `orthographic`): keeping long vowels and the initial alif cut Arabic false positives to about 10% on dev and test and brought the ratio down (test 5.9 to 2.9), but Arabic recall fell to 33% on dev and 30% on test, because spellings of one name (Khaled and Khalid, Yusuf and Youssef) stopped meeting (`reports/stage3_orthographic.json`).
+
+The rejected fixes are in the code behind flags that are off, so the results can be reproduced.
+
+### Diagnosis
+
+On dev, 186 of 677 clean Arabic-script names alert. 163 of those needed the skeleton to reach the threshold, 156 are full-name collisions (every skeleton token of the query has a partner in the listed name), and 139 rest only on common skeleton tokens such as `b` (abu, bin), `mhmd`, `hmd` and `l` (al, ali). Arabic skeletons are short and common, so unrelated names collide at a similarity of 1.0 whatever the token weights.
+
+Birth date and country do little to separate them. Of the 186 false alerts, the birth date is missing on one side for 143 (66 on the query side, 77 on the entity side) and the country for 142 (86 and 56). Agreeing details pushed only 9 over the threshold, and 177 were over it with neither adjustment. A secondary identifier cannot rescue a screening decision when it is absent from most pairs, which is why the common-token tier cost recall and gained little (`reports/stage3_arabic_diagnosis.json`, `reports/stage3_arabic_secondary.json`).
+
+### Future work
+
+- A spelling-variant table for Arabic names (Khaled and Khalid, Yusuf and Youssef, Mohammed and Muhammad), so that a stricter orthographic skeleton can keep recall. The orthographic result shows that vowel information separates names, and that the cost is in variants that a rule cannot join.
+- The parked embedding fallback for Han, kana and organisation translations, which the current transliteration cannot reach (0% found on the hold-out).
 
 ## Known limitations
 
