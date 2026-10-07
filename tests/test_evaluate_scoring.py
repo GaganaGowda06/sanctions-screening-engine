@@ -13,11 +13,11 @@ import evaluate_scoring as ev
 from normalise import normalise
 from scoring import Components
 
-PARAMS = ev.Params(skeleton_floor=0.5, skeleton_lift=0.1, penalty_index=0)
+PARAMS = ev.Params(skeleton_floor=0.5, skeleton_lift=0.1, blend_index=0)
 
 
 def names(value):
-    return (value,) * len(ev.LENGTH_PENALTIES)
+    return (value,) * len(ev.BLENDS)
 
 
 def query(kind, group, comps, true_id=None):
@@ -92,8 +92,8 @@ def test_tune_picks_the_highest_threshold_that_separates_perfectly():
     params, threshold, f1, marginals = ev.tune(dev_pos, dev_neg, True, True)
     assert (threshold, f1) == (0.9, 1.0)  # separation holds for 0.61 to 0.90, ties go to the higher end
     assert isinstance(params, ev.Params)
-    assert set(marginals) == {"skeleton_floor", "skeleton_lift", "length_penalty"}
-    assert set(marginals["length_penalty"]) == {"0.0", "0.2", "0.4", "0.6"}
+    assert set(marginals) == {"skeleton_floor", "skeleton_lift", "blend"}
+    assert set(marginals["blend"]) == {"0.0", "0.5", "1.0"}
 
 
 def test_conflicting_birth_date_differs_by_at_least_eight_years():
@@ -140,3 +140,55 @@ def test_synthetic_names_match_no_existing_name(monkeypatch):
         assert norm not in existing and " ".join(sorted(norm.split())) not in existing_sorted
         assert q["kind"] == "synthetic" and q["group"] == "Latin" and q["true_id"] is None
         assert q["dob"] in (None, "1970") and q["country"] in (None, "ru")
+
+
+def test_final_scores_arabic_full_lift_switch():
+    comps = [Components("t", names(0.3), 0.9, 0, 0, True)]
+    q = query("positive", "ar_to_latin", comps, "t")
+    assert ev.final_scores([q], PARAMS, True, True, arabic_full=True)[0][2] == pytest.approx(0.9)
+    assert ev.final_scores([q], PARAMS, True, True, arabic_full=False)[0][2] == pytest.approx(0.3)
+
+
+def tiny_targets(n=14):
+    return [person(f"e{i}", [f"Karim Nasser{i}x", f"Nasser Karim{i}y"], target=True) for i in range(n)]
+
+
+def test_default_plan_matches_the_explicit_dev_test_plan(monkeypatch):
+    monkeypatch.setattr(ev, "POSITIVE_GROUPS", {"variant": (2, 3)})
+    default, kept = ev.build_positives(tiny_targets(), random.Random(1))
+    explicit, kept2 = ev.build_positives(tiny_targets(), random.Random(1), {"variant": [("dev", 2), ("test", 3)]})
+    assert default == explicit and kept == kept2
+    assert [q["split"] for q in default] == ["dev", "dev", "test", "test", "test"]
+
+
+def test_final_positives_are_disjoint_from_dev_and_test(monkeypatch):
+    monkeypatch.setattr(ev, "POSITIVE_GROUPS", {"variant": (2, 3)})
+    targets = tiny_targets()
+    dev_test, _ = ev.build_positives(targets, random.Random(1))
+    used = {q["true_id"] for q in dev_test}
+    final, kept = ev.build_positives(
+        targets, random.Random("final"), {"variant": [("final", 4)]}, exclude=used, key="{seed}-final-{group}"
+    )
+    assert len(final) == 4 and {q["split"] for q in final} == {"final"}
+    assert not used & {q["true_id"] for q in final}
+    assert set(kept) == {q["true_id"] for q in final}
+
+
+def test_final_holdout_is_written_once_and_never_overwritten(tmp_path):
+    path = tmp_path / "holdout" / "final_holdout.json"
+    first = [{"split": "final", "kind": "synthetic", "group": "Latin", "name": "Karim Nasser", "comps": ["dropped"]}]
+    info = ev.write_final_holdout(path, first, {})
+    assert info["queries"] == {"synthetic/Latin": 1}
+    assert "comps" not in path.read_text()
+    assert path.with_suffix(".sha256").read_text().strip() == info["sha256"]
+    other = [{"split": "final", "kind": "synthetic", "group": "Latin", "name": "Someone Else"}]
+    again = ev.write_final_holdout(path, other, {})
+    assert again["sha256"] == info["sha256"]  # frozen: the second call changed nothing
+
+
+def test_final_near_misses_use_their_own_split_and_exclude_used_entities(monkeypatch):
+    monkeypatch.setattr(ev, "NEAR_MISS", {"dev": 0, "test": 0, "final": 2})
+    targets = [person(f"p{i}", [f"Ivan Petrov{i}x"], ["1970"], ["ru"]) for i in range(5)]
+    out = ev.build_near_misses(targets, {"p0"}, ["us", "de"], random.Random(1), ("final",), "near-final")
+    assert len(out) == 2 and {q["split"] for q in out} == {"final"}
+    assert "p0" not in {q["entity"] for q in out}

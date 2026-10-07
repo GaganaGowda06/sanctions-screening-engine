@@ -14,10 +14,12 @@ from scoring import (
     combine,
     country_adjustment,
     date_adjustment,
+    has_arabic,
     make_record,
     name_scores,
     skeleton_form,
     strip_legal_forms,
+    weighted_token_score,
 )
 
 ADJ = Adjustments()  # dob_full 0.10, dob_year 0.05, dob_conflict 0.30, country_agree 0.03, country_conflict 0.15
@@ -93,10 +95,19 @@ def test_combine_skeleton_cannot_produce_a_high_score_alone():
     assert combine(Components("e", (0.8,), 0.2, 0, 0), 0.5, 0.3) == pytest.approx(0.8)
 
 
-def test_combine_picks_the_name_score_for_the_requested_length_penalty():
+def test_combine_picks_the_name_score_for_the_requested_blend():
     c = Components("e", names=(0.9, 0.7), skeleton=0.0, dob=0.0, country=0.0)
-    assert combine(c, 0.5, 0.1, penalty_index=0) == pytest.approx(0.9)
-    assert combine(c, 0.5, 0.1, penalty_index=1) == pytest.approx(0.7)
+    assert combine(c, 0.5, 0.1, blend_index=0) == pytest.approx(0.9)
+    assert combine(c, 0.5, 0.1, blend_index=1) == pytest.approx(0.7)
+
+
+def test_combine_arabic_involved_pairs_get_the_full_skeleton():
+    # Below the floor and far above the lift cap, but the pair is Arabic-involved: the skeleton stands in.
+    c = Components("e", names=(0.3,), skeleton=0.9, dob=0.0, country=0.0, arabic=True)
+    assert combine(c, 0.5, 0.1) == pytest.approx(0.9)
+    assert combine(c, 0.5, 0.1, arabic_full_lift=False) == pytest.approx(0.3)  # the gate applies instead
+    # The skeleton never lowers a better name score.
+    assert combine(Components("e", (0.8,), 0.2, 0, 0, arabic=True), 0.5, 0.1) == pytest.approx(0.8)
 
 
 def test_combine_clips_to_unit_interval():
@@ -121,15 +132,20 @@ def test_strip_legal_forms(normalised, expected):
     assert strip_legal_forms(normalised) == expected
 
 
+def one(_token):
+    return 1.0
+
+
 def test_name_scores_clean_subset_is_not_penalised():
     record = make_record(["Ivan Petrov Sidorov"])
-    # "ivan petrov" is a subset of the listed name: ratio 2 * 11 / (11 + 19) = 0.7333 at every penalty.
-    assert name_scores("ivan petrov", record, (0.0, 0.6)) == pytest.approx((0.7333, 0.7333), abs=1e-3)
+    # "ivan petrov" is a subset of the listed name: ratio 2 * 11 / (11 + 19) = 0.7333 even with a penalty.
+    assert name_scores("ivan petrov", record, one, (0.0,), length_penalty=0.6) == pytest.approx((0.7333,), abs=1e-3)
 
 
-def test_name_scores_length_mismatch_is_penalised():
+def test_name_scores_length_mismatch_is_penalised_only_when_asked():
     record = make_record(["Ivan Petrov Sidorov"])
-    plain, penalised = name_scores("ivan sidorova", record, (0.0, 0.6))
+    (plain,) = name_scores("ivan sidorova", record, one, (0.0,))
+    (penalised,) = name_scores("ivan sidorova", record, one, (0.0,), length_penalty=0.6)
     # Not a subset, 2 tokens against 3: mismatch 1 - 2/3, penalty 0.6 * 1/3 = 0.2.
     assert plain > 0.2
     assert penalised == pytest.approx(plain - 0.2)
@@ -137,13 +153,69 @@ def test_name_scores_length_mismatch_is_penalised():
 
 def test_name_scores_equal_length_is_not_penalised():
     record = make_record(["Ivan Petrov"])
-    plain, penalised = name_scores("ivan petrova", record, (0.0, 0.6))
-    assert penalised == pytest.approx(plain)
+    assert name_scores("ivan petrova", record, one, (0.0,), 0.6) == name_scores("ivan petrova", record, one, (0.0,))
 
 
 def test_name_scores_take_the_best_name():
     record = make_record(["Anna Sidorova Ivanovna Petrova", "Ivan Petrov"])
-    assert name_scores("petrov ivan", record, (0.0,)) == pytest.approx((1.0,))
+    assert name_scores("petrov ivan", record, one, (0.0, 1.0)) == pytest.approx((1.0, 1.0))
+
+
+def test_name_scores_blend_between_ratio_and_weighted_score():
+    record = make_record(["Muhammad Ali"])
+    ratio, weighted = 0.8333, 0.75 * 0.5 + 0.5  # see test_weighted below: tokens weigh equally
+    # query "mohammed ali": ratio 10/12 = 0.8333. Weighted: "ali" exact (1), "mohammed"~"muhammad" (0.75), both sides.
+    scores = name_scores("mohammed ali", record, one, (0.0, 1.0, 0.5))
+    assert scores[0] == pytest.approx(ratio, abs=1e-3)
+    assert scores[1] == pytest.approx((0.75 + 1.0) / 2, abs=1e-3)  # (0.75 + 1 + 0.75 + 1) / 4
+    assert scores[2] == pytest.approx((scores[0] + scores[1]) / 2)
+    assert weighted == pytest.approx(0.875)
+
+
+def test_weighted_token_score_counts_rare_tokens_more():
+    idf = {"ahmad": 0.1, "zorblax": 5.0, "name": 2.0}.get
+    # Only the common token matches: matched weight 0.1 + 0.1, total 0.1 + 5 + 0.1 + 2.
+    assert weighted_token_score(["ahmad", "zorblax"], ("ahmad", "name"), frozenset({"ahmad", "name"}), idf) == (
+        pytest.approx(0.2 / 7.2)
+    )
+    # The rare token matches and the common one does not: far higher.
+    weights = {"ahmad": 0.1, "zorblax": 5.0, "karim": 0.1}.get
+    entity_tokens = ("karim", "zorblax")
+    rare_match = weighted_token_score(["ahmad", "zorblax"], entity_tokens, frozenset(entity_tokens), weights)
+    assert rare_match == pytest.approx(10.0 / 10.2)  # matched 5 + 5 of total 0.1 + 5 + 0.1 + 5
+
+
+def test_weighted_token_score_fuzzy_tokens():
+    assert weighted_token_score(["muhammad"], ("mohammed",), frozenset({"mohammed"}), one) == pytest.approx(0.75)
+    # "aly" against "ali" is 0.667, under the 0.7 cut-off, so it counts as a different token.
+    assert weighted_token_score(["aly"], ("ali",), frozenset({"ali"}), one) == 0.0
+    assert weighted_token_score([], (), frozenset(), one) == 0.0
+
+
+def test_idf_comes_from_the_index():
+    s = Screener.build(
+        [
+            {"id": "e1", "names": ["Ahmad Hassan"]},
+            {"id": "e2", "names": ["Ahmad Zorblax"]},
+            {"id": "e3", "names": ["Ahmad Karim"]},
+        ]
+    )
+    assert s.idf("ahmad") == pytest.approx(0.1)  # in every entity: ln(4/4) = 0, floored at 0.1
+    assert s.idf("hassan") == pytest.approx(0.6931, abs=1e-3)  # ln(4/2)
+    assert s.idf("never seen") == pytest.approx(1.3863, abs=1e-3)  # ln(4/1)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [("محمد", True), ("Mohammed محمد", True), ("Mohammed", False), ("Мухаммед", False), ("张伟", False), ("", False)],
+)
+def test_has_arabic(text, expected):
+    assert has_arabic(text) is expected
+
+
+def test_record_knows_when_an_entity_has_an_arabic_name():
+    assert make_record(["Mohammed Ali"]).arabic is False
+    assert make_record(["Mohammed Ali", "محمد علي"]).arabic is True
 
 
 def test_best_similarity():
@@ -162,12 +234,14 @@ def test_make_record_deduplicates_and_lowercases():
 
 
 def screener():
+    # blend 0 so these tests exercise the ratio and the skeleton gate on their own.
     return Screener.build(
         [
-            {"id": "e1", "names": ["Mohammed Ali", "محمد علي"], "birth_dates": ["1970-05-12"], "countries": ["sa"]},
+            {"id": "e1", "names": ["Mohammed Ali"], "birth_dates": ["1970-05-12"], "countries": ["sa"]},
             {"id": "e2", "names": ["Ivan Petrov"], "birth_dates": ["1980"], "countries": ["ru"]},
             {"id": "e3", "names": ["Ivan Petrov Sidorov"], "countries": ["ru"]},
-        ]
+        ],
+        blend=0.0,
     )
 
 
@@ -189,13 +263,13 @@ def test_name_only_match_is_confirmed_by_the_skeleton():
 
 def test_skeleton_alone_cannot_create_a_match():
     entities = [{"id": "n", "names": ["Natallia Holub"]}]
-    result = Screener.build(entities).screen("Gleb Anatoliyivna", threshold=0.5)
+    result = Screener.build(entities, blend=0.0).screen("Gleb Anatoliyivna", threshold=0.5)
     assert result == []
 
 
 def test_company_legal_forms_do_not_get_in_the_way():
     entities = [{"id": "c", "names": ["Beijing CBT Optics Equipment Co., Ltd."]}]
-    s = Screener.build(entities)
+    s = Screener.build(entities, blend=0.0)
     assert scores(s.screen("Beijing CBT Optics Equipment", threshold=0.99)) == {"c": 1.0}
     assert scores(s.screen("Beijing CBT Optics Equipment Limited", threshold=0.99)) == {"c": 1.0}
 
@@ -222,8 +296,17 @@ def test_entity_without_attributes_is_not_affected_by_query_attributes():
     assert with_query == pytest.approx(plain + 0.03)
 
 
-def test_arabic_query_matches_through_its_own_name_form():
+def test_arabic_query_matches_a_latin_spelling_through_the_skeleton():
+    # "mhmd ly" against "mohammed ali" is a weak name match, but the query is Arabic, so the skeleton stands in.
     assert scores(screen("محمد علي", threshold=0.9))["e1"] == pytest.approx(1.0)
+
+
+def test_latin_query_against_an_entity_with_an_arabic_alias_gets_the_full_skeleton():
+    plain = Screener.build([{"id": "y", "names": ["Mohammed Ali"]}], blend=0.0)
+    arabic = Screener.build([{"id": "y", "names": ["Mohammed Ali", "محمد علي"]}], blend=0.0)
+    kwargs = {"threshold": 0.5, "skeleton_floor": 0.5, "skeleton_lift": 0.1}
+    assert scores(plain.screen("Muhammad Ali", **kwargs)) == pytest.approx({"y": 0.9333}, abs=1e-3)  # gated lift
+    assert scores(arabic.screen("Muhammad Ali", **kwargs)) == pytest.approx({"y": 1.0})  # full lift
 
 
 def test_word_order_does_not_matter_and_extra_tokens_score_lower():
@@ -255,5 +338,5 @@ def test_components_rank_by_best_reachable_score_so_a_boost_can_lift_an_entity_i
         {"id": "a", "names": ["Karim Nasser"], "birth_dates": ["1950"]},
         {"id": "b", "names": ["Karim Nasser"], "birth_dates": ["1970-05-12"]},
     ]
-    kept = Screener.build(entities).components("Karim Nasser", "1970-05-12", None, keep=1)
+    kept = Screener.build(entities, blend=0.0).components("Karim Nasser", "1970-05-12", None, keep=1)
     assert [c.entity_id for c in kept] == ["b"]  # name scores tie, "b" can reach 1.0 with the full-date boost

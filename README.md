@@ -28,8 +28,8 @@ These come from the measurements in `reports/stage2_candidates.json` and `report
 
 - Organisation names that are translated, not transliterated, are often missed. An Arabic company name such as the Arabic for "Wafa Humanitarian Organization" shares no spelling with its English name, so no transliteration key can connect them. Looking up a Latin name against Arabic-script entries finds 94.8% of people but only 63.5% of organisations.
 - Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. Cross-script candidate recall for these scripts is close to zero.
-- Arabic is written without short vowels, so Arabic-derived names are compared as consonant skeletons. To stop skeletons creating false positives they only confirm a name that already matches moderately, which costs Arabic cross-script recall (about 50% at the chosen threshold).
-- Names that are subsets of a longer listed name (a two-word query against a three-word listing) score high with token-based fuzzy matching, and common first names make this worse.
+- Arabic is written without short vowels, so for any pair involving Arabic the consonant skeleton may stand in for the name score in full. That brings Arabic cross-script recall to about 60% at the chosen threshold, but about 39% of synthetic Arabic names raise an alert, against under 10% for Latin and Cyrillic. Elsewhere the skeleton only confirms a name that already matches moderately.
+- Names are scored with rarity weighting, so a shared rare surname counts for far more than a shared first name such as Mohammed. A query that matches only a common token scores low, and so does a true alias that shares only a common token.
 
 ## How to run
 
@@ -59,12 +59,14 @@ src/
   ftm_props.json         FollowTheMoney identifier and country property map
   normalise.py           transliterate Cyrillic and Arabic, strip accents and punctuation
   candidates.py          inverted index over folded tokens, consonant skeletons and joined tokens
-  scoring.py             fuzzy name score adjusted by birth date and country
+  scoring.py             rarity-weighted fuzzy name score adjusted by birth date and country
   profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py   measurement scripts
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/
   stage1_profile.json    profile of the downloaded data
+holdout/
+  final_holdout.json     frozen final hold-out queries, not scored until the final audit
 data/                    downloaded data (not committed)
 reference/yente/         yente source for study (not committed)
 .github/workflows/ci.yml lint and tests on every push and pull request

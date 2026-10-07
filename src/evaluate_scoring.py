@@ -16,8 +16,12 @@ Negatives (the query is not a listed person, and any alert is a false positive):
   near_miss      a real listed name with a birth date and country that conflict with that entity's
 
 Positive queries carry the entity's own birth date and country, each dropped with probability 0.3.
-Dev and test samples are disjoint. The alert threshold and skeleton weight are tuned on dev for
-maximum F1, and everything is reported on test. Birth date and country magnitudes are fixed, not tuned.
+Dev and test samples are disjoint. The alert threshold, skeleton floor and lift, and the blend of
+character ratio and rarity-weighted token score are tuned on dev for maximum F1, and everything is
+reported on test. Birth date and country magnitudes are fixed, not tuned. The length penalty is off.
+
+A third, final hold-out set is generated once into holdout/final_holdout.json, disjoint from dev and
+test, and never scored here. It is for the final re-audit only.
 
 Run:
     python src/evaluate_scoring.py
@@ -25,6 +29,7 @@ Writes reports/stage2_scoring.json.
 """
 
 import argparse
+import hashlib
 import itertools
 import json
 import platform
@@ -43,26 +48,26 @@ from scoring import Adjustments, Screener, combine
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "reports" / "stage2_scoring.json"
+FINAL_HOLDOUT = ROOT / "holdout" / "final_holdout.json"
 SEED = 11
 MISSING_P = 0.3
-SKELETON_FLOORS = (0.4, 0.5, 0.6)
-SKELETON_LIFTS = (0.1, 0.15, 0.2, 0.3)
-LENGTH_PENALTIES = (0.0, 0.2, 0.4, 0.6)  # the first must be 0.0: candidates are ranked on it
+SKELETON_FLOORS = (0.2, 0.3, 0.4, 0.5, 0.6)
+SKELETON_LIFTS = (0.1, 0.2, 0.3, 0.4, 0.5)
+BLENDS = (0.0, 0.5, 1.0)  # 0 is the character ratio alone, 1 the rarity-weighted token score alone
 
 
 class Params(NamedTuple):
     skeleton_floor: float
     skeleton_lift: float
-    penalty_index: int
+    blend_index: int
 
     @property
-    def length_penalty(self) -> float:
-        return LENGTH_PENALTIES[self.penalty_index]
+    def blend(self) -> float:
+        return BLENDS[self.blend_index]
 
 
 GRID = [
-    Params(f, lift, i)
-    for f, lift, i in itertools.product(SKELETON_FLOORS, SKELETON_LIFTS, range(len(LENGTH_PENALTIES)))
+    Params(f, lift, i) for f, lift, i in itertools.product(SKELETON_FLOORS, SKELETON_LIFTS, range(len(BLENDS)))
 ]
 THRESHOLDS = [round(0.50 + 0.01 * i, 2) for i in range(50)]  # 0.50 to 0.99
 # Positive groups: (dev count, test count).
@@ -78,8 +83,9 @@ HEADLINE_GROUPS = {g for g in POSITIVE_GROUPS if g != "other_to_latin"}
 SYNTHETIC = {
     "dev": {"Latin": 400, "Cyrillic": 175, "Arabic": 175},
     "test": {"Latin": 800, "Cyrillic": 350, "Arabic": 350},
+    "final": {"Latin": 800, "Cyrillic": 350, "Arabic": 350},
 }
-NEAR_MISS = {"dev": 250, "test": 500}
+NEAR_MISS = {"dev": 250, "test": 500, "final": 500}
 MODES = {
     "neither": (False, False),
     "birth_date_only": (True, False),
@@ -125,14 +131,26 @@ def positive_candidates(entities: list[dict], group: str) -> list[tuple[dict, st
     return out
 
 
-def build_positives(targets: list[dict], rng: random.Random) -> tuple[list[dict], dict[str, list[str]]]:
-    """Positive queries for dev and test, plus the names each sampled entity keeps in the list."""
-    queries, kept_names, used = [], {}, set()
-    for group, (n_dev, n_test) in POSITIVE_GROUPS.items():
+def build_positives(
+    targets: list[dict],
+    rng: random.Random,
+    plan: dict[str, list[tuple[str, int]]] | None = None,
+    exclude: set[str] | None = None,
+    key: str = "{seed}-{group}",
+) -> tuple[list[dict], dict[str, list[str]]]:
+    """Positive queries, plus the names each sampled entity keeps in the list.
+
+    `plan` gives, per group, the splits to fill in order with their sizes (default dev then test).
+    Entities in `exclude` are not used, and `key` sets the shuffle, so another set can be carved
+    out later without disturbing this one.
+    """
+    plan = plan or {g: [("dev", n_dev), ("test", n_test)] for g, (n_dev, n_test) in POSITIVE_GROUPS.items()}
+    queries, kept_names, used = [], {}, set(exclude or ())
+    for group, splits in plan.items():
         eligible = [c for c in positive_candidates(targets, group) if c[0]["id"] not in used]
-        random.Random(f"{SEED}-{group}").shuffle(eligible)
-        for i, (entity, pool, kept) in enumerate(eligible[: n_dev + n_test]):
-            split = "dev" if i < n_dev else "test"
+        random.Random(key.format(seed=SEED, group=group)).shuffle(eligible)
+        labels = [name for name, count in splits for _ in range(count)]
+        for split, (entity, pool, kept) in zip(labels, eligible, strict=False):
             query = rng.choice(pool)
             if group == "variant":
                 same = normalise(query)
@@ -164,7 +182,14 @@ def conflicting_birth_date(rng: random.Random, entity_dates: list[str]) -> str |
     return None
 
 
-def build_near_misses(targets: list[dict], used: set[str], country_pool: list[str], rng: random.Random) -> list[dict]:
+def build_near_misses(
+    targets: list[dict],
+    used: set[str],
+    country_pool: list[str],
+    rng: random.Random,
+    splits: tuple[str, ...] = ("dev", "test"),
+    key: str = "near",
+) -> list[dict]:
     """A real listed name, with a birth date and country that both conflict with the entity's."""
     eligible = [
         e
@@ -172,7 +197,7 @@ def build_near_misses(targets: list[dict], used: set[str], country_pool: list[st
         if e["schema"] == "Person" and e["id"] not in used and e["birth_dates"] and e["countries"]
         and any(script_class(n) in ("Latin", "Cyrillic", "Arabic") for n in e["names"])
     ]
-    random.Random(f"{SEED}-near").shuffle(eligible)
+    random.Random(f"{SEED}-{key}").shuffle(eligible)
     out = []
     for e in eligible:
         dob = conflicting_birth_date(rng, e["birth_dates"])
@@ -183,16 +208,22 @@ def build_near_misses(targets: list[dict], used: set[str], country_pool: list[st
         name = rng.choice([n for n in e["names"] if script_class(n) in ("Latin", "Cyrillic", "Arabic")])
         out.append({"kind": "near_miss", "group": script_class(name), "true_id": None, "name": name,
                     "dob": dob, "country": country, "entity": e["id"]})  # fmt: skip
-        if len(out) >= sum(NEAR_MISS.values()):
+        if len(out) >= sum(NEAR_MISS[x] for x in splits):
             break
     used.update(q["entity"] for q in out)
-    for i, q in enumerate(out):
-        q["split"] = "dev" if i < NEAR_MISS["dev"] else "test"
+    labels = [name for name in splits for _ in range(NEAR_MISS[name])]
+    for q, label in zip(out, labels, strict=False):
+        q["split"] = label
     return out
 
 
 def build_synthetic(
-    entities: list[dict], targets: list[dict], dob_pool: list[str], country_pool: list[str], rng: random.Random
+    entities: list[dict],
+    targets: list[dict],
+    dob_pool: list[str],
+    country_pool: list[str],
+    rng: random.Random,
+    splits: tuple[str, ...] = ("dev", "test"),
 ) -> list[dict]:
     """First-name token and last-name token from different real names; matches no entity name exactly."""
     forbidden = set()
@@ -214,7 +245,7 @@ def build_synthetic(
                     lasts.append(tokens[-1])
         pools[script] = (firsts, lasts)
     out = []
-    for split in ("dev", "test"):
+    for split in splits:
         for script, count in SYNTHETIC[split].items():
             firsts, lasts = pools[script]
             made = 0
@@ -238,9 +269,7 @@ def run_queries(screener: Screener, queries: list[dict]) -> list[float]:
     latencies = []
     for q in queries:
         start = time.perf_counter()
-        q["comps"] = screener.components(
-            q["name"], q["dob"], q["country"], always=q["true_id"], penalties=LENGTH_PENALTIES
-        )
+        q["comps"] = screener.components(q["name"], q["dob"], q["country"], always=q["true_id"], blends=BLENDS)
         latencies.append(time.perf_counter() - start)
     return latencies
 
@@ -248,13 +277,17 @@ def run_queries(screener: Screener, queries: list[dict]) -> list[float]:
 # ---------- metrics ----------
 
 
-def final_scores(queries: list[dict], params: Params, use_dob: bool, use_country: bool) -> list[tuple]:
+def final_scores(
+    queries: list[dict], params: Params, use_dob: bool, use_country: bool, arabic_full: bool = True
+) -> list[tuple]:
     """Per query: (group or kind, true entity score or None, best other score, true entity is top-1)."""
     rows = []
     for q in queries:
         s_true, s_other = None, 0.0
         for c in q["comps"]:
-            score = combine(c, params.skeleton_floor, params.skeleton_lift, params.penalty_index, use_dob, use_country)
+            score = combine(
+                c, params.skeleton_floor, params.skeleton_lift, params.blend_index, use_dob, use_country, arabic_full
+            )
             if c.entity_id == q["true_id"]:
                 s_true = score
             elif score > s_other:
@@ -303,7 +336,12 @@ def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float) -> dict:
 
 
 def tune(
-    dev_pos: list[dict], dev_neg: list[dict], use_dob: bool, use_country: bool, grid: list[Params] | None = None
+    dev_pos: list[dict],
+    dev_neg: list[dict],
+    use_dob: bool,
+    use_country: bool,
+    grid: list[Params] | None = None,
+    arabic_full: bool = True,
 ) -> tuple[Params, float, float, dict[str, dict[str, float]]]:
     """(params, threshold, F1, best F1 per value of each parameter) maximising F1 on dev.
 
@@ -313,8 +351,8 @@ def tune(
     best: tuple[Params, float, float] = (grid[0], 0.0, -1.0)
     best_f1 = {}
     for params in grid:
-        pos = final_scores(dev_pos, params, use_dob, use_country)
-        neg = final_scores(dev_neg, params, use_dob, use_country)
+        pos = final_scores(dev_pos, params, use_dob, use_country, arabic_full)
+        neg = final_scores(dev_neg, params, use_dob, use_country, arabic_full)
         top = -1.0
         for t in THRESHOLDS:
             f1 = metrics_at(pos, neg, t)["f1"]
@@ -322,12 +360,12 @@ def tune(
             if f1 >= best[2]:
                 best = (params, t, f1)
         best_f1[params] = top
-    marginals: dict[str, dict[str, float]] = {"skeleton_floor": {}, "skeleton_lift": {}, "length_penalty": {}}
+    marginals: dict[str, dict[str, float]] = {"skeleton_floor": {}, "skeleton_lift": {}, "blend": {}}
     for params, f1 in best_f1.items():
         for name, value in (
             ("skeleton_floor", params.skeleton_floor),
             ("skeleton_lift", params.skeleton_lift),
-            ("length_penalty", params.length_penalty),
+            ("blend", params.blend),
         ):
             marginals[name][str(value)] = max(marginals[name].get(str(value), -1.0), f1)
     return (*best, marginals)
@@ -342,11 +380,34 @@ def threshold_for_fpr(dev_pos: list[dict], dev_neg: list[dict], params: Params, 
     return THRESHOLDS[-1]
 
 
-def evaluate_at(test_pos: list[dict], test_neg: list[dict], params: Params, threshold: float, mode: str) -> dict:
+def evaluate_at(
+    test_pos: list[dict],
+    test_neg: list[dict],
+    params: Params,
+    threshold: float,
+    mode: str,
+    arabic_full: bool = True,
+) -> dict:
     use_dob, use_country = MODES[mode]
-    pos = final_scores(test_pos, params, use_dob, use_country)
-    neg = final_scores(test_neg, params, use_dob, use_country)
+    pos = final_scores(test_pos, params, use_dob, use_country, arabic_full)
+    neg = final_scores(test_neg, params, use_dob, use_country, arabic_full)
     return metrics_at(pos, neg, threshold)
+
+
+def write_final_holdout(path: Path, queries: list[dict], kept_names: dict[str, list[str]]) -> dict:
+    """Freeze the final hold-out query set. An existing file is never overwritten."""
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        rows = [{k: v for k, v in q.items() if k != "comps"} for q in queries]
+        payload = {"seed": SEED, "kept_names": kept_names, "queries": rows}
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=1, sort_keys=True) + "\n")
+        path.with_suffix(".sha256").write_text(hashlib.sha256(path.read_bytes()).hexdigest() + "\n")
+    data = json.loads(path.read_text())
+    return {
+        "path": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "queries": dict(Counter(f"{q['kind']}/{q['group']}" for q in data["queries"])),
+    }
 
 
 def main() -> None:
@@ -365,9 +426,20 @@ def main() -> None:
     country_pool = [c for e in persons for c in e["countries"][:1]]
 
     positives, kept_names = build_positives(targets, rng)
-    near = build_near_misses(targets, {q["true_id"] for q in positives}, country_pool, rng)
+    used = {q["true_id"] for q in positives}
+    near = build_near_misses(targets, used, country_pool, rng)  # adds its entities to `used`
     synthetic = build_synthetic(entities, targets, dob_pool, country_pool, rng)
     print(f"queries: {len(positives)} positive, {len(synthetic)} synthetic, {len(near)} near-miss", file=sys.stderr)
+
+    # Final hold-out: its own random streams, built after dev and test, entities disjoint from both.
+    final_rng = random.Random(f"{SEED}-final")
+    final_plan = {g: [("final", n_test)] for g, (_, n_test) in POSITIVE_GROUPS.items()}
+    final_pos, final_kept = build_positives(targets, final_rng, final_plan, exclude=used, key="{seed}-final-{group}")
+    used_final = used | {q["true_id"] for q in final_pos}
+    final_near = build_near_misses(targets, used_final, country_pool, final_rng, ("final",), "near-final")
+    final_syn = build_synthetic(entities, targets, dob_pool, country_pool, final_rng, ("final",))
+    holdout = write_final_holdout(FINAL_HOLDOUT, final_pos + final_near + final_syn, final_kept)
+    print(f"final hold-out frozen: {holdout['sha256'][:12]}", file=sys.stderr)
 
     adjustments = Adjustments()
     t0 = time.perf_counter()
@@ -393,7 +465,7 @@ def main() -> None:
         tuned[mode] = {
             "skeleton_floor": params.skeleton_floor,
             "skeleton_lift": params.skeleton_lift,
-            "length_penalty": params.length_penalty,
+            "blend": params.blend,
             "threshold": threshold,
             "dev_f1": dev_f1,
             "dev_best_f1_by_parameter_value": marginals,
@@ -405,17 +477,28 @@ def main() -> None:
         tuned[mode]["test_at_both_operating_point"] = evaluate_at(test_pos, test_neg, both_params, both_t, mode)
         del tuned[mode]["_params"]
     low_fpr_t = threshold_for_fpr(dev_pos, dev_neg, both_params, 0.01)
-    penalty_sensitivity = {}  # tune everything else on dev for each fixed length penalty
-    for i, penalty in enumerate(LENGTH_PENALTIES):
-        fixed = [p for p in GRID if p.penalty_index == i]
-        params, threshold, dev_f1, _ = tune(dev_pos, dev_neg, True, True, fixed)
-        test = evaluate_at(test_pos, test_neg, params, threshold, "both")
-        penalty_sensitivity[str(penalty)] = {
+
+    # Each new piece switched off in turn, everything else re-tuned on dev, reported on test.
+    ablations = {}
+    for label, grid, arabic_full in (
+        ("full", GRID, True),
+        ("without_rarity_weighting", [p for p in GRID if p.blend_index == 0], True),
+        ("without_arabic_full_lift", GRID, False),
+        ("step_3b_scoring", [p for p in GRID if p.blend_index == 0], False),
+    ):
+        params, threshold, dev_f1, _ = tune(dev_pos, dev_neg, True, True, grid, arabic_full)
+        test = evaluate_at(test_pos, test_neg, params, threshold, "both", arabic_full)
+        ablations[label] = {
             "skeleton_floor": params.skeleton_floor,
             "skeleton_lift": params.skeleton_lift,
+            "blend": params.blend,
             "threshold": threshold,
             "dev_f1": dev_f1,
             **{k: test[k] for k in ("recall", "precision", "f1", "top1_accuracy", "false_positive_rate")},
+            "fpr_synthetic": test["fpr_synthetic"],
+            "fpr_near_miss": test["fpr_near_miss"],
+            "recall_by_group": test["recall_by_group"],
+            "fpr_synthetic_by_script": test["fpr_synthetic_by_script"],
         }
     sweep = {
         str(t): {k: m[k] for k in ("recall", "precision", "false_positive_rate", "alert_rate_overall", "top1_accuracy")}
@@ -435,10 +518,11 @@ def main() -> None:
             "threshold_from_dev": low_fpr_t,
             "skeleton_floor": both_params.skeleton_floor,
             "skeleton_lift": both_params.skeleton_lift,
-            "length_penalty": both_params.length_penalty,
+            "blend": both_params.blend,
             "test": evaluate_at(test_pos, test_neg, both_params, low_fpr_t, "both"),
         },
-        "length_penalty_sensitivity_both": penalty_sensitivity,
+        "ablations_both": ablations,
+        "final_holdout_frozen_not_scored": holdout,
         "test_threshold_sweep_both": sweep,
         "timing": {
             "screener_build_seconds": round(build_seconds, 2),

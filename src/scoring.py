@@ -3,14 +3,23 @@
 Name score
   Names are normalised and company legal-form words are stripped (ltd, llc, gmbh, "obshchestvo s
   ogranichennoy otvetstvennostyu" ...), so an organisation matches its aliases on the part that
-  identifies it. The query is compared to each name of an entity with a token-order-insensitive fuzzy
-  ratio (rapidfuzz token_sort_ratio, 0 to 1).
-  Length mismatch: a name pair loses  length_penalty * (1 - shorter / longer)  in token count, unless
-  the tokens of the shorter name are all in the longer one (a clean subset).
-  The name score of an entity is the best penalised score over its names.
-Skeleton (vowel-stripped, folded tokens, see candidates.py) only confirms. If the name score is at
-  least skeleton_floor, it may be raised towards the skeleton similarity by at most skeleton_lift.
-  Below the floor the skeleton has no effect, so it cannot produce a high score on its own.
+  identifies it. The query is compared to each name of an entity two ways:
+    ratio     rapidfuzz token_sort_ratio, order-insensitive character similarity, 0 to 1
+    weighted  rarity-weighted token overlap: every token is weighted by its inverse document
+              frequency over the entities in the index, and matched to the best token on the other
+              side (similarity of at least 0.7, exact matches score 1). A rare surname counts for
+              much more than "mohammed" or "ivan", and a missing rare token costs more than a missing
+              common one.
+  name = (1 - blend) * ratio + blend * weighted. The entity's name score is the best over its names.
+  An optional length penalty (default 0, off) takes length_penalty * (1 - shorter / longer) in token
+  count off a name pair unless one side's tokens are all in the other.
+
+Skeleton (vowel-stripped, folded tokens, see candidates.py)
+  Arabic-involved pairs (the query is in Arabic script, or the entity has an Arabic-script name, so its
+  Latin names are Arabic-derived): the skeleton may stand in for the name score in full, because Arabic
+  is written without short vowels and Latin spellings of it vary.
+  Everything else: the skeleton only confirms. If the name score is at least skeleton_floor it may be
+  raised towards the skeleton similarity by at most skeleton_lift, so it cannot create a match alone.
 
 Birth date and country adjust the name score, then the result is clipped to 0..1:
   birth date   same full date  +dob_full        same year  +dob_year
@@ -22,7 +31,10 @@ Birth date and country adjust the name score, then the result is clipped to 0..1
 An alert is an entity whose final score reaches the alert threshold.
 """
 
-from collections.abc import Iterable, Sequence
+import math
+import re
+from collections import Counter
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -31,14 +43,18 @@ from rapidfuzz import fuzz, process
 from candidates import CandidateIndex, fold, skeleton
 from normalise import normalise
 
-MIN_NAME_SCORE = 0.35  # below this a candidate cannot reach an alert threshold of 0.5 even with every boost and lift
-MAX_SKELETON_LIFT = 0.3  # largest lift the tuning grid allows, used to rank candidates by their best reachable score
-MIN_SKELETON_FLOOR = 0.4  # smallest floor the tuning grid allows
-# Defaults are the values tuned on dev in src/evaluate_scoring.py (floor and lift sit at the edge of the grid searched).
+MIN_NAME_SCORE = 0.2  # below this on every blend a candidate cannot reach an alert threshold of 0.5
+MAX_SKELETON_LIFT = 0.5  # largest lift and smallest floor the tuning grid allows, used to rank candidates
+MIN_SKELETON_FLOOR = 0.2
+TOKEN_MATCH_CUTOFF = 70  # fuzz.ratio a token pair needs, out of 100, to count as the same token
+WEIGHTED_MIN_RATIO = 0.2  # the weighted score is only worked out for names at least this similar by ratio
+# Defaults are the values tuned on dev in src/evaluate_scoring.py.
 DEFAULT_SKELETON_FLOOR = 0.4
 DEFAULT_SKELETON_LIFT = 0.3
-DEFAULT_LENGTH_PENALTY = 0.0  # the tuner found any penalty lowers dev F1; the mechanism stays available
-DEFAULT_THRESHOLD = 0.89
+DEFAULT_BLEND = 1.0
+DEFAULT_LENGTH_PENALTY = 0.0
+DEFAULT_THRESHOLD = 0.87
+_ARABIC = re.compile("[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]")
 
 # Tokens that mark a company legal form. Only stripped from names that contain at least one of them,
 # and never down to nothing. Ambiguous short words (as, ab, de, ad) are left out on purpose.
@@ -64,10 +80,11 @@ class Components(NamedTuple):
     """Everything needed to rebuild an entity's score for any skeleton setting or adjustment switch."""
 
     entity_id: str
-    names: tuple[float, ...]  # best penalised name score, one per length penalty asked for
+    names: tuple[float, ...]  # best name score, one per blend asked for
     skeleton: float
     dob: float
     country: float
+    arabic: bool = False  # Arabic-involved pair: the skeleton may stand in for the name score
 
 
 class Match(NamedTuple):
@@ -80,9 +97,11 @@ class Match(NamedTuple):
 class EntityRecord:
     norms: tuple[str, ...]
     token_sets: tuple[frozenset[str], ...]  # tokens of each name in norms
+    token_lists: tuple[tuple[str, ...], ...]
     skeletons: tuple[str, ...]
     birth_dates: tuple[str, ...]
     countries: frozenset[str]
+    arabic: bool = False  # the entity has a name in Arabic script
 
 
 def strip_legal_forms(normalised: str) -> str:
@@ -103,15 +122,22 @@ def skeleton_form(normalised: str) -> str:
     return " ".join(sk for token in normalised.split() if (sk := skeleton(fold(token))))
 
 
+def has_arabic(text: str) -> bool:
+    return _ARABIC.search(text) is not None
+
+
 def make_record(names: Iterable[str], birth_dates: Iterable[str] = (), countries: Iterable[str] = ()) -> EntityRecord:
+    names = list(names)
     norms = tuple(dict.fromkeys(n for n in map(scoring_form, names) if n))
     skeletons = tuple(dict.fromkeys(s for s in map(skeleton_form, norms) if s))
     return EntityRecord(
         norms=norms,
         token_sets=tuple(frozenset(n.split()) for n in norms),
+        token_lists=tuple(tuple(n.split()) for n in norms),
         skeletons=skeletons,
         birth_dates=tuple(dict.fromkeys(birth_dates)),
         countries=frozenset(c.lower() for c in countries),
+        arabic=any(has_arabic(n) for n in names),
     )
 
 
@@ -123,23 +149,60 @@ def best_similarity(query: str, forms: Sequence[str]) -> float:
     return best[1] / 100 if best else 0.0
 
 
-def name_scores(query: str, record: EntityRecord, penalties: Sequence[float]) -> tuple[float, ...]:
-    """Best length-penalised name score of the query against the entity's names, per penalty."""
-    best = [0.0] * len(penalties)
+def _token_match(token: str, tokens: Sequence[str], token_set: frozenset[str]) -> float:
+    if token in token_set:
+        return 1.0
+    best = process.extractOne(token, tokens, scorer=fuzz.ratio, score_cutoff=TOKEN_MATCH_CUTOFF)
+    return best[1] / 100 if best else 0.0
+
+
+def weighted_token_score(
+    query_tokens: Sequence[str],
+    entity_tokens: Sequence[str],
+    entity_set: frozenset[str],
+    idf: Callable[[str], float],
+) -> float:
+    """Rarity-weighted soft token overlap, symmetric: unmatched rare tokens on either side cost the most."""
+    query_set = frozenset(query_tokens)
+    matched = total = 0.0
+    for token in query_tokens:
+        weight = idf(token)
+        total += weight
+        matched += weight * _token_match(token, entity_tokens, entity_set)
+    for token in entity_tokens:
+        weight = idf(token)
+        total += weight
+        matched += weight * _token_match(token, query_tokens, query_set)
+    return matched / total if total else 0.0
+
+
+def name_scores(
+    query: str,
+    record: EntityRecord,
+    idf: Callable[[str], float],
+    blends: Sequence[float],
+    length_penalty: float = 0.0,
+) -> tuple[float, ...]:
+    """Best name score of the query against the entity's names, one per blend of ratio and weighted score."""
+    best = [0.0] * len(blends)
     if not query or not record.norms:
         return tuple(best)
     query_tokens = query.split()
     query_set = frozenset(query_tokens)
-    for _, ratio, index in process.extract(query, record.norms, scorer=fuzz.token_sort_ratio, limit=None):
+    need_weighted = any(b > 0 for b in blends)
+    for _, score, index in process.extract(query, record.norms, scorer=fuzz.token_sort_ratio, limit=None):
+        ratio = score / 100
         entity_set = record.token_sets[index]
-        if query_set <= entity_set or entity_set <= query_set:
-            mismatch = 0.0  # clean subset
-        else:
-            shorter, longer = sorted((len(query_tokens), len(record.norms[index].split())))
-            mismatch = 1 - shorter / longer
-        for i, penalty in enumerate(penalties):
-            best[i] = max(best[i], ratio / 100 - penalty * mismatch)
-    return tuple(max(0.0, b) for b in best)
+        entity_tokens = record.token_lists[index]
+        if length_penalty and not (query_set <= entity_set or entity_set <= query_set):
+            shorter, longer = sorted((len(query_tokens), len(entity_tokens)))
+            ratio = max(0.0, ratio - length_penalty * (1 - shorter / longer))
+        weighted = ratio
+        if need_weighted and ratio >= WEIGHTED_MIN_RATIO:
+            weighted = weighted_token_score(query_tokens, entity_tokens, entity_set, idf)
+        for i, blend in enumerate(blends):
+            best[i] = max(best[i], (1 - blend) * ratio + blend * weighted)
+    return tuple(best)
 
 
 def _year(date: str) -> int | None:
@@ -172,12 +235,15 @@ def combine(
     c: Components,
     skeleton_floor: float = DEFAULT_SKELETON_FLOOR,
     skeleton_lift: float = DEFAULT_SKELETON_LIFT,
-    penalty_index: int = 0,
+    blend_index: int = 0,
     use_dob: bool = True,
     use_country: bool = True,
+    arabic_full_lift: bool = True,
 ) -> float:
-    score = c.names[penalty_index]
-    if score >= skeleton_floor:
+    score = c.names[blend_index]
+    if c.arabic and arabic_full_lift:
+        score = max(score, c.skeleton)
+    elif score >= skeleton_floor:
         score = max(score, min(c.skeleton, score + skeleton_lift))
     if use_dob:
         score += c.dob
@@ -187,23 +253,42 @@ def combine(
 
 
 class Screener:
-    """Candidate index plus the entity records needed to score candidates."""
+    """Candidate index plus the entity records and token statistics needed to score candidates."""
 
     def __init__(
         self,
         index: CandidateIndex,
         records: dict[str, EntityRecord],
         adjustments: Adjustments,
+        blend: float = DEFAULT_BLEND,
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
     ) -> None:
         self.index = index
         self.records = records
         self.adjustments = adjustments
+        self.blend = blend
         self.length_penalty = length_penalty
+        document_frequency: Counter[str] = Counter()
+        for record in records.values():
+            document_frequency.update(set().union(*record.token_sets))
+        self._df = document_frequency
+        self._n = len(records)
+        self._idf_cache: dict[str, float] = {}
+
+    def idf(self, token: str) -> float:
+        """Inverse document frequency of a name token over the entities in the index (never below 0.1)."""
+        if token not in self._idf_cache:
+            self._idf_cache[token] = max(0.1, math.log((self._n + 1) / (self._df.get(token, 0) + 1)))
+        return self._idf_cache[token]
 
     @classmethod
     def build(
-        cls, entities: Iterable[dict], max_df: int = 1000, adjustments: Adjustments | None = None
+        cls,
+        entities: Iterable[dict],
+        max_df: int = 1000,
+        adjustments: Adjustments | None = None,
+        blend: float = DEFAULT_BLEND,
+        length_penalty: float = DEFAULT_LENGTH_PENALTY,
     ) -> "Screener":
         """Build from dicts with id, names and optionally birth_dates and countries."""
         entities = list(entities)
@@ -211,7 +296,7 @@ class Screener:
         records = {
             e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities
         }
-        return cls(index, records, adjustments or Adjustments())
+        return cls(index, records, adjustments or Adjustments(), blend, length_penalty)
 
     def components(
         self,
@@ -220,21 +305,22 @@ class Screener:
         country: str | None = None,
         keep: int = 200,
         always: str | None = None,
-        penalties: Sequence[float] | None = None,
+        blends: Sequence[float] | None = None,
     ) -> list[Components]:
         """Score components for the best `keep` candidates, ranked by the highest score they could reach.
 
-        `penalties` lists the length penalties to score for (smallest first); default is the screener's own.
+        `blends` lists the ratio/weighted blends to score for; default is the screener's own.
         `always` names an entity that is kept even if it falls outside the best `keep`.
         """
-        penalties = tuple(penalties) if penalties is not None else (self.length_penalty,)
+        blends = tuple(blends) if blends is not None else (self.blend,)
         query = scoring_form(name)
         query_skeleton = skeleton_form(query)
+        query_arabic = has_arabic(name)
         scored = []
         for entity_id, _ in self.index.query(name):
             record = self.records[entity_id]
-            names = name_scores(query, record, penalties)
-            if names[0] < MIN_NAME_SCORE:
+            names = name_scores(query, record, self.idf, blends, self.length_penalty)
+            if max(names) < MIN_NAME_SCORE:
                 continue
             scored.append(
                 Components(
@@ -243,12 +329,15 @@ class Screener:
                     best_similarity(query_skeleton, record.skeletons),
                     date_adjustment(birth_date, record.birth_dates, self.adjustments),
                     country_adjustment(country, record.countries, self.adjustments),
+                    query_arabic or record.arabic,
                 )
             )
 
         def reachable(c: Components) -> float:
-            best = c.names[0]
-            if best >= MIN_SKELETON_FLOOR:
+            best = max(c.names)
+            if c.arabic:
+                best = max(best, c.skeleton)
+            elif best >= MIN_SKELETON_FLOOR:
                 best = max(best, min(c.skeleton, best + MAX_SKELETON_LIFT))
             return best + max(c.dob, 0.0) + max(c.country, 0.0)
 
