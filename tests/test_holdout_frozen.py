@@ -23,3 +23,12 @@ def test_only_the_generator_and_the_final_evaluation_name_the_final_holdout_file
     for path in (ROOT / "src").glob("*.py"):
         if path.name not in allowed:
             assert "final_holdout.json" not in path.read_text(), path.name
+
+
+def test_the_final_evaluation_scored_the_frozen_file():
+    import json
+
+    report = json.loads((ROOT / "reports" / "final_evaluation.json").read_text())
+    assert report["checksum"]["ok"] is True
+    assert report["checksum"]["holdout_sha256"] == hashlib.sha256(HOLDOUT.read_bytes()).hexdigest()
+    assert report["engine_check"]["mismatches"] == 0

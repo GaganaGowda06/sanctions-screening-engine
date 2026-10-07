@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built and evaluated. The evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. The fuller evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -39,7 +39,7 @@ for match in screen("Vladimir Putin", birth_date="1952-10-07", country="ru"):
 - `birth_date` is `agree`, `conflict`, `close` (one year apart, no effect) or `missing`, and `country` is `agree`, `conflict` or `missing`, each with the adjustment it made.
 - `matched_name` is the entity's own spelling that the query matched best.
 
-The thresholds are per query script (Latin, Cyrillic, Arabic, other) and live in `src/screening_config.json`, which `src/evaluate_screening.py` writes. For each script the threshold is the one with the lowest false positive rate on a dev sample that does not lose recall against the single global threshold, and results are reported on a separate test sample. In practice that leaves the thresholds close to the global one (0.86 to 0.88), so the false positive rate still differs a lot by script.
+The alert threshold is one global value, 0.86, set in `src/screening_config.json` together with the other scoring settings. Per-script thresholds are kept in the same file and in the code, and `per_script` switches them on, but they are off: see "A negative result: per-script thresholds".
 
 The same function is available from the command line:
 
@@ -48,14 +48,61 @@ python src/screen_cli.py "Vladimir Putin" --birth-date 1952-10-07 --country ru
 python src/screen_cli.py "محمد علي" --json --limit 5
 ```
 
-## Known limitations of the baseline matcher
+## Final results
 
-These come from the measurements in `reports/stage2_candidates.json` and `reports/stage2_scoring.json`.
+The configuration was frozen before the final run: one global alert threshold of 0.86, a blend of character ratio and rarity-weighted score of 0.5, skeleton lift 0.2 and floor 0.6. All of it was tuned on a dev sample. It was then scored once, with no changes, on a hold-out set of 2,000 positive and 2,000 negative queries that had been frozen earlier (SHA-256 `cb3cb8f4...`) and never used for tuning. The checksum was verified before scoring. Full numbers are in `reports/final_evaluation.json`. Intervals are 95%: Wilson for proportions, bootstrap for F1.
 
+A positive query is a real alias of a listed entity with that name removed from the list, so the engine has to find the entity under a different spelling or script. A negative query is either a synthetic name built from real first and last name tokens that matches no listed entity (75%), or a real listed name given a birth date and country that conflict with the entity's (25%).
+
+| Figure | Hold-out | 95% interval | Test set |
+|---|---|---|---|
+| Recall | 74.7% | 72.7 to 76.5 | 73.0% |
+| Precision | 80.9% | 79.0 to 82.6 | 80.3% |
+| F1 | 0.776 | 0.761 to 0.792 | 0.764 |
+| Top-1 accuracy | 79.0% | 77.1 to 80.7 | 77.9% |
+| False positive rate | 11.3% | 10.0 to 12.8 | 10.8% |
+
+False positives as alerts per 1,000 clean names screened: 113 overall (100 to 128), 145 for synthetic names (128 to 163) and 18 for namesakes with conflicting details (10 to 34). This describes the negative mix above, not a production rate: real customer names differ from recombined tokens. At this level the baseline would be too noisy to run as it is.
+
+By direction:
+
+| Direction | Queries | Recall | 95% interval |
+|---|---|---|---|
+| Latin spelling variants | 800 | 77.9% | 74.9 to 80.6 |
+| Cyrillic query, Latin entry | 300 | 89.7% | 85.7 to 92.6 |
+| Latin query, Cyrillic entry | 300 | 69.7% | 64.2 to 74.6 |
+| Arabic query, Latin entry | 300 | 69.3% | 63.9 to 74.3 |
+| Latin query, Arabic entry | 300 | 61.3% | 55.7 to 66.7 |
+| Han, kana and other scripts against Latin | 200 | 0.0% | 0.0 to 1.9 |
+
+By script of the query:
+
+| Script of the query | Recall | 95% interval | False positive rate | 95% interval | Alerts per 1,000 clean names |
+|---|---|---|---|---|---|
+| Latin | 72.6% | 70.2 to 74.8 | 7.0% | 5.6 to 8.6 | 70 (56 to 86) |
+| Cyrillic | 89.7% | 85.7 to 92.6 | 5.3% | 3.6 to 7.6 | 53 (36 to 76) |
+| Arabic | 69.3% | 63.9 to 74.3 | 33.6% | 28.9 to 38.7 | 336 (289 to 387) |
+
+Test set against hold-out. Recall, precision and top-1 accuracy are higher on the hold-out than on the test set (by 1.7, 0.6 and 1.1 points), the false positive rate is 0.5 points higher, and the test value sits inside the hold-out interval for all five headline figures (recall, precision, F1, top-1 accuracy and false positive rate). F1 was 0.769 on dev, 0.764 on test and 0.776 on the hold-out. I read that as no sign of overfitting. Of the 18 test-versus-hold-out comparisons in the report, two have a test value outside the hold-out interval: the false positive rate for Latin queries (7.0% on the hold-out against 4.7% on test, p = 0.02) and for namesakes with conflicting details (1.8% against 0.8%, p = 0.16). With 18 comparisons, one result under 0.05 is expected by chance, but the Latin figure is worth watching.
+
+## A negative result: per-script thresholds
+
+The Arabic false positive rate is far above the others, so I tried alert thresholds per query script (Latin, Cyrillic, Arabic, other). They are still in the code and the config, but switched off (`per_script` is false).
+
+- First attempt, tuned on dev to make the false positive rate equal across scripts, with no condition on recall (commit `e3ed230`). Arabic ended up at a threshold of 1.0, so Arabic-script queries alerted only on a perfect score. On test the Arabic false positive rate fell from 24% to 9.5%, but an Arabic-script query then found only 28% of the entities listed under the same name in Latin spelling, down from 54%.
+- Second attempt, requiring each script to keep its recall and then taking the lowest false positive rate (commit `64bd188`). The thresholds came out at 0.86, 0.88, 0.86 and 0.86, almost the global value. Overall false positive rate moved from 10.8% to 10.6% on test, and Arabic stayed at 37.6%.
+
+A threshold cannot lower the Arabic false positive rate without losing Arabic recall, because in this data the scores of true and false Arabic matches overlap. The cause is in the scoring: for any pair involving Arabic the vowel-stripped skeleton can stand in for the name score, and Arabic names are made of a small set of very common consonant skeletons.
+
+## Known limitations
+
+These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.
+
+- Arabic false positives are the main open problem. On the hold-out, 33.6% of synthetic and namesake names in Arabic script raise an alert (336 per 1,000), against 7.0% for Latin and 5.3% for Cyrillic. Arabic recall is also among the weakest (69.3% for an Arabic-script query, 61.3% for a Latin query against Arabic entries). Thresholds do not fix it (see above). The next thing to try is a stricter rule for the skeleton on Arabic pairs, for example requiring a second token to match as well.
 - Organisation names that are translated, not transliterated, are often missed. An Arabic company name such as the Arabic for "Wafa Humanitarian Organization" shares no spelling with its English name, so no transliteration key can connect them. Looking up a Latin name against Arabic-script entries finds 94.8% of people but only 63.5% of organisations.
-- Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. Cross-script candidate recall for these scripts is close to zero.
-- Arabic is written without short vowels, so for any pair involving Arabic the consonant skeleton may stand in for the name score in full. That keeps Arabic recall up (about 65% for an Arabic-script query against Latin entries) but makes Arabic names raise far more false alerts: about 38% of synthetic Arabic names alert, against about 5% for Latin and Cyrillic. Raising the Arabic threshold lowers that only by losing recall, and no per-script threshold removes the gap. Elsewhere the skeleton only confirms a name that already matches moderately.
+- Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. On the hold-out, 0.0% of such queries found their entity. Same-script matching is weak too: about 14% on the test set.
 - Names are scored with rarity weighting, so a shared rare surname counts for far more than a shared first name such as Mohammed. A query that matches only a common token scores low, and so does a true alias that shares only a common token.
+- Precision and the false positive rate depend on the mix of negatives. The hold-out mix is synthetic recombined names and namesakes, and it has no negatives in scripts other than Latin, Cyrillic and Arabic. There is no labelled set of real customer names.
 
 ## How to run
 
@@ -70,10 +117,12 @@ python src/profile_data.py          # writes reports/stage1_profile.json
 python src/profile_normaliser.py    # normalisation report, reports/stage2_normaliser.json
 python src/evaluate_candidates.py   # candidate recall, reports/stage2_candidates.json
 python src/evaluate_scoring.py      # precision, recall, false positives, reports/stage2_scoring.json
-python src/evaluate_screening.py    # per-script thresholds, reports/stage2_screening.json
+python src/evaluate_screening.py    # tuning on dev, test report, reports/stage2_screening.json
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
+
+`src/evaluate_final.py` scored the frozen hold-out once and writes `reports/final_evaluation.json`. It checks the hold-out checksum and the frozen config first and will not run a second time. The other scripts can be re-run.
 
 `download_data.py --force` downloads again even if the saved version is current. It also writes `data/sanctions/VERSION` with the dataset version and the SHA1 of the verified file. The profile report records the SHA1 of the file it read, so a later run can confirm it used the same data.
 
@@ -89,15 +138,18 @@ src/
   scoring.py             rarity-weighted fuzzy name score adjusted by birth date and country
   screening.py           screen(): the callable interface, per-script thresholds, explanations
   screen_cli.py          command line wrapper over screen()
-  screening_config.json  tuned scoring parameters and per-script thresholds
+  screening_config.json  frozen scoring settings, global threshold, per-script thresholds (off)
   entities.py            load named entities from the OpenSanctions file
   profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py, evaluate_screening.py   measurement scripts
+  evaluate_final.py      the one-time final evaluation on the frozen hold-out
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/
   stage1_profile.json    profile of the downloaded data
+  stage2_*.json          candidate, scoring and screening evaluations used to build it
+  final_evaluation.json  the final hold-out evaluation
 holdout/
-  final_holdout.json     frozen final hold-out queries, not scored until the final audit
+  final_holdout.json     frozen final hold-out queries, scored once
 data/                    downloaded data (not committed)
 reference/yente/         yente source for study (not committed)
 .github/workflows/ci.yml lint and tests on every push and pull request
