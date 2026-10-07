@@ -138,6 +138,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--config", type=Path, default=CONFIG_PATH)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--max-df", type=int, default=1000)
+    parser.add_argument(
+        "--compare-with", type=Path, help="an earlier final evaluation report to compare the overall figures to"
+    )
     args = parser.parse_args(argv)
     print(f"Python {platform.python_version()}", file=sys.stderr)
 
@@ -227,6 +230,19 @@ def main(argv: list[str] | None = None) -> None:
     assert abs(overall["recall"]["value"] - point["recall"]) < 1e-3
     assert abs(overall["false_positive_rate"]["value"] - point["false_positive_rate"]) < 1e-3
 
+    versus_earlier = None
+    if args.compare_with and args.compare_with.exists():
+        earlier = json.loads(args.compare_with.read_text())["overall"]
+        versus_earlier = {}
+        for name in ("recall", "precision", "f1", "top1_accuracy", "false_positive_rate"):
+            before, now = earlier[name], overall[name]
+            versus_earlier[name] = {
+                "earlier": before["value"], "earlier_ci95": before["ci95"],
+                "now": now["value"], "now_ci95": now["ci95"],
+                "difference": round(now["value"] - before["value"], 4),
+                "intervals_overlap": before["ci95"][0] <= now["ci95"][1] and now["ci95"][0] <= before["ci95"][1],
+            }  # fmt: skip
+
     def positives_in(group: str | None = None, script: str | None = None) -> list[tuple[tuple, bool]]:
         return [(r, t) for r, t in zip(head, true_alert, strict=True)
                 if (group is None or r[0] == group) and (script is None or r[5] == script)]  # fmt: skip
@@ -309,6 +325,7 @@ def main(argv: list[str] | None = None) -> None:
         },  # fmt: skip
         "queries": {"positive_headline": len(head), "negative": len(head_neg), "positive_other_to_latin": len(other)},
         "overall": overall,
+        "versus_earlier_holdout": versus_earlier,
         "by_direction": by_direction,
         "by_script": by_script,
         "false_positives_per_1000": per_1000,

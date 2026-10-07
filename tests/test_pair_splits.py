@@ -162,8 +162,8 @@ def test_only_the_final_evaluation_may_ask_for_the_final_split():
     from pathlib import Path
 
     src = Path(__file__).resolve().parent.parent / "src"
-    for path in src.glob("*.py"):
-        assert "allow_final=True" not in path.read_text(), f"{path.name} asks for the final hold-out"
+    askers = {p.name for p in src.glob("*.py") if "allow_final=True" in p.read_text()}
+    assert askers == {"evaluate_pairs_final.py"}
 
 
 def test_the_committed_split_files_agree_with_each_other():

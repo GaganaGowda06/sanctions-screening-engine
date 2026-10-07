@@ -117,6 +117,17 @@ def test_end_to_end_on_a_fake_holdout(tmp_path):
     assert report["by_script"]["Arabic"]["false_positive_rate"]["value"] is None
 
 
+def test_a_later_holdout_can_be_compared_with_an_earlier_one(tmp_path):
+    entities, holdout, checksum = fake_inputs(tmp_path)
+    first = run(tmp_path, entities, holdout, checksum)
+    second = tmp_path / "second.json"
+    final.main(["--input", str(entities), "--holdout", str(holdout), "--checksum", str(checksum),
+                "--output", str(second), "--compare-with", str(first)])  # fmt: skip
+    versus = json.loads(second.read_text())["versus_earlier_holdout"]
+    assert set(versus) == {"recall", "precision", "f1", "top1_accuracy", "false_positive_rate"}
+    assert all(v["difference"] == 0.0 and v["intervals_overlap"] for v in versus.values())  # the same queries twice
+
+
 def test_refuses_to_run_twice(tmp_path):
     entities, holdout, checksum = fake_inputs(tmp_path)
     out = run(tmp_path, entities, holdout, checksum)
