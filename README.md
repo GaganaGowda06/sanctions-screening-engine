@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring) is built and evaluated. The evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built and evaluated. The evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -22,13 +22,39 @@ Profile of dataset version 20261006074704-hib (full output in `reports/stage1_pr
 - 56% of targets with a name (39,330 of 69,637) have at least one non-Latin name. Only 1,317 have no purely Latin name at all.
 - FollowTheMoney types `programId` as an identifier, but it holds a sanctions programme, not an ID for the entity. The report gives identifier coverage both with and without it. For people, own-identifier coverage is 79.6% with it and 49.7% without.
 
+## Screening a name
+
+One function does the whole job. The list it screens against is the named sanctions targets in the downloaded file, built on first use (a few seconds).
+
+```
+from screening import screen
+
+for match in screen("Vladimir Putin", birth_date="1952-10-07", country="ru"):
+    print(match.score, match.entity_id, match.explanation)
+```
+
+`screen()` returns the entities whose score reaches the alert threshold for the script of the query, best first. Birth date is `YYYY`, `YYYY-MM` or `YYYY-MM-DD`, and country is a two-letter code. Each match explains itself:
+
+- `name_score` is the name similarity before the skeleton and before birth date and country, and `skeleton_used` says whether the vowel-stripped skeleton raised it.
+- `birth_date` is `agree`, `conflict`, `close` (one year apart, no effect) or `missing`, and `country` is `agree`, `conflict` or `missing`, each with the adjustment it made.
+- `matched_name` is the entity's own spelling that the query matched best.
+
+The thresholds are per query script (Latin, Cyrillic, Arabic, other) and live in `src/screening_config.json`, which `src/evaluate_screening.py` writes. They were tuned on a dev sample to bring the false positive rate of the scripts close together, and reported on a separate test sample.
+
+The same function is available from the command line:
+
+```
+python src/screen_cli.py "Vladimir Putin" --birth-date 1952-10-07 --country ru
+python src/screen_cli.py "محمد علي" --json --limit 5
+```
+
 ## Known limitations of the baseline matcher
 
 These come from the measurements in `reports/stage2_candidates.json` and `reports/stage2_scoring.json`.
 
 - Organisation names that are translated, not transliterated, are often missed. An Arabic company name such as the Arabic for "Wafa Humanitarian Organization" shares no spelling with its English name, so no transliteration key can connect them. Looking up a Latin name against Arabic-script entries finds 94.8% of people but only 63.5% of organisations.
 - Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. Cross-script candidate recall for these scripts is close to zero.
-- Arabic is written without short vowels, so for any pair involving Arabic the consonant skeleton may stand in for the name score in full. That brings Arabic cross-script recall to about 60% at the chosen threshold, but about 39% of synthetic Arabic names raise an alert, against under 10% for Latin and Cyrillic. Elsewhere the skeleton only confirms a name that already matches moderately.
+- Arabic is written without short vowels, so for any pair involving Arabic the consonant skeleton may stand in for the name score in full. That makes Arabic names produce more false alerts than other scripts, and the per-script threshold for Arabic-script queries ends up at 1.0 (a perfect score) to bring the Arabic false positive rate down to about 10%. The price is recall: an Arabic-script query finds only about 28% of the entities that list the same name in Latin spelling. Elsewhere the skeleton only confirms a name that already matches moderately.
 - Names are scored with rarity weighting, so a shared rare surname counts for far more than a shared first name such as Mohammed. A query that matches only a common token scores low, and so does a true alias that shares only a common token.
 
 ## How to run
@@ -44,6 +70,7 @@ python src/profile_data.py          # writes reports/stage1_profile.json
 python src/profile_normaliser.py    # normalisation report, reports/stage2_normaliser.json
 python src/evaluate_candidates.py   # candidate recall, reports/stage2_candidates.json
 python src/evaluate_scoring.py      # precision, recall, false positives, reports/stage2_scoring.json
+python src/evaluate_screening.py    # per-script thresholds, reports/stage2_screening.json
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
@@ -60,7 +87,11 @@ src/
   normalise.py           transliterate Cyrillic and Arabic, strip accents and punctuation
   candidates.py          inverted index over folded tokens, consonant skeletons and joined tokens
   scoring.py             rarity-weighted fuzzy name score adjusted by birth date and country
-  profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py   measurement scripts
+  screening.py           screen(): the callable interface, per-script thresholds, explanations
+  screen_cli.py          command line wrapper over screen()
+  screening_config.json  tuned scoring parameters and per-script thresholds
+  entities.py            load named entities from the OpenSanctions file
+  profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py, evaluate_screening.py   measurement scripts
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/

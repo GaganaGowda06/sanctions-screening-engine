@@ -95,6 +95,7 @@ class Match(NamedTuple):
 
 @dataclass(frozen=True)
 class EntityRecord:
+    raw_names: tuple[str, ...]  # the first original spelling of each name in norms
     norms: tuple[str, ...]
     token_sets: tuple[frozenset[str], ...]  # tokens of each name in norms
     token_lists: tuple[tuple[str, ...], ...]
@@ -128,9 +129,15 @@ def has_arabic(text: str) -> bool:
 
 def make_record(names: Iterable[str], birth_dates: Iterable[str] = (), countries: Iterable[str] = ()) -> EntityRecord:
     names = list(names)
-    norms = tuple(dict.fromkeys(n for n in map(scoring_form, names) if n))
+    by_form: dict[str, str] = {}
+    for name in names:
+        form = scoring_form(name)
+        if form and form not in by_form:
+            by_form[form] = name
+    norms = tuple(by_form)
     skeletons = tuple(dict.fromkeys(s for s in map(skeleton_form, norms) if s))
     return EntityRecord(
+        raw_names=tuple(by_form.values()),
         norms=norms,
         token_sets=tuple(frozenset(n.split()) for n in norms),
         token_lists=tuple(tuple(n.split()) for n in norms),
@@ -209,26 +216,72 @@ def _year(date: str) -> int | None:
     return int(date[:4]) if len(date) >= 4 and date[:4].isdigit() else None
 
 
-def date_adjustment(query: str | None, entity_dates: Sequence[str], adj: Adjustments) -> float:
+def date_comparison(query: str | None, entity_dates: Sequence[str], adj: Adjustments) -> tuple[str, float]:
+    """(status, adjustment). Status is agree, conflict, close (a year apart, no effect) or missing."""
     query_year = _year(query) if query else None
     if query_year is None or not entity_dates:
-        return 0.0
+        return "missing", 0.0
     years = [(_year(d), d) for d in entity_dates]
     years = [(y, d) for y, d in years if y is not None]
     if not years:
-        return 0.0
+        return "missing", 0.0
     if any(y == query_year for y, _ in years):
         full = len(query) >= 10 and any(len(d) >= 10 and d[:10] == query[:10] for _, d in years)
-        return adj.dob_full if full else adj.dob_year
+        return "agree", adj.dob_full if full else adj.dob_year
     if min(abs(y - query_year) for y, _ in years) <= 1:
-        return 0.0
-    return -adj.dob_conflict
+        return "close", 0.0
+    return "conflict", -adj.dob_conflict
+
+
+def country_comparison(
+    query: str | None, entity_countries: frozenset[str], adj: Adjustments
+) -> tuple[str, float]:
+    """(status, adjustment). Status is agree, conflict or missing."""
+    if not query or not entity_countries:
+        return "missing", 0.0
+    if query.lower() in entity_countries:
+        return "agree", adj.country_agree
+    return "conflict", -adj.country_conflict
+
+
+def date_adjustment(query: str | None, entity_dates: Sequence[str], adj: Adjustments) -> float:
+    return date_comparison(query, entity_dates, adj)[1]
 
 
 def country_adjustment(query: str | None, entity_countries: frozenset[str], adj: Adjustments) -> float:
-    if not query or not entity_countries:
-        return 0.0
-    return adj.country_agree if query.lower() in entity_countries else -adj.country_conflict
+    return country_comparison(query, entity_countries, adj)[1]
+
+
+def name_with_skeleton(
+    c: Components,
+    skeleton_floor: float = DEFAULT_SKELETON_FLOOR,
+    skeleton_lift: float = DEFAULT_SKELETON_LIFT,
+    blend_index: int = 0,
+    arabic_full_lift: bool = True,
+) -> tuple[float, bool]:
+    """(name score after the skeleton, whether the skeleton raised it)."""
+    score = c.names[blend_index]
+    if c.arabic and arabic_full_lift:
+        lifted = max(score, c.skeleton)
+    elif score >= skeleton_floor:
+        lifted = max(score, min(c.skeleton, score + skeleton_lift))
+    else:
+        lifted = score
+    return lifted, lifted > score
+
+
+def best_matching_name(query: str, record: EntityRecord, idf: Callable[[str], float], blend: float) -> str:
+    """The entity's own spelling that the query matches best, for explaining a match."""
+    query_tokens = query.split()
+    best_score, best_index = -1.0, 0
+    for _, score, index in process.extract(query, record.norms, scorer=fuzz.token_sort_ratio, limit=None):
+        weighted = score / 100
+        if blend > 0 and weighted >= WEIGHTED_MIN_RATIO:
+            weighted = weighted_token_score(query_tokens, record.token_lists[index], record.token_sets[index], idf)
+        combined = (1 - blend) * score / 100 + blend * weighted
+        if combined > best_score:
+            best_score, best_index = combined, index
+    return record.raw_names[best_index] if record.raw_names else ""
 
 
 def combine(
@@ -240,11 +293,7 @@ def combine(
     use_country: bool = True,
     arabic_full_lift: bool = True,
 ) -> float:
-    score = c.names[blend_index]
-    if c.arabic and arabic_full_lift:
-        score = max(score, c.skeleton)
-    elif score >= skeleton_floor:
-        score = max(score, min(c.skeleton, score + skeleton_lift))
+    score, _ = name_with_skeleton(c, skeleton_floor, skeleton_lift, blend_index, arabic_full_lift)
     if use_dob:
         score += c.dob
     if use_country:

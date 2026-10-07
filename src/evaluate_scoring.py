@@ -43,7 +43,7 @@ from typing import NamedTuple
 
 from evaluate_candidates import load_named_entities, percentile, script_class
 from normalise import normalise
-from profile_data import DEFAULT_INPUT
+from profile_data import DEFAULT_INPUT, name_scripts
 from scoring import Adjustments, Screener, combine
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -79,11 +79,19 @@ POSITIVE_GROUPS = {
     "latin_to_ar": (150, 300),
     "other_to_latin": (100, 200),
 }
-HEADLINE_GROUPS = {g for g in POSITIVE_GROUPS if g != "other_to_latin"}
+# Added for step 4, drawn on their own random stream after dev and test so those sets are unchanged.
+EXTRA_POSITIVE_GROUPS = {"other_same_script": (100, 200)}
+HEADLINE_GROUPS = {g for g in POSITIVE_GROUPS if g != "other_to_latin"}  # same-script groups are reported apart
+HEADLINE_NEG_SCRIPTS = ("Latin", "Cyrillic", "Arabic")  # "other" negatives are reported apart
+NEGATIVE_SCRIPTS = (*HEADLINE_NEG_SCRIPTS, "other")
+OTHER_LABELS = ("Japanese kana", "Hebrew", "Han", "Thai")  # sub-scripts "other" negatives are drawn from, in turn
 SYNTHETIC = {
     "dev": {"Latin": 400, "Cyrillic": 175, "Arabic": 175},
     "test": {"Latin": 800, "Cyrillic": 350, "Arabic": 350},
     "final": {"Latin": 800, "Cyrillic": 350, "Arabic": 350},
+    # step 4: extra negatives to tune per-script thresholds on, and "other"-script negatives for test
+    "dev_extra": {"Latin": 200, "Cyrillic": 200, "Arabic": 500, "other": 300},
+    "test_other": {"other": 400},
 }
 NEAR_MISS = {"dev": 250, "test": 500, "final": 500}
 MODES = {
@@ -92,7 +100,7 @@ MODES = {
     "country_only": (False, True),
     "both": (True, True),
 }
-GROUP_SPEC = {  # group -> (query script class, script class kept in the list, direction for held_out)
+GROUP_SPEC = {  # group -> (script class of the query, script class kept in the list)
     "cyr_to_latin": ("Cyrillic", "Latin"),
     "latin_to_cyr": ("Latin", "Cyrillic"),
     "ar_to_latin": ("Arabic", "Latin"),
@@ -122,6 +130,11 @@ def positive_candidates(entities: list[dict], group: str) -> list[tuple[dict, st
             latin = [n for n in names if script_class(n) == "Latin"]
             if len({normalise(n) for n in latin}) >= 2:
                 out.append((e, latin, names))
+            continue
+        if group == "other_same_script":
+            other = [n for n in names if script_class(n) == "other"]
+            if len({normalise(n) for n in other}) >= 2:
+                out.append((e, other, other))
             continue
         query_cls, kept_cls = GROUP_SPEC[group]
         pool = [n for n in names if script_class(n) == query_cls]
@@ -155,6 +168,9 @@ def build_positives(
             if group == "variant":
                 same = normalise(query)
                 kept = [n for n in entity["names"] if normalise(n) != same]
+            elif group == "other_same_script":
+                same = normalise(query)
+                kept = [n for n in kept if normalise(n) != same]
             used.add(entity["id"])
             kept_names[entity["id"]] = kept
             queries.append(
@@ -169,6 +185,21 @@ def build_positives(
                 }
             )
     return queries, kept_names
+
+
+def build_dev_test_queries(
+    entities: list[dict], targets: list[dict], dob_pool: list[str], country_pool: list[str], rng: random.Random
+) -> tuple[list[dict], dict[str, list[str]], list[dict], list[dict], set[str]]:
+    """The dev and test queries, in the fixed order that keeps them identical from run to run.
+
+    Returns positives, the names each positive's entity keeps, near-misses, synthetic negatives, and the
+    ids of every entity used.
+    """
+    positives, kept_names = build_positives(targets, rng)
+    used = {q["true_id"] for q in positives}
+    near = build_near_misses(targets, used, country_pool, rng)  # adds its entities to `used`
+    synthetic = build_synthetic(entities, targets, dob_pool, country_pool, rng)
+    return positives, kept_names, near, synthetic, used
 
 
 def conflicting_birth_date(rng: random.Random, entity_dates: list[str]) -> str | None:
@@ -233,6 +264,18 @@ def build_synthetic(
             forbidden.add(norm)
             forbidden.add(" ".join(sorted(norm.split())))
     pools: dict[str, tuple[list[str], list[str]]] = {}
+    other_pools: dict[str, tuple[list[str], list[str]]] = {label: ([], []) for label in OTHER_LABELS}
+    for e in targets:
+        if e["schema"] != "Person":
+            continue
+        for n in e["names"]:
+            if script_class(n) != "other":
+                continue
+            scripts = name_scripts(n)
+            tokens = [t for t in re.split(r"[\s,・·]+", n.strip()) if len(t) > 0]
+            if len(scripts) == 1 and next(iter(scripts)) in other_pools and 2 <= len(tokens) <= 3:
+                other_pools[next(iter(scripts))][0].append(tokens[0])
+                other_pools[next(iter(scripts))][1].append(tokens[-1])
     for script in ("Latin", "Cyrillic", "Arabic"):
         firsts, lasts = [], []
         for e in targets:
@@ -247,9 +290,12 @@ def build_synthetic(
     out = []
     for split in splits:
         for script, count in SYNTHETIC[split].items():
-            firsts, lasts = pools[script]
             made = 0
             while made < count:
+                if script == "other":
+                    firsts, lasts = other_pools[OTHER_LABELS[made % len(OTHER_LABELS)]]
+                else:
+                    firsts, lasts = pools[script]
                 name = f"{rng.choice(firsts)} {rng.choice(lasts)}"
                 norm = normalise(name)
                 if not norm or norm in forbidden or " ".join(sorted(norm.split())) in forbidden:
@@ -280,7 +326,7 @@ def run_queries(screener: Screener, queries: list[dict]) -> list[float]:
 def final_scores(
     queries: list[dict], params: Params, use_dob: bool, use_country: bool, arabic_full: bool = True
 ) -> list[tuple]:
-    """Per query: (group or kind, true entity score or None, best other score, true entity is top-1)."""
+    """Per query: (group or kind, group, true entity score or None, best other score, top-1, query script)."""
     rows = []
     for q in queries:
         s_true, s_other = None, 0.0
@@ -293,45 +339,56 @@ def final_scores(
             elif score > s_other:
                 s_other = score
         top1 = s_true is not None and s_true > 0 and s_true >= s_other
-        rows.append((q["group"] if q["kind"] == "positive" else q["kind"], q["group"], s_true, s_other, top1))
+        group_or_kind = q["group"] if q["kind"] == "positive" else q["kind"]
+        rows.append((group_or_kind, q["group"], s_true, s_other, top1, q.get("script")))
     return rows
 
 
-def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float) -> dict:
-    """Headline metrics. pos rows are from positives, neg rows from negatives (see final_scores)."""
+def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float | dict[str, float]) -> dict:
+    """Headline metrics. Rows come from final_scores. `threshold` is one value or one per query script."""
+    thr = (lambda row: threshold[row[5]]) if isinstance(threshold, dict) else (lambda row: threshold)
     head = [p for p in pos if p[0] in HEADLINE_GROUPS]
-    alerted_true = [p[2] is not None and p[2] >= threshold for p in head]
-    wrong_only = [(not t) and p[3] >= threshold for t, p in zip(alerted_true, head, strict=True)]
-    neg_alert = [n[3] >= threshold for n in neg]  # for negatives s_other holds the best score
+    head_neg = [n for n in neg if n[1] in HEADLINE_NEG_SCRIPTS]
+    alerted_true = [p[2] is not None and p[2] >= thr(p) for p in head]
+    wrong_only = [(not t) and p[3] >= thr(p) for t, p in zip(alerted_true, head, strict=True)]
+    neg_alert = [n[3] >= thr(n) for n in head_neg]  # for negatives s_other holds the best score
     tp, fn_wrong, fp_neg = sum(alerted_true), sum(wrong_only), sum(neg_alert)
     fp = fp_neg + fn_wrong
     recall = tp / len(head) if head else 0.0
     precision = tp / (tp + fp) if tp + fp else 0.0
-    kinds = Counter(n[0] for n in neg)
-    by_kind = {k: sum(a for a, n in zip(neg_alert, neg, strict=True) if n[0] == k) / kinds[k] for k in kinds}
-    synthetic_by_script = {}
-    for script in ("Latin", "Cyrillic", "Arabic"):
-        rows = [a for a, n in zip(neg_alert, neg, strict=True) if n[0] == "synthetic" and n[1] == script]
-        synthetic_by_script[script] = round(sum(rows) / len(rows), 4) if rows else None
+    kinds = Counter(n[0] for n in head_neg)
+    by_kind = {k: sum(a for a, n in zip(neg_alert, head_neg, strict=True) if n[0] == k) / kinds[k] for k in kinds}
+
+    def rate(rows: list[tuple]) -> float | None:
+        return round(sum(r[3] >= thr(r) for r in rows) / len(rows), 4) if rows else None
+
+    synthetic_by_script = {s: rate([n for n in neg if n[0] == "synthetic" and n[1] == s]) for s in NEGATIVE_SCRIPTS}
+    fpr_by_script = {s: rate([n for n in neg if n[1] == s]) for s in NEGATIVE_SCRIPTS}
     group_recall = {}
-    for group in POSITIVE_GROUPS:
-        rows = [p[2] is not None and p[2] >= threshold for p in pos if p[0] == group]
+    for group in (*POSITIVE_GROUPS, *EXTRA_POSITIVE_GROUPS):
+        rows = [p[2] is not None and p[2] >= thr(p) for p in pos if p[0] == group]
         group_recall[group] = round(sum(rows) / len(rows), 4) if rows else None
-    any_alert = sum(a or p[3] >= threshold for a, p in zip(alerted_true, head, strict=True)) + fp_neg
+    recall_by_script = {}
+    for script in NEGATIVE_SCRIPTS:
+        rows = [a for a, p in zip(alerted_true, head, strict=True) if len(p) > 5 and p[5] == script]
+        recall_by_script[script] = round(sum(rows) / len(rows), 4) if rows else None
+    any_alert = sum(a or p[3] >= thr(p) for a, p in zip(alerted_true, head, strict=True)) + fp_neg
     return {
         "threshold": threshold,
         "queries_positive": len(head),
-        "queries_negative": len(neg),
+        "queries_negative": len(head_neg),
         "recall": round(recall, 4),
         "precision": round(precision, 4),
         "f1": round(2 * precision * recall / (precision + recall), 4) if precision + recall else 0.0,
         "top1_accuracy": round(sum(p[4] for p in head) / len(head), 4) if head else 0.0,
-        "false_positive_rate": round(fp_neg / len(neg), 4) if neg else 0.0,
+        "false_positive_rate": round(fp_neg / len(head_neg), 4) if head_neg else 0.0,
         "fpr_synthetic": round(by_kind.get("synthetic", 0.0), 4),
         "fpr_near_miss": round(by_kind.get("near_miss", 0.0), 4),
         "fpr_synthetic_by_script": synthetic_by_script,
-        "alert_rate_overall": round(any_alert / (len(head) + len(neg)), 4),
+        "fpr_by_script": fpr_by_script,
+        "alert_rate_overall": round(any_alert / (len(head) + len(head_neg)), 4),
         "recall_by_group": group_recall,
+        "recall_by_script": recall_by_script,
     }
 
 
@@ -394,13 +451,31 @@ def evaluate_at(
     return metrics_at(pos, neg, threshold)
 
 
+def holdout_text(queries: list[dict], kept_names: dict[str, list[str]]) -> str:
+    """The exact text frozen into the final hold-out file."""
+    rows = [{k: v for k, v in q.items() if k != "comps"} for q in queries]
+    payload = {"seed": SEED, "kept_names": kept_names, "queries": rows}
+    return json.dumps(payload, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
+
+
+def build_final_holdout(
+    entities: list[dict], targets: list[dict], dob_pool: list[str], country_pool: list[str], used: set[str]
+) -> tuple[list[dict], dict[str, list[str]]]:
+    """The final hold-out queries: own random streams, entities disjoint from everything in `used`."""
+    final_rng = random.Random(f"{SEED}-final")
+    plan = {g: [("final", n_test)] for g, (_, n_test) in POSITIVE_GROUPS.items()}
+    positives, kept = build_positives(targets, final_rng, plan, exclude=used, key="{seed}-final-{group}")
+    used_final = used | {q["true_id"] for q in positives}
+    near = build_near_misses(targets, used_final, country_pool, final_rng, ("final",), "near-final")
+    synthetic = build_synthetic(entities, targets, dob_pool, country_pool, final_rng, ("final",))
+    return positives + near + synthetic, kept
+
+
 def write_final_holdout(path: Path, queries: list[dict], kept_names: dict[str, list[str]]) -> dict:
     """Freeze the final hold-out query set. An existing file is never overwritten."""
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        rows = [{k: v for k, v in q.items() if k != "comps"} for q in queries]
-        payload = {"seed": SEED, "kept_names": kept_names, "queries": rows}
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=1, sort_keys=True) + "\n")
+        path.write_text(holdout_text(queries, kept_names))
         path.with_suffix(".sha256").write_text(hashlib.sha256(path.read_bytes()).hexdigest() + "\n")
     data = json.loads(path.read_text())
     return {
@@ -425,20 +500,14 @@ def main() -> None:
     dob_pool = [d for e in persons for d in e["birth_dates"][:1]]
     country_pool = [c for e in persons for c in e["countries"][:1]]
 
-    positives, kept_names = build_positives(targets, rng)
-    used = {q["true_id"] for q in positives}
-    near = build_near_misses(targets, used, country_pool, rng)  # adds its entities to `used`
-    synthetic = build_synthetic(entities, targets, dob_pool, country_pool, rng)
+    positives, kept_names, near, synthetic, used = build_dev_test_queries(
+        entities, targets, dob_pool, country_pool, rng
+    )
     print(f"queries: {len(positives)} positive, {len(synthetic)} synthetic, {len(near)} near-miss", file=sys.stderr)
 
-    # Final hold-out: its own random streams, built after dev and test, entities disjoint from both.
-    final_rng = random.Random(f"{SEED}-final")
-    final_plan = {g: [("final", n_test)] for g, (_, n_test) in POSITIVE_GROUPS.items()}
-    final_pos, final_kept = build_positives(targets, final_rng, final_plan, exclude=used, key="{seed}-final-{group}")
-    used_final = used | {q["true_id"] for q in final_pos}
-    final_near = build_near_misses(targets, used_final, country_pool, final_rng, ("final",), "near-final")
-    final_syn = build_synthetic(entities, targets, dob_pool, country_pool, final_rng, ("final",))
-    holdout = write_final_holdout(FINAL_HOLDOUT, final_pos + final_near + final_syn, final_kept)
+    # Final hold-out: built after dev and test, entities disjoint from both, frozen and never scored here.
+    final_queries, final_kept = build_final_holdout(entities, targets, dob_pool, country_pool, used)
+    holdout = write_final_holdout(FINAL_HOLDOUT, final_queries, final_kept)
     print(f"final hold-out frozen: {holdout['sha256'][:12]}", file=sys.stderr)
 
     adjustments = Adjustments()

@@ -1,0 +1,236 @@
+{
+  "python_version": "3.14.7",
+  "scoring": {
+    "skeleton_floor": 0.4,
+    "skeleton_lift": 0.3,
+    "blend": 1.0
+  },
+  "global_threshold_step_3c": 0.87,
+  "target_fpr_from_dev": 0.069,
+  "thresholds": {
+    "Latin": 0.86,
+    "Cyrillic": 0.85,
+    "Arabic": 1.0,
+    "other": 0.71
+  },
+  "dev_negatives_per_script": {
+    "Latin": 793,
+    "Cyrillic": 430,
+    "Arabic": 677,
+    "other": 300
+  },
+  "test_negatives_per_script": {
+    "Latin": 1162,
+    "Cyrillic": 479,
+    "Arabic": 359,
+    "other": 400
+  },
+  "fpr_by_script": {
+    "dev_global": {
+      "Latin": 0.0504,
+      "Cyrillic": 0.0326,
+      "Arabic": 0.223,
+      "other": 0.0033
+    },
+    "dev_per_script": {
+      "Latin": 0.0567,
+      "Cyrillic": 0.0605,
+      "Arabic": 0.1064,
+      "other": 0.0633
+    },
+    "test_global": {
+      "Latin": 0.0404,
+      "Cyrillic": 0.0501,
+      "Arabic": 0.2423,
+      "other": 0.0025
+    },
+    "test_per_script": {
+      "Latin": 0.0439,
+      "Cyrillic": 0.0585,
+      "Arabic": 0.0947,
+      "other": 0.105
+    }
+  },
+  "fpr_spread_latin_cyrillic_arabic": {
+    "test_global": 0.2019,
+    "test_per_script": 0.0508
+  },
+  "fpr_spread_all_four_scripts": {
+    "test_global": 0.2398,
+    "test_per_script": 0.0611
+  },
+  "test_overall_global_threshold": {
+    "threshold": 0.87,
+    "queries_positive": 2000,
+    "queries_negative": 2000,
+    "recall": 0.7045,
+    "precision": 0.8182,
+    "f1": 0.7571,
+    "top1_accuracy": 0.754,
+    "false_positive_rate": 0.079,
+    "fpr_synthetic": 0.104,
+    "fpr_near_miss": 0.004,
+    "fpr_synthetic_by_script": {
+      "Latin": 0.0563,
+      "Cyrillic": 0.0686,
+      "Arabic": 0.2486,
+      "other": 0.0025
+    },
+    "fpr_by_script": {
+      "Latin": 0.0404,
+      "Cyrillic": 0.0501,
+      "Arabic": 0.2423,
+      "other": 0.0025
+    },
+    "alert_rate_overall": 0.4305,
+    "recall_by_group": {
+      "variant": 0.7775,
+      "cyr_to_latin": 0.88,
+      "latin_to_cyr": 0.72,
+      "ar_to_latin": 0.5433,
+      "latin_to_ar": 0.48,
+      "other_to_latin": 0.0,
+      "other_same_script": 0.145
+    },
+    "recall_by_script": {
+      "Latin": 0.7014,
+      "Cyrillic": 0.88,
+      "Arabic": 0.5433,
+      "other": null
+    }
+  },
+  "test_overall_per_script_thresholds": {
+    "threshold": {
+      "Latin": 0.86,
+      "Cyrillic": 0.85,
+      "Arabic": 1.0,
+      "other": 0.71
+    },
+    "queries_positive": 2000,
+    "queries_negative": 2000,
+    "recall": 0.6765,
+    "precision": 0.8547,
+    "f1": 0.7552,
+    "top1_accuracy": 0.754,
+    "false_positive_rate": 0.0565,
+    "fpr_synthetic": 0.074,
+    "fpr_near_miss": 0.004,
+    "fpr_synthetic_by_script": {
+      "Latin": 0.0612,
+      "Cyrillic": 0.08,
+      "Arabic": 0.0971,
+      "other": 0.105
+    },
+    "fpr_by_script": {
+      "Latin": 0.0439,
+      "Cyrillic": 0.0585,
+      "Arabic": 0.0947,
+      "other": 0.105
+    },
+    "alert_rate_overall": 0.3957,
+    "recall_by_group": {
+      "variant": 0.785,
+      "cyr_to_latin": 0.8933,
+      "latin_to_cyr": 0.7433,
+      "ar_to_latin": 0.2767,
+      "latin_to_ar": 0.5033,
+      "other_to_latin": 0.0,
+      "other_same_script": 0.32
+    },
+    "recall_by_script": {
+      "Latin": 0.7157,
+      "Cyrillic": 0.8933,
+      "Arabic": 0.2767,
+      "other": null
+    }
+  },
+  "engine": {
+    "calls_checked_against_evaluation": 300,
+    "mismatches": 0,
+    "call_ms_median": 5.69,
+    "call_ms_p95": 26.81
+  },
+  "positive_screen_ms": {
+    "median": 11.16,
+    "p95": 65.91
+  },
+  "examples": {
+    "Vladimir Putin, 1952-10-07, ru": [
+      {
+        "entity_id": "Q7747",
+        "score": 1.0,
+        "names": [
+          "Путин Владимир Владимирович",
+          "Vladimir Putin",
+          "Vladimir Vladimirovich POUTINE",
+          "Vladimir Vladimirovich Putin",
+          "ウラジーミル・プーチン"
+        ],
+        "explanation": {
+          "script": "Latin",
+          "threshold": 0.86,
+          "matched_name": "Vladimir Putin",
+          "name_score": 1.0,
+          "skeleton_score": 1.0,
+          "skeleton_used": false,
+          "birth_date": "agree",
+          "country": "agree",
+          "birth_date_adjustment": 0.1,
+          "country_adjustment": 0.03
+        }
+      }
+    ],
+    "Vladimir Putin, no birth date or country": [
+      {
+        "entity_id": "Q7747",
+        "score": 1.0,
+        "names": [
+          "Путин Владимир Владимирович",
+          "Vladimir Putin",
+          "Vladimir Vladimirovich POUTINE",
+          "Vladimir Vladimirovich Putin",
+          "ウラジーミル・プーチン"
+        ],
+        "explanation": {
+          "script": "Latin",
+          "threshold": 0.86,
+          "matched_name": "Vladimir Putin",
+          "name_score": 1.0,
+          "skeleton_score": 1.0,
+          "skeleton_used": false,
+          "birth_date": "missing",
+          "country": "missing",
+          "birth_date_adjustment": 0.0,
+          "country_adjustment": 0.0
+        }
+      },
+      {
+        "entity_id": "Q233282",
+        "score": 0.8689679681620222,
+        "names": [
+          "Lyudmila Aleksandrovna OCHERETNAYA",
+          "Lyudmila Alexandrovna OCHERETNAYA",
+          "ПУТИНА Людмила Александровна",
+          "OCHERETNAYA Lyudmila",
+          "ШКРЕБНЕВА Людмила Олександрівна"
+        ],
+        "explanation": {
+          "script": "Latin",
+          "threshold": 0.86,
+          "matched_name": "PUTINA Lyudmila",
+          "name_score": 0.5689679681620221,
+          "skeleton_score": 0.875,
+          "skeleton_used": true,
+          "birth_date": "missing",
+          "country": "missing",
+          "birth_date_adjustment": 0.0,
+          "country_adjustment": 0.0
+        }
+      }
+    ]
+  },
+  "final_holdout": {
+    "checked_against_checksum": "cb3cb8f41d59",
+    "scored": false
+  }
+}

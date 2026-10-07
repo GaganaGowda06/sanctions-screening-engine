@@ -1,0 +1,13 @@
+{
+  "skeleton_floor": 0.4,
+  "skeleton_lift": 0.3,
+  "blend": 1.0,
+  "thresholds": {
+    "Latin": 0.86,
+    "Cyrillic": 0.85,
+    "Arabic": 1.0,
+    "other": 0.71
+  },
+  "tuned_on": "dev, to equalise the false positive rate across scripts",
+  "target_fpr": 0.069
+}
