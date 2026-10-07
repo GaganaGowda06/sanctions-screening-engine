@@ -1,0 +1,183 @@
+{
+  "python_version": "3.14.7",
+  "scipy": "1.18.1",
+  "inputs": [
+    "name_score",
+    "skeleton_score",
+    "weighted_score",
+    "phonetic_score",
+    "arabic_score",
+    "birth_agree",
+    "birth_close",
+    "birth_conflict",
+    "country_agree",
+    "country_conflict",
+    "identifier_agree",
+    "identifier_conflict"
+  ],
+  "constraints": {
+    "name_score": {
+      "lower": null,
+      "upper": null
+    },
+    "skeleton_score": {
+      "lower": null,
+      "upper": null
+    },
+    "weighted_score": {
+      "lower": null,
+      "upper": null
+    },
+    "phonetic_score": {
+      "lower": null,
+      "upper": null
+    },
+    "arabic_score": {
+      "lower": null,
+      "upper": null
+    },
+    "birth_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "birth_close": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "birth_conflict": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "country_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "country_conflict": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "identifier_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "identifier_conflict": {
+      "lower": null,
+      "upper": 0.0
+    }
+  },
+  "regularisation_tuned_on_pairs_dev": {
+    "grid": [
+      {
+        "C": 0.0001,
+        "dev_log_loss": 0.25556,
+        "dev_auc": 0.9769
+      },
+      {
+        "C": 0.001,
+        "dev_log_loss": 0.16905,
+        "dev_auc": 0.9799
+      },
+      {
+        "C": 0.01,
+        "dev_log_loss": 0.14941,
+        "dev_auc": 0.9847
+      },
+      {
+        "C": 0.1,
+        "dev_log_loss": 0.14524,
+        "dev_auc": 0.9857
+      },
+      {
+        "C": 1.0,
+        "dev_log_loss": 0.14472,
+        "dev_auc": 0.9858
+      },
+      {
+        "C": 10.0,
+        "dev_log_loss": 0.14455,
+        "dev_auc": 0.9858
+      },
+      {
+        "C": 100.0,
+        "dev_log_loss": 0.14453,
+        "dev_auc": 0.9858
+      },
+      {
+        "C": 1000.0,
+        "dev_log_loss": 0.14453,
+        "dev_auc": 0.9858
+      }
+    ],
+    "chosen_C": 1.0,
+    "criterion": "most regularised C within 0.0005 of the best dev log loss"
+  },
+  "coefficients": {
+    "name_score": 9.549,
+    "skeleton_score": -0.1453,
+    "weighted_score": 4.5094,
+    "phonetic_score": -3.5289,
+    "arabic_score": -5.9117,
+    "birth_agree": 2.0672,
+    "birth_close": -2.2886,
+    "birth_conflict": -3.9789,
+    "country_agree": 0.0,
+    "country_conflict": -2.922,
+    "identifier_agree": 1.2216,
+    "identifier_conflict": -3.0488,
+    "intercept": -1.7224
+  },
+  "unconstrained_coefficients_same_features": {
+    "name_score": 8.8182,
+    "skeleton_score": -0.055,
+    "weighted_score": 4.9082,
+    "phonetic_score": -3.1949,
+    "arabic_score": -5.4863,
+    "birth_agree": 2.1542,
+    "birth_close": -2.1948,
+    "birth_conflict": -4.0327,
+    "country_agree": -1.7615,
+    "country_conflict": -4.3701,
+    "identifier_agree": 1.4082,
+    "identifier_conflict": -2.8701,
+    "intercept": -0.7318
+  },
+  "binding_constraints": [
+    "country_agree"
+  ],
+  "pairs_auc_and_log_loss": {
+    "dev": {
+      "constrained": {
+        "auc": 0.9858,
+        "log_loss": 0.1447
+      },
+      "unconstrained_same_features": {
+        "auc": 0.9858,
+        "log_loss": 0.1387
+      }
+    },
+    "test": {
+      "constrained": {
+        "auc": 0.9854,
+        "log_loss": 0.1468
+      },
+      "unconstrained_same_features": {
+        "auc": 0.9858,
+        "log_loss": 0.1392
+      }
+    }
+  },
+  "pairs_test_auc": 0.9854,
+  "pairs_test_auc_by_script_slice": {
+    "all": 0.9854,
+    "Latin": 0.978,
+    "Cyrillic": 0.9933,
+    "Arabic": 0.9944,
+    "other": 0.9951,
+    "cross-script": 0.9845
+  },
+  "pairs_dev_f1_threshold_for_reference_only": {
+    "threshold": 0.73,
+    "dev_f1": 0.9589
+  },
+  "alert_threshold": "chosen on the screening dev queries, see reports/pairs_comparison_v2.json"
+}

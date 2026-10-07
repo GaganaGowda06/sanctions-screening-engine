@@ -257,10 +257,14 @@ def choose_threshold_for_fpr(pos: list[tuple], neg: list[tuple], target: float) 
     return THRESHOLDS[-1]
 
 
+SUMMARY_KEYS = (
+    "recall", "precision", "f1", "top1_accuracy", "false_positive_rate", "fpr_synthetic", "fpr_near_miss",
+    "recall_by_script", "precision_by_script", "fpr_by_script", "top1_by_script", "recall_by_group",
+)  # fmt: skip
+
+
 def summary(metrics: dict) -> dict:
-    keys = ("recall", "precision", "f1", "top1_accuracy", "false_positive_rate", "fpr_synthetic", "fpr_near_miss",
-            "recall_by_script", "precision_by_script", "fpr_by_script", "recall_by_group")  # fmt: skip
-    return {k: metrics[k] for k in keys}
+    return {k: metrics[k] for k in SUMMARY_KEYS}
 
 
 def part_b(args: argparse.Namespace, model_json: dict) -> dict:

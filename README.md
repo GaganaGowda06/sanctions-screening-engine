@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. A logistic regression matcher has been trained on the OpenSanctions Pairs dataset. It beats the hand-tuned engine at deduplicating pairs but not at screening, so screening still uses the hand-tuned engine. The fuller evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. A logistic regression matcher has been trained on the OpenSanctions Pairs dataset. It beats the hand-tuned engine at deduplicating pairs but not at screening, even with the attribute weights constrained, so screening still uses the hand-tuned engine. The fuller evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -222,7 +222,26 @@ The cause is in the attribute weights, not the names. In the Pairs data a missin
 | Names only (all attribute weights zero) | 35.8% | 72.5% |
 | Attribute weights set by hand | 72.2% | 78.7% |
 
-So the name side of the model is as good as the hand-tuned engine's, and the attribute weights learned from this dataset do not transfer to screening. The trained model is therefore not used for screening. Fixing it means training the attribute weights on something that has not got this artefact, for example restricting them to the pairs where both sides carry the attribute, or constraining agreement to help and conflict to hurt.
+So the name side of the model is as good as the hand-tuned engine's, and the attribute weights learned from this dataset do not transfer to screening. The second attempt below follows the obvious fix.
+
+### Second attempt: two name features, sign-constrained attributes
+
+The attribute weights were the problem, so the model was refitted with only the current name score and the rarity-weighted score (the other three were redundant on the Pairs data) and with the attribute weights constrained: every agree weight at least zero, every conflict weight at most zero, a missing attribute fixed at zero effect, and the one-year-apart birth state ("close") held at most zero because in the data it behaves like a conflict. The fit is L2 regularised with the same objective as scikit-learn, minimised with bounded L-BFGS (`src/train_constrained.py`), C = 1 tuned on Pairs dev. The alert threshold is chosen on the screening dev queries, not on Pairs.
+
+The constraint that binds is country agreement: unconstrained it is -1.83, constrained it is 0. Pairs test AUC is 0.9848, against 0.9858 for the same features unconstrained and 0.9559 for the hand-tuned engine, so the constraints cost 0.001 of AUC. The two name weights offset each other (-6.4 on the name score, 11.6 on the rarity-weighted score), which amounts to a negative weight on the plain character similarity; they were left unconstrained.
+
+On the screening test queries, recall / precision / false positive rate / top-1:
+
+| Screening test | Hand-tuned engine (threshold 0.86) | Constrained model (threshold 0.81, best F1 on screening dev) |
+|---|---|---|
+| All scripts | 73.0% / 80.2% / 10.8% / 77.9% | 61.8% / 69.5% / 14.1% / 63.3% |
+| Latin queries | 71.4% / 86.5% / 4.7% / 76.6% | 65.2% / 76.2% / 12.3% / 66.3% |
+| Cyrillic queries | 88.0% / 88.9% / 5.2% / 91.3% | 85.3% / 80.5% / 10.9% / 85.3% |
+| Arabic queries | 65.0% / 53.4% / 37.6% / 70.3% | 22.0% / 25.4% / 24.2% / 27.7% |
+
+It is far better than the first model (at the hand-tuned engine's dev false positive rate, overall recall rises from 33% to 60%), better than the hand-tuned engine on Latin queries against Cyrillic entries (77.3% against 68.0% recall), but still behind overall, and it fails on Arabic: recall 22.0% against 65.0%. The hand-tuned engine gets its Arabic recall from a screening-specific rule, the skeleton standing in for the name score on Arabic pairs, and the Pairs data gives a model no reason to learn it. Keeping all five name scores does not help: with the same constraints the five-score model is worse at the same dev false positive rate (overall recall 49.1% against 60.5%, Arabic 7.3% against 21.7%), and its best-F1 threshold on screening dev is 0.02, which alerts on nearly everything (`reports/pairs_comparison_v2_five_names.json`).
+
+The trained model is still not used for screening. It is better than the hand-tuned engine at telling whether two records are the same entity, and not at screening a name against the list.
 
 ## Known limitations
 
@@ -258,6 +277,8 @@ python src/build_idf.py             # the deployment rarity table, models/idf_ma
 python src/train_matcher.py         # train, ablate, bootstrap; models/pairs_lr_v1.json
 python src/compare_matchers.py      # trained against hand-tuned: reports/pairs_comparison.json
 python src/diagnose_screening.py    # why the trained model does worse at screening
+python src/train_constrained.py     # two name features, sign-constrained attributes; models/pairs_lr_v2.json
+python src/compare_matchers.py --model models/pairs_lr_v2.json --report reports/pairs_comparison_v2.json
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
@@ -288,6 +309,7 @@ src/
   idf_table.py, build_idf.py   the deployment rarity table used for training and serving
   matcher_model.py, train_matcher.py   the trained matcher: serving (standard library) and training (scikit-learn)
   compare_matchers.py, diagnose_screening.py   trained against hand-tuned, and why it falls short at screening
+  train_constrained.py   the second attempt: two name features, sign-constrained attribute weights
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/

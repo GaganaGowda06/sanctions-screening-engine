@@ -1,0 +1,915 @@
+{
+  "python_version": "3.14.7",
+  "model": "pairs_lr_v2_five_names.json",
+  "C": 1.0,
+  "pairs_test": {
+    "test_pairs": 44482,
+    "auc": {
+      "hand_tuned": {
+        "dev": 0.956,
+        "test": 0.9559
+      },
+      "trained": {
+        "dev": 0.9858,
+        "test": 0.9854
+      }
+    },
+    "thresholds": {
+      "hand_tuned_frozen": 0.86,
+      "hand_tuned_best_f1_on_pairs_dev": 0.9,
+      "trained_best_f1_on_pairs_dev": 0.73,
+      "trained_matching_hand_tuned_dev_recall": 0.42
+    },
+    "systems": {
+      "hand_tuned_frozen_threshold": {
+        "threshold": 0.86,
+        "all_pairs": {
+          "all": {
+            "pairs": 44482,
+            "matches": 27343,
+            "non_matches": 17139,
+            "recall": 0.9557,
+            "precision": 0.9532,
+            "false_positive_rate": 0.0748
+          },
+          "Latin": {
+            "pairs": 17116,
+            "matches": 11379,
+            "non_matches": 5737,
+            "recall": 0.9467,
+            "precision": 0.9458,
+            "false_positive_rate": 0.1075
+          },
+          "Cyrillic": {
+            "pairs": 11831,
+            "matches": 6259,
+            "non_matches": 5572,
+            "recall": 0.9853,
+            "precision": 0.9368,
+            "false_positive_rate": 0.0747
+          },
+          "Arabic": {
+            "pairs": 2932,
+            "matches": 1332,
+            "non_matches": 1600,
+            "recall": 0.997,
+            "precision": 0.9465,
+            "false_positive_rate": 0.0469
+          },
+          "other": {
+            "pairs": 2132,
+            "matches": 1278,
+            "non_matches": 854,
+            "recall": 0.9906,
+            "precision": 0.962,
+            "false_positive_rate": 0.0585
+          },
+          "cross-script": {
+            "pairs": 10471,
+            "matches": 7095,
+            "non_matches": 3376,
+            "recall": 0.9301,
+            "precision": 0.9816,
+            "false_positive_rate": 0.0367
+          }
+        },
+        "share_an_entity_with_train": {
+          "all": {
+            "pairs": 24575,
+            "matches": 8744,
+            "non_matches": 15831,
+            "recall": 0.9706,
+            "precision": 0.9031,
+            "false_positive_rate": 0.0575
+          },
+          "Latin": {
+            "pairs": 6233,
+            "matches": 1444,
+            "non_matches": 4789,
+            "recall": 0.9612,
+            "precision": 0.7815,
+            "false_positive_rate": 0.081
+          },
+          "Cyrillic": {
+            "pairs": 8183,
+            "matches": 2793,
+            "non_matches": 5390,
+            "recall": 0.9832,
+            "precision": 0.8924,
+            "false_positive_rate": 0.0614
+          },
+          "Arabic": {
+            "pairs": 2228,
+            "matches": 647,
+            "non_matches": 1581,
+            "recall": 0.9938,
+            "precision": 0.9121,
+            "false_positive_rate": 0.0392
+          },
+          "other": {
+            "pairs": 1017,
+            "matches": 228,
+            "non_matches": 789,
+            "recall": 0.9605,
+            "precision": 0.8656,
+            "false_positive_rate": 0.0431
+          },
+          "cross-script": {
+            "pairs": 6914,
+            "matches": 3632,
+            "non_matches": 3282,
+            "recall": 0.9612,
+            "precision": 0.9732,
+            "false_positive_rate": 0.0293
+          }
+        },
+        "no_entity_in_train": {
+          "all": {
+            "pairs": 19907,
+            "matches": 18599,
+            "non_matches": 1308,
+            "recall": 0.9487,
+            "precision": 0.9794,
+            "false_positive_rate": 0.2836
+          },
+          "Latin": {
+            "pairs": 10883,
+            "matches": 9935,
+            "non_matches": 948,
+            "recall": 0.9445,
+            "precision": 0.9762,
+            "false_positive_rate": 0.2416
+          },
+          "Cyrillic": {
+            "pairs": 3648,
+            "matches": 3466,
+            "non_matches": 182,
+            "recall": 0.987,
+            "precision": 0.9758,
+            "false_positive_rate": 0.467
+          },
+          "Arabic": {
+            "pairs": 704,
+            "matches": 685,
+            "non_matches": 19,
+            "recall": 1.0,
+            "precision": 0.9814,
+            "false_positive_rate": 0.6842
+          },
+          "other": {
+            "pairs": 1115,
+            "matches": 1050,
+            "non_matches": 65,
+            "recall": 0.9971,
+            "precision": 0.9849,
+            "false_positive_rate": 0.2462
+          },
+          "cross-script": {
+            "pairs": 3557,
+            "matches": 3463,
+            "non_matches": 94,
+            "recall": 0.8975,
+            "precision": 0.9911,
+            "false_positive_rate": 0.2979
+          }
+        }
+      },
+      "hand_tuned_threshold_retuned_on_pairs_dev": {
+        "threshold": 0.9,
+        "all_pairs": {
+          "all": {
+            "pairs": 44482,
+            "matches": 27343,
+            "non_matches": 17139,
+            "recall": 0.9493,
+            "precision": 0.9632,
+            "false_positive_rate": 0.0578
+          },
+          "Latin": {
+            "pairs": 17116,
+            "matches": 11379,
+            "non_matches": 5737,
+            "recall": 0.9351,
+            "precision": 0.9538,
+            "false_positive_rate": 0.0898
+          },
+          "Cyrillic": {
+            "pairs": 11831,
+            "matches": 6259,
+            "non_matches": 5572,
+            "recall": 0.9845,
+            "precision": 0.9543,
+            "false_positive_rate": 0.0529
+          },
+          "Arabic": {
+            "pairs": 2932,
+            "matches": 1332,
+            "non_matches": 1600,
+            "recall": 0.9962,
+            "precision": 0.9637,
+            "false_positive_rate": 0.0312
+          },
+          "other": {
+            "pairs": 2132,
+            "matches": 1278,
+            "non_matches": 854,
+            "recall": 0.989,
+            "precision": 0.9723,
+            "false_positive_rate": 0.0422
+          },
+          "cross-script": {
+            "pairs": 10471,
+            "matches": 7095,
+            "non_matches": 3376,
+            "recall": 0.925,
+            "precision": 0.9857,
+            "false_positive_rate": 0.0281
+          }
+        },
+        "share_an_entity_with_train": {
+          "all": {
+            "pairs": 24575,
+            "matches": 8744,
+            "non_matches": 15831,
+            "recall": 0.9659,
+            "precision": 0.9286,
+            "false_positive_rate": 0.041
+          },
+          "Latin": {
+            "pairs": 6233,
+            "matches": 1444,
+            "non_matches": 4789,
+            "recall": 0.9529,
+            "precision": 0.8181,
+            "false_positive_rate": 0.0639
+          },
+          "Cyrillic": {
+            "pairs": 8183,
+            "matches": 2793,
+            "non_matches": 5390,
+            "recall": 0.9814,
+            "precision": 0.927,
+            "false_positive_rate": 0.0401
+          },
+          "Arabic": {
+            "pairs": 2228,
+            "matches": 647,
+            "non_matches": 1581,
+            "recall": 0.9923,
+            "precision": 0.9455,
+            "false_positive_rate": 0.0234
+          },
+          "other": {
+            "pairs": 1017,
+            "matches": 228,
+            "non_matches": 789,
+            "recall": 0.9605,
+            "precision": 0.9125,
+            "false_positive_rate": 0.0266
+          },
+          "cross-script": {
+            "pairs": 6914,
+            "matches": 3632,
+            "non_matches": 3282,
+            "recall": 0.9548,
+            "precision": 0.9805,
+            "false_positive_rate": 0.021
+          }
+        },
+        "no_entity_in_train": {
+          "all": {
+            "pairs": 19907,
+            "matches": 18599,
+            "non_matches": 1308,
+            "recall": 0.9414,
+            "precision": 0.9808,
+            "false_positive_rate": 0.2615
+          },
+          "Latin": {
+            "pairs": 10883,
+            "matches": 9935,
+            "non_matches": 948,
+            "recall": 0.9325,
+            "precision": 0.9779,
+            "false_positive_rate": 0.2205
+          },
+          "Cyrillic": {
+            "pairs": 3648,
+            "matches": 3466,
+            "non_matches": 182,
+            "recall": 0.987,
+            "precision": 0.9774,
+            "false_positive_rate": 0.4341
+          },
+          "Arabic": {
+            "pairs": 704,
+            "matches": 685,
+            "non_matches": 19,
+            "recall": 1.0,
+            "precision": 0.9814,
+            "false_positive_rate": 0.6842
+          },
+          "other": {
+            "pairs": 1115,
+            "matches": 1050,
+            "non_matches": 65,
+            "recall": 0.9952,
+            "precision": 0.9858,
+            "false_positive_rate": 0.2308
+          },
+          "cross-script": {
+            "pairs": 3557,
+            "matches": 3463,
+            "non_matches": 94,
+            "recall": 0.8937,
+            "precision": 0.9917,
+            "false_positive_rate": 0.2766
+          }
+        }
+      },
+      "trained_threshold_best_f1_on_pairs_dev": {
+        "threshold": 0.73,
+        "all_pairs": {
+          "all": {
+            "pairs": 44482,
+            "matches": 27343,
+            "non_matches": 17139,
+            "recall": 0.9456,
+            "precision": 0.9735,
+            "false_positive_rate": 0.0411
+          },
+          "Latin": {
+            "pairs": 17116,
+            "matches": 11379,
+            "non_matches": 5737,
+            "recall": 0.9357,
+            "precision": 0.9763,
+            "false_positive_rate": 0.045
+          },
+          "Cyrillic": {
+            "pairs": 11831,
+            "matches": 6259,
+            "non_matches": 5572,
+            "recall": 0.9562,
+            "precision": 0.9645,
+            "false_positive_rate": 0.0395
+          },
+          "Arabic": {
+            "pairs": 2932,
+            "matches": 1332,
+            "non_matches": 1600,
+            "recall": 0.994,
+            "precision": 0.9477,
+            "false_positive_rate": 0.0456
+          },
+          "other": {
+            "pairs": 2132,
+            "matches": 1278,
+            "non_matches": 854,
+            "recall": 0.9875,
+            "precision": 0.9685,
+            "false_positive_rate": 0.048
+          },
+          "cross-script": {
+            "pairs": 10471,
+            "matches": 7095,
+            "non_matches": 3376,
+            "recall": 0.9356,
+            "precision": 0.9833,
+            "false_positive_rate": 0.0335
+          }
+        },
+        "share_an_entity_with_train": {
+          "all": {
+            "pairs": 24575,
+            "matches": 8744,
+            "non_matches": 15831,
+            "recall": 0.9708,
+            "precision": 0.9515,
+            "false_positive_rate": 0.0274
+          },
+          "Latin": {
+            "pairs": 6233,
+            "matches": 1444,
+            "non_matches": 4789,
+            "recall": 0.9598,
+            "precision": 0.9203,
+            "false_positive_rate": 0.0251
+          },
+          "Cyrillic": {
+            "pairs": 8183,
+            "matches": 2793,
+            "non_matches": 5390,
+            "recall": 0.9778,
+            "precision": 0.9493,
+            "false_positive_rate": 0.0271
+          },
+          "Arabic": {
+            "pairs": 2228,
+            "matches": 647,
+            "non_matches": 1581,
+            "recall": 0.9892,
+            "precision": 0.9169,
+            "false_positive_rate": 0.0367
+          },
+          "other": {
+            "pairs": 1017,
+            "matches": 228,
+            "non_matches": 789,
+            "recall": 0.9649,
+            "precision": 0.9053,
+            "false_positive_rate": 0.0292
+          },
+          "cross-script": {
+            "pairs": 6914,
+            "matches": 3632,
+            "non_matches": 3282,
+            "recall": 0.967,
+            "precision": 0.9761,
+            "false_positive_rate": 0.0262
+          }
+        },
+        "no_entity_in_train": {
+          "all": {
+            "pairs": 19907,
+            "matches": 18599,
+            "non_matches": 1308,
+            "recall": 0.9338,
+            "precision": 0.9846,
+            "false_positive_rate": 0.208
+          },
+          "Latin": {
+            "pairs": 10883,
+            "matches": 9935,
+            "non_matches": 948,
+            "recall": 0.9322,
+            "precision": 0.9853,
+            "false_positive_rate": 0.1456
+          },
+          "Cyrillic": {
+            "pairs": 3648,
+            "matches": 3466,
+            "non_matches": 182,
+            "recall": 0.9388,
+            "precision": 0.9778,
+            "false_positive_rate": 0.4066
+          },
+          "Arabic": {
+            "pairs": 704,
+            "matches": 685,
+            "non_matches": 19,
+            "recall": 0.9985,
+            "precision": 0.9785,
+            "false_positive_rate": 0.7895
+          },
+          "other": {
+            "pairs": 1115,
+            "matches": 1050,
+            "non_matches": 65,
+            "recall": 0.9924,
+            "precision": 0.983,
+            "false_positive_rate": 0.2769
+          },
+          "cross-script": {
+            "pairs": 3557,
+            "matches": 3463,
+            "non_matches": 94,
+            "recall": 0.9027,
+            "precision": 0.9914,
+            "false_positive_rate": 0.2872
+          }
+        }
+      },
+      "trained_threshold_matching_hand_tuned_dev_recall": {
+        "threshold": 0.42,
+        "all_pairs": {
+          "all": {
+            "pairs": 44482,
+            "matches": 27343,
+            "non_matches": 17139,
+            "recall": 0.9742,
+            "precision": 0.9408,
+            "false_positive_rate": 0.0978
+          },
+          "Latin": {
+            "pairs": 17116,
+            "matches": 11379,
+            "non_matches": 5737,
+            "recall": 0.9721,
+            "precision": 0.9283,
+            "false_positive_rate": 0.1489
+          },
+          "Cyrillic": {
+            "pairs": 11831,
+            "matches": 6259,
+            "non_matches": 5572,
+            "recall": 0.996,
+            "precision": 0.9423,
+            "false_positive_rate": 0.0686
+          },
+          "Arabic": {
+            "pairs": 2932,
+            "matches": 1332,
+            "non_matches": 1600,
+            "recall": 0.9977,
+            "precision": 0.8998,
+            "false_positive_rate": 0.0925
+          },
+          "other": {
+            "pairs": 2132,
+            "matches": 1278,
+            "non_matches": 854,
+            "recall": 0.9953,
+            "precision": 0.9478,
+            "false_positive_rate": 0.082
+          },
+          "cross-script": {
+            "pairs": 10471,
+            "matches": 7095,
+            "non_matches": 3376,
+            "recall": 0.9501,
+            "precision": 0.9681,
+            "false_positive_rate": 0.0658
+          }
+        },
+        "share_an_entity_with_train": {
+          "all": {
+            "pairs": 24575,
+            "matches": 8744,
+            "non_matches": 15831,
+            "recall": 0.9896,
+            "precision": 0.8795,
+            "false_positive_rate": 0.0749
+          },
+          "Latin": {
+            "pairs": 6233,
+            "matches": 1444,
+            "non_matches": 4789,
+            "recall": 0.9855,
+            "precision": 0.7271,
+            "false_positive_rate": 0.1115
+          },
+          "Cyrillic": {
+            "pairs": 8183,
+            "matches": 2793,
+            "non_matches": 5390,
+            "recall": 0.9946,
+            "precision": 0.9075,
+            "false_positive_rate": 0.0525
+          },
+          "Arabic": {
+            "pairs": 2228,
+            "matches": 647,
+            "non_matches": 1581,
+            "recall": 0.9954,
+            "precision": 0.8299,
+            "false_positive_rate": 0.0835
+          },
+          "other": {
+            "pairs": 1017,
+            "matches": 228,
+            "non_matches": 789,
+            "recall": 0.9868,
+            "precision": 0.8152,
+            "false_positive_rate": 0.0646
+          },
+          "cross-script": {
+            "pairs": 6914,
+            "matches": 3632,
+            "non_matches": 3282,
+            "recall": 0.9865,
+            "precision": 0.9507,
+            "false_positive_rate": 0.0567
+          }
+        },
+        "no_entity_in_train": {
+          "all": {
+            "pairs": 19907,
+            "matches": 18599,
+            "non_matches": 1308,
+            "recall": 0.967,
+            "precision": 0.9735,
+            "false_positive_rate": 0.3746
+          },
+          "Latin": {
+            "pairs": 10883,
+            "matches": 9935,
+            "non_matches": 948,
+            "recall": 0.9702,
+            "precision": 0.9679,
+            "false_positive_rate": 0.3376
+          },
+          "Cyrillic": {
+            "pairs": 3648,
+            "matches": 3466,
+            "non_matches": 182,
+            "recall": 0.9971,
+            "precision": 0.9722,
+            "false_positive_rate": 0.544
+          },
+          "Arabic": {
+            "pairs": 704,
+            "matches": 685,
+            "non_matches": 19,
+            "recall": 1.0,
+            "precision": 0.9772,
+            "false_positive_rate": 0.8421
+          },
+          "other": {
+            "pairs": 1115,
+            "matches": 1050,
+            "non_matches": 65,
+            "recall": 0.9971,
+            "precision": 0.9822,
+            "false_positive_rate": 0.2923
+          },
+          "cross-script": {
+            "pairs": 3557,
+            "matches": 3463,
+            "non_matches": 94,
+            "recall": 0.9119,
+            "precision": 0.9887,
+            "false_positive_rate": 0.383
+          }
+        }
+      }
+    }
+  },
+  "screening_test": {
+    "queries": {
+      "dev_positive": 1000,
+      "dev_negative": 1000,
+      "test_positive": 2400,
+      "test_negative": 2400,
+      "test_negative_by_script": {
+        "Latin": 1162,
+        "Cyrillic": 479,
+        "Arabic": 359,
+        "other": 400
+      }
+    },
+    "systems": {
+      "hand_tuned_frozen": {
+        "threshold": 0.86,
+        "dev": {
+          "recall": 0.726,
+          "precision": 0.8185,
+          "f1": 0.7695,
+          "top1_accuracy": 0.782,
+          "false_positive_rate": 0.1,
+          "fpr_synthetic": 0.128,
+          "fpr_near_miss": 0.016,
+          "recall_by_script": {
+            "Latin": 0.7186,
+            "Cyrillic": 0.88,
+            "Arabic": 0.6067,
+            "other": null
+          },
+          "precision_by_script": {
+            "Latin": 0.8763,
+            "Cyrillic": 0.9041,
+            "Arabic": 0.5449,
+            "other": null
+          },
+          "fpr_by_script": {
+            "Latin": 0.054,
+            "Cyrillic": 0.0435,
+            "Arabic": 0.3277,
+            "other": null
+          },
+          "top1_by_script": {
+            "Latin": 0.7729,
+            "Cyrillic": 0.9133,
+            "Arabic": 0.6933,
+            "other": null
+          },
+          "recall_by_group": {
+            "variant": 0.7725,
+            "cyr_to_latin": 0.88,
+            "latin_to_cyr": 0.6933,
+            "ar_to_latin": 0.6067,
+            "latin_to_ar": 0.6,
+            "other_to_latin": null,
+            "other_same_script": null
+          }
+        },
+        "test": {
+          "recall": 0.7295,
+          "precision": 0.8025,
+          "f1": 0.7643,
+          "top1_accuracy": 0.779,
+          "false_positive_rate": 0.1075,
+          "fpr_synthetic": 0.1407,
+          "fpr_near_miss": 0.008,
+          "recall_by_script": {
+            "Latin": 0.7143,
+            "Cyrillic": 0.88,
+            "Arabic": 0.65,
+            "other": null
+          },
+          "precision_by_script": {
+            "Latin": 0.8651,
+            "Cyrillic": 0.8889,
+            "Arabic": 0.5342,
+            "other": null
+          },
+          "fpr_by_script": {
+            "Latin": 0.0473,
+            "Cyrillic": 0.0522,
+            "Arabic": 0.376,
+            "other": 0.0025
+          },
+          "top1_by_script": {
+            "Latin": 0.7664,
+            "Cyrillic": 0.9133,
+            "Arabic": 0.7033,
+            "other": null
+          },
+          "recall_by_group": {
+            "variant": 0.7625,
+            "cyr_to_latin": 0.88,
+            "latin_to_cyr": 0.68,
+            "ar_to_latin": 0.65,
+            "latin_to_ar": 0.62,
+            "other_to_latin": 0.0,
+            "other_same_script": 0.14
+          }
+        }
+      },
+      "trained_threshold_best_f1_on_screening_dev": {
+        "threshold": 0.02,
+        "dev": {
+          "recall": 0.889,
+          "precision": 0.4526,
+          "f1": 0.5999,
+          "top1_accuracy": 0.598,
+          "false_positive_rate": 0.969,
+          "fpr_synthetic": 0.976,
+          "fpr_near_miss": 0.948,
+          "recall_by_script": {
+            "Latin": 0.8871,
+            "Cyrillic": 0.98,
+            "Arabic": 0.8067,
+            "other": null
+          },
+          "precision_by_script": {
+            "Latin": 0.4897,
+            "Cyrillic": 0.3899,
+            "Arabic": 0.3793,
+            "other": null
+          },
+          "fpr_by_script": {
+            "Latin": 0.9646,
+            "Cyrillic": 0.9913,
+            "Arabic": 0.9548,
+            "other": null
+          },
+          "top1_by_script": {
+            "Latin": 0.65,
+            "Cyrillic": 0.82,
+            "Arabic": 0.1333,
+            "other": null
+          },
+          "recall_by_group": {
+            "variant": 0.925,
+            "cyr_to_latin": 0.98,
+            "latin_to_cyr": 0.9267,
+            "ar_to_latin": 0.8067,
+            "latin_to_ar": 0.7467,
+            "other_to_latin": null,
+            "other_same_script": null
+          }
+        },
+        "test": {
+          "recall": 0.9015,
+          "precision": 0.455,
+          "f1": 0.6047,
+          "top1_accuracy": 0.573,
+          "false_positive_rate": 0.9845,
+          "fpr_synthetic": 0.986,
+          "fpr_near_miss": 0.98,
+          "recall_by_script": {
+            "Latin": 0.8993,
+            "Cyrillic": 0.97,
+            "Arabic": 0.8433,
+            "other": null
+          },
+          "precision_by_script": {
+            "Latin": 0.4959,
+            "Cyrillic": 0.3736,
+            "Arabic": 0.3922,
+            "other": null
+          },
+          "fpr_by_script": {
+            "Latin": 0.9845,
+            "Cyrillic": 1.0,
+            "Arabic": 0.9638,
+            "other": 0.77
+          },
+          "top1_by_script": {
+            "Latin": 0.6136,
+            "Cyrillic": 0.7967,
+            "Arabic": 0.16,
+            "other": null
+          },
+          "recall_by_group": {
+            "variant": 0.9275,
+            "cyr_to_latin": 0.97,
+            "latin_to_cyr": 0.9433,
+            "ar_to_latin": 0.8433,
+            "latin_to_ar": 0.78,
+            "other_to_latin": 0.0,
+            "other_same_script": 0.465
+          }
+        }
+      },
+      "trained_threshold_matching_hand_tuned_dev_fpr": {
+        "threshold": 0.88,
+        "dev": {
+          "recall": 0.498,
+          "precision": 0.6803,
+          "f1": 0.5751,
+          "top1_accuracy": 0.598,
+          "false_positive_rate": 0.091,
+          "fpr_synthetic": 0.116,
+          "fpr_near_miss": 0.016,
+          "recall_by_script": {
+            "Latin": 0.5443,
+            "Cyrillic": 0.7067,
+            "Arabic": 0.0733,
+            "other": null
+          },
+          "precision_by_script": {
+            "Latin": 0.7651,
+            "Cyrillic": 0.8154,
+            "Arabic": 0.1058,
+            "other": null
+          },
+          "fpr_by_script": {
+            "Latin": 0.0675,
+            "Cyrillic": 0.0739,
+            "Arabic": 0.1921,
+            "other": null
+          },
+          "top1_by_script": {
+            "Latin": 0.65,
+            "Cyrillic": 0.82,
+            "Arabic": 0.1333,
+            "other": null
+          },
+          "recall_by_group": {
+            "variant": 0.6725,
+            "cyr_to_latin": 0.7067,
+            "latin_to_cyr": 0.6267,
+            "ar_to_latin": 0.0733,
+            "latin_to_ar": 0.12,
+            "other_to_latin": null,
+            "other_same_script": null
+          }
+        },
+        "test": {
+          "recall": 0.4915,
+          "precision": 0.6669,
+          "f1": 0.5659,
+          "top1_accuracy": 0.573,
+          "false_positive_rate": 0.1085,
+          "fpr_synthetic": 0.138,
+          "fpr_near_miss": 0.02,
+          "recall_by_script": {
+            "Latin": 0.5343,
+            "Cyrillic": 0.71,
+            "Arabic": 0.0733,
+            "other": null
+          },
+          "precision_by_script": {
+            "Latin": 0.7458,
+            "Cyrillic": 0.8038,
+            "Arabic": 0.1068,
+            "other": null
+          },
+          "fpr_by_script": {
+            "Latin": 0.0895,
+            "Cyrillic": 0.0814,
+            "Arabic": 0.2061,
+            "other": 0.0175
+          },
+          "top1_by_script": {
+            "Latin": 0.6136,
+            "Cyrillic": 0.7967,
+            "Arabic": 0.16,
+            "other": null
+          },
+          "recall_by_group": {
+            "variant": 0.6663,
+            "cyr_to_latin": 0.71,
+            "latin_to_cyr": 0.66,
+            "ar_to_latin": 0.0733,
+            "latin_to_ar": 0.0567,
+            "other_to_latin": 0.0,
+            "other_same_script": 0.17
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "model": "sign-constrained L2 logistic regression, nine inputs; see src/train_constrained.py",
+  "C": 1.0,
+  "inputs": [
+    "name_score",
+    "skeleton_score",
+    "weighted_score",
+    "phonetic_score",
+    "arabic_score",
+    "birth_agree",
+    "birth_close",
+    "birth_conflict",
+    "country_agree",
+    "country_conflict",
+    "identifier_agree",
+    "identifier_conflict"
+  ],
+  "coefficients": {
+    "name_score": 9.548960345720253,
+    "skeleton_score": -0.14533500132995686,
+    "weighted_score": 4.509362954623108,
+    "phonetic_score": -3.528888355475873,
+    "arabic_score": -5.911732238313251,
+    "birth_agree": 2.0672016588448776,
+    "birth_close": -2.2885994716065885,
+    "birth_conflict": -3.9788687357856802,
+    "country_agree": 0.0,
+    "country_conflict": -2.9219588409934523,
+    "identifier_agree": 1.2215859409710381,
+    "identifier_conflict": -3.0488445352021345
+  },
+  "intercept": -1.7224413312052904,
+  "constraints": {
+    "name_score": {
+      "lower": null,
+      "upper": null
+    },
+    "skeleton_score": {
+      "lower": null,
+      "upper": null
+    },
+    "weighted_score": {
+      "lower": null,
+      "upper": null
+    },
+    "phonetic_score": {
+      "lower": null,
+      "upper": null
+    },
+    "arabic_score": {
+      "lower": null,
+      "upper": null
+    },
+    "birth_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "birth_close": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "birth_conflict": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "country_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "country_conflict": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "identifier_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "identifier_conflict": {
+      "lower": null,
+      "upper": 0.0
+    }
+  },
+  "dev_f1_threshold": 0.73,
+  "trained_on_feature_table_sha256": "001d86fd3d51215f5b16dc3f85d8979316f1feef2963ee8883e9caae1cdf59da",
+  "idf_table_sha256": "87e59ec639d18deb415fba025af3347a74f0cceeb77ff8b7d36414a3108a34ff"
+}

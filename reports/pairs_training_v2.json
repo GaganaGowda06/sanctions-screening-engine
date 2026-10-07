@@ -1,0 +1,162 @@
+{
+  "python_version": "3.14.7",
+  "scipy": "1.18.1",
+  "inputs": [
+    "name_score",
+    "weighted_score",
+    "birth_agree",
+    "birth_close",
+    "birth_conflict",
+    "country_agree",
+    "country_conflict",
+    "identifier_agree",
+    "identifier_conflict"
+  ],
+  "constraints": {
+    "name_score": {
+      "lower": null,
+      "upper": null
+    },
+    "weighted_score": {
+      "lower": null,
+      "upper": null
+    },
+    "birth_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "birth_close": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "birth_conflict": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "country_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "country_conflict": {
+      "lower": null,
+      "upper": 0.0
+    },
+    "identifier_agree": {
+      "lower": 0.0,
+      "upper": null
+    },
+    "identifier_conflict": {
+      "lower": null,
+      "upper": 0.0
+    }
+  },
+  "regularisation_tuned_on_pairs_dev": {
+    "grid": [
+      {
+        "C": 0.0001,
+        "dev_log_loss": 0.27391,
+        "dev_auc": 0.9812
+      },
+      {
+        "C": 0.001,
+        "dev_log_loss": 0.16782,
+        "dev_auc": 0.9819
+      },
+      {
+        "C": 0.01,
+        "dev_log_loss": 0.15097,
+        "dev_auc": 0.984
+      },
+      {
+        "C": 0.1,
+        "dev_log_loss": 0.14771,
+        "dev_auc": 0.9851
+      },
+      {
+        "C": 1.0,
+        "dev_log_loss": 0.14681,
+        "dev_auc": 0.9853
+      },
+      {
+        "C": 10.0,
+        "dev_log_loss": 0.14676,
+        "dev_auc": 0.9853
+      },
+      {
+        "C": 100.0,
+        "dev_log_loss": 0.14675,
+        "dev_auc": 0.9853
+      },
+      {
+        "C": 1000.0,
+        "dev_log_loss": 0.14675,
+        "dev_auc": 0.9853
+      }
+    ],
+    "chosen_C": 1.0,
+    "criterion": "most regularised C within 0.0005 of the best dev log loss"
+  },
+  "coefficients": {
+    "name_score": -6.3702,
+    "weighted_score": 11.5731,
+    "birth_agree": 2.0142,
+    "birth_close": -2.3215,
+    "birth_conflict": -3.9953,
+    "country_agree": 0.0,
+    "country_conflict": -2.9041,
+    "identifier_agree": 1.2086,
+    "identifier_conflict": -3.0038,
+    "intercept": -2.45
+  },
+  "unconstrained_coefficients_same_features": {
+    "name_score": -5.8422,
+    "weighted_score": 11.4513,
+    "birth_agree": 2.1014,
+    "birth_close": -2.2369,
+    "birth_conflict": -4.0658,
+    "country_agree": -1.8308,
+    "country_conflict": -4.4277,
+    "identifier_agree": 1.3983,
+    "identifier_conflict": -2.8369,
+    "intercept": -1.2832
+  },
+  "binding_constraints": [
+    "country_agree"
+  ],
+  "pairs_auc_and_log_loss": {
+    "dev": {
+      "constrained": {
+        "auc": 0.9853,
+        "log_loss": 0.1468
+      },
+      "unconstrained_same_features": {
+        "auc": 0.9857,
+        "log_loss": 0.1404
+      }
+    },
+    "test": {
+      "constrained": {
+        "auc": 0.9848,
+        "log_loss": 0.1498
+      },
+      "unconstrained_same_features": {
+        "auc": 0.9858,
+        "log_loss": 0.1415
+      }
+    }
+  },
+  "pairs_test_auc": 0.9848,
+  "pairs_test_auc_by_script_slice": {
+    "all": 0.9848,
+    "Latin": 0.9782,
+    "Cyrillic": 0.9933,
+    "Arabic": 0.9939,
+    "other": 0.9953,
+    "cross-script": 0.9836
+  },
+  "pairs_dev_f1_threshold_for_reference_only": {
+    "threshold": 0.74,
+    "dev_f1": 0.9597
+  },
+  "alert_threshold": "chosen on the screening dev queries, see reports/pairs_comparison_v2.json"
+}

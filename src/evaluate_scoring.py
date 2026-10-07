@@ -374,6 +374,10 @@ def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float | dict[str, 
     for script in NEGATIVE_SCRIPTS:
         rows = [a for a, p in zip(alerted_true, head, strict=True) if len(p) > 5 and p[5] == script]
         recall_by_script[script] = round(sum(rows) / len(rows), 4) if rows else None
+    top1_by_script = {}
+    for script in NEGATIVE_SCRIPTS:
+        rows = [p[4] for p in head if len(p) > 5 and p[5] == script]
+        top1_by_script[script] = round(sum(rows) / len(rows), 4) if rows else None
     precision_by_script = {}
     for script in NEGATIVE_SCRIPTS:
         found = sum(a for a, p in zip(alerted_true, head, strict=True) if len(p) > 5 and p[5] == script)
@@ -399,6 +403,7 @@ def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float | dict[str, 
         "recall_by_group": group_recall,
         "recall_by_script": recall_by_script,
         "precision_by_script": precision_by_script,
+        "top1_by_script": top1_by_script,
     }
 
 
