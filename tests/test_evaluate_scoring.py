@@ -13,33 +13,40 @@ import evaluate_scoring as ev
 from normalise import normalise
 from scoring import Components
 
+PARAMS = ev.Params(skeleton_floor=0.5, skeleton_lift=0.1, penalty_index=0)
+
+
+def names(value):
+    return (value,) * len(ev.LENGTH_PENALTIES)
+
 
 def query(kind, group, comps, true_id=None):
     return {"kind": kind, "group": group, "true_id": true_id, "comps": comps}
 
 
 def test_final_scores_find_true_score_best_other_and_top1():
-    q = query("positive", "variant", [Components("t", 0.9, 0.0, 0, 0), Components("o", 0.8, 0.0, 0, 0)], "t")
-    row = ev.final_scores([q], 0.9, True, True)[0]
+    comps = [Components("t", names(0.9), 0.0, 0, 0), Components("o", names(0.8), 0.0, 0, 0)]
+    q = query("positive", "variant", comps, "t")
+    row = ev.final_scores([q], PARAMS, True, True)[0]
     assert row == ("variant", "variant", pytest.approx(0.9), pytest.approx(0.8), True)
 
 
 def test_final_scores_attributes_can_change_the_top_entity():
-    comps = [Components("t", 0.7, 0.0, 0.10, 0.0), Components("o", 0.75, 0.0, 0.0, 0.0)]
+    comps = [Components("t", names(0.7), 0.0, 0.10, 0.0), Components("o", names(0.75), 0.0, 0.0, 0.0)]
     q = query("positive", "variant", comps, "t")
-    assert ev.final_scores([q], 0.9, True, True)[0][4] is True  # 0.8 against 0.75
-    assert ev.final_scores([q], 0.9, False, True)[0][4] is False  # 0.7 against 0.75
+    assert ev.final_scores([q], PARAMS, True, True)[0][4] is True  # 0.8 against 0.75
+    assert ev.final_scores([q], PARAMS, False, True)[0][4] is False  # 0.7 against 0.75
 
 
 def test_final_scores_missing_true_entity():
-    q = query("positive", "variant", [Components("o", 0.8, 0.0, 0, 0)], "t")
-    row = ev.final_scores([q], 0.9, True, True)[0]
+    q = query("positive", "variant", [Components("o", names(0.8), 0.0, 0, 0)], "t")
+    row = ev.final_scores([q], PARAMS, True, True)[0]
     assert row[2] is None and row[4] is False
 
 
 def test_final_scores_negative_uses_kind_and_script():
-    q = query("synthetic", "Arabic", [Components("o", 0.6, 0.0, 0, 0)])
-    assert ev.final_scores([q], 0.9, True, True) == [("synthetic", "Arabic", None, pytest.approx(0.6), False)]
+    q = query("synthetic", "Arabic", [Components("o", names(0.6), 0.0, 0, 0)])
+    assert ev.final_scores([q], PARAMS, True, True) == [("synthetic", "Arabic", None, pytest.approx(0.6), False)]
 
 
 POS = [
@@ -80,11 +87,13 @@ def test_metrics_at_a_threshold_nothing_reaches():
 
 
 def test_tune_picks_the_highest_threshold_that_separates_perfectly():
-    dev_pos = [query("positive", "variant", [Components("t", 0.9, 0.0, 0, 0)], "t") for _ in range(3)]
-    dev_neg = [query("synthetic", "Latin", [Components("n", 0.6, 0.0, 0, 0)]) for _ in range(3)]
-    weight, threshold, f1, by_weight = ev.tune(dev_pos, dev_neg, True, True)
+    dev_pos = [query("positive", "variant", [Components("t", names(0.9), 0.0, 0, 0)], "t") for _ in range(3)]
+    dev_neg = [query("synthetic", "Latin", [Components("n", names(0.6), 0.0, 0, 0)]) for _ in range(3)]
+    params, threshold, f1, marginals = ev.tune(dev_pos, dev_neg, True, True)
     assert (threshold, f1) == (0.9, 1.0)  # separation holds for 0.61 to 0.90, ties go to the higher end
-    assert set(by_weight) == set(ev.SKELETON_WEIGHTS)
+    assert isinstance(params, ev.Params)
+    assert set(marginals) == {"skeleton_floor", "skeleton_lift", "length_penalty"}
+    assert set(marginals["length_penalty"]) == {"0.0", "0.2", "0.4", "0.6"}
 
 
 def test_conflicting_birth_date_differs_by_at_least_eight_years():

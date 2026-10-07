@@ -28,7 +28,7 @@ These come from the measurements in `reports/stage2_candidates.json` and `report
 
 - Organisation names that are translated, not transliterated, are often missed. An Arabic company name such as the Arabic for "Wafa Humanitarian Organization" shares no spelling with its English name, so no transliteration key can connect them. Looking up a Latin name against Arabic-script entries finds 94.8% of people but only 63.5% of organisations.
 - Han, kana and other scripts without a transliteration table (Hebrew, Greek, Thai, Hangul, Georgian and a few more) only match themselves. A Latin query cannot find an entity listed only in those scripts, and the reverse is also true. Cross-script candidate recall for these scripts is close to zero.
-- Arabic is written without short vowels, so Arabic-derived names are compared as consonant skeletons. That finds the right entity but also lets unrelated names through, which raises false positives.
+- Arabic is written without short vowels, so Arabic-derived names are compared as consonant skeletons. To stop skeletons creating false positives they only confirm a name that already matches moderately, which costs Arabic cross-script recall (about 50% at the chosen threshold).
 - Names that are subsets of a longer listed name (a two-word query against a three-word listing) score high with token-based fuzzy matching, and common first names make this worse.
 
 ## How to run

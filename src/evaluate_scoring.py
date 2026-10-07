@@ -25,6 +25,7 @@ Writes reports/stage2_scoring.json.
 """
 
 import argparse
+import itertools
 import json
 import platform
 import random
@@ -33,6 +34,7 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
+from typing import NamedTuple
 
 from evaluate_candidates import load_named_entities, percentile, script_class
 from normalise import normalise
@@ -43,7 +45,25 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "reports" / "stage2_scoring.json"
 SEED = 11
 MISSING_P = 0.3
-SKELETON_WEIGHTS = (0.0, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 1.0)
+SKELETON_FLOORS = (0.4, 0.5, 0.6)
+SKELETON_LIFTS = (0.1, 0.15, 0.2, 0.3)
+LENGTH_PENALTIES = (0.0, 0.2, 0.4, 0.6)  # the first must be 0.0: candidates are ranked on it
+
+
+class Params(NamedTuple):
+    skeleton_floor: float
+    skeleton_lift: float
+    penalty_index: int
+
+    @property
+    def length_penalty(self) -> float:
+        return LENGTH_PENALTIES[self.penalty_index]
+
+
+GRID = [
+    Params(f, lift, i)
+    for f, lift, i in itertools.product(SKELETON_FLOORS, SKELETON_LIFTS, range(len(LENGTH_PENALTIES)))
+]
 THRESHOLDS = [round(0.50 + 0.01 * i, 2) for i in range(50)]  # 0.50 to 0.99
 # Positive groups: (dev count, test count).
 POSITIVE_GROUPS = {
@@ -218,7 +238,9 @@ def run_queries(screener: Screener, queries: list[dict]) -> list[float]:
     latencies = []
     for q in queries:
         start = time.perf_counter()
-        q["comps"] = screener.components(q["name"], q["dob"], q["country"], always=q["true_id"])
+        q["comps"] = screener.components(
+            q["name"], q["dob"], q["country"], always=q["true_id"], penalties=LENGTH_PENALTIES
+        )
         latencies.append(time.perf_counter() - start)
     return latencies
 
@@ -226,13 +248,13 @@ def run_queries(screener: Screener, queries: list[dict]) -> list[float]:
 # ---------- metrics ----------
 
 
-def final_scores(queries: list[dict], weight: float, use_dob: bool, use_country: bool) -> list[tuple]:
+def final_scores(queries: list[dict], params: Params, use_dob: bool, use_country: bool) -> list[tuple]:
     """Per query: (group or kind, true entity score or None, best other score, true entity is top-1)."""
     rows = []
     for q in queries:
         s_true, s_other = None, 0.0
         for c in q["comps"]:
-            score = combine(c, weight, use_dob, use_country)
+            score = combine(c, params.skeleton_floor, params.skeleton_lift, params.penalty_index, use_dob, use_country)
             if c.entity_id == q["true_id"]:
                 s_true = score
             elif score > s_other:
@@ -281,35 +303,49 @@ def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float) -> dict:
 
 
 def tune(
-    dev_pos: list[dict], dev_neg: list[dict], use_dob: bool, use_country: bool
-) -> tuple[float, float, float, dict[float, float]]:
-    """(skeleton weight, threshold, F1, best F1 per weight) maximising F1 on dev. Ties go to the higher threshold."""
-    best = (0.0, 0.0, -1.0)
-    by_weight = {}
-    for weight in SKELETON_WEIGHTS:
-        pos = final_scores(dev_pos, weight, use_dob, use_country)
-        neg = final_scores(dev_neg, weight, use_dob, use_country)
-        by_weight[weight] = max(metrics_at(pos, neg, t)["f1"] for t in THRESHOLDS)
+    dev_pos: list[dict], dev_neg: list[dict], use_dob: bool, use_country: bool, grid: list[Params] | None = None
+) -> tuple[Params, float, float, dict[str, dict[str, float]]]:
+    """(params, threshold, F1, best F1 per value of each parameter) maximising F1 on dev.
+
+    Ties go to the higher threshold.
+    """
+    grid = grid or GRID
+    best: tuple[Params, float, float] = (grid[0], 0.0, -1.0)
+    best_f1 = {}
+    for params in grid:
+        pos = final_scores(dev_pos, params, use_dob, use_country)
+        neg = final_scores(dev_neg, params, use_dob, use_country)
+        top = -1.0
         for t in THRESHOLDS:
             f1 = metrics_at(pos, neg, t)["f1"]
+            top = max(top, f1)
             if f1 >= best[2]:
-                best = (weight, t, f1)
-    return (*best, by_weight)
+                best = (params, t, f1)
+        best_f1[params] = top
+    marginals: dict[str, dict[str, float]] = {"skeleton_floor": {}, "skeleton_lift": {}, "length_penalty": {}}
+    for params, f1 in best_f1.items():
+        for name, value in (
+            ("skeleton_floor", params.skeleton_floor),
+            ("skeleton_lift", params.skeleton_lift),
+            ("length_penalty", params.length_penalty),
+        ):
+            marginals[name][str(value)] = max(marginals[name].get(str(value), -1.0), f1)
+    return (*best, marginals)
 
 
-def threshold_for_fpr(dev_pos: list[dict], dev_neg: list[dict], weight: float, target: float) -> float:
-    pos = final_scores(dev_pos, weight, True, True)
-    neg = final_scores(dev_neg, weight, True, True)
+def threshold_for_fpr(dev_pos: list[dict], dev_neg: list[dict], params: Params, target: float) -> float:
+    pos = final_scores(dev_pos, params, True, True)
+    neg = final_scores(dev_neg, params, True, True)
     for t in THRESHOLDS:
         if metrics_at(pos, neg, t)["false_positive_rate"] <= target:
             return t
     return THRESHOLDS[-1]
 
 
-def evaluate_at(test_pos: list[dict], test_neg: list[dict], weight: float, threshold: float, mode: str) -> dict:
+def evaluate_at(test_pos: list[dict], test_neg: list[dict], params: Params, threshold: float, mode: str) -> dict:
     use_dob, use_country = MODES[mode]
-    pos = final_scores(test_pos, weight, use_dob, use_country)
-    neg = final_scores(test_neg, weight, use_dob, use_country)
+    pos = final_scores(test_pos, params, use_dob, use_country)
+    neg = final_scores(test_neg, params, use_dob, use_country)
     return metrics_at(pos, neg, threshold)
 
 
@@ -353,22 +389,38 @@ def main() -> None:
 
     tuned = {}
     for mode, (use_dob, use_country) in MODES.items():
-        weight, threshold, dev_f1, by_weight = tune(dev_pos, dev_neg, use_dob, use_country)
+        params, threshold, dev_f1, marginals = tune(dev_pos, dev_neg, use_dob, use_country)
         tuned[mode] = {
-            "skeleton_weight": weight,
+            "skeleton_floor": params.skeleton_floor,
+            "skeleton_lift": params.skeleton_lift,
+            "length_penalty": params.length_penalty,
             "threshold": threshold,
             "dev_f1": dev_f1,
-            "dev_best_f1_by_skeleton_weight": {str(w): f for w, f in by_weight.items()},
-            "test": evaluate_at(test_pos, test_neg, weight, threshold, mode),
+            "dev_best_f1_by_parameter_value": marginals,
+            "test": evaluate_at(test_pos, test_neg, params, threshold, mode),
         }
-    both_w, both_t = tuned["both"]["skeleton_weight"], tuned["both"]["threshold"]
+        tuned[mode]["_params"] = params
+    both_params, both_t = tuned["both"]["_params"], tuned["both"]["threshold"]
     for mode in MODES:  # same operating point as "both", to isolate what the attributes do
-        tuned[mode]["test_at_both_operating_point"] = evaluate_at(test_pos, test_neg, both_w, both_t, mode)
-    low_fpr_t = threshold_for_fpr(dev_pos, dev_neg, both_w, 0.01)
+        tuned[mode]["test_at_both_operating_point"] = evaluate_at(test_pos, test_neg, both_params, both_t, mode)
+        del tuned[mode]["_params"]
+    low_fpr_t = threshold_for_fpr(dev_pos, dev_neg, both_params, 0.01)
+    penalty_sensitivity = {}  # tune everything else on dev for each fixed length penalty
+    for i, penalty in enumerate(LENGTH_PENALTIES):
+        fixed = [p for p in GRID if p.penalty_index == i]
+        params, threshold, dev_f1, _ = tune(dev_pos, dev_neg, True, True, fixed)
+        test = evaluate_at(test_pos, test_neg, params, threshold, "both")
+        penalty_sensitivity[str(penalty)] = {
+            "skeleton_floor": params.skeleton_floor,
+            "skeleton_lift": params.skeleton_lift,
+            "threshold": threshold,
+            "dev_f1": dev_f1,
+            **{k: test[k] for k in ("recall", "precision", "f1", "top1_accuracy", "false_positive_rate")},
+        }
     sweep = {
         str(t): {k: m[k] for k in ("recall", "precision", "false_positive_rate", "alert_rate_overall", "top1_accuracy")}
         for t in (0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95)
-        for m in [evaluate_at(test_pos, test_neg, both_w, t, "both")]
+        for m in [evaluate_at(test_pos, test_neg, both_params, t, "both")]
     }
     report = {
         "python_version": platform.python_version(),
@@ -381,9 +433,12 @@ def main() -> None:
         "tuned_on_dev": tuned,
         "fpr_at_most_1_percent_operating_point": {
             "threshold_from_dev": low_fpr_t,
-            "skeleton_weight": both_w,
-            "test": evaluate_at(test_pos, test_neg, both_w, low_fpr_t, "both"),
+            "skeleton_floor": both_params.skeleton_floor,
+            "skeleton_lift": both_params.skeleton_lift,
+            "length_penalty": both_params.length_penalty,
+            "test": evaluate_at(test_pos, test_neg, both_params, low_fpr_t, "both"),
         },
+        "length_penalty_sensitivity_both": penalty_sensitivity,
         "test_threshold_sweep_both": sweep,
         "timing": {
             "screener_build_seconds": round(build_seconds, 2),
