@@ -66,9 +66,7 @@ class Params(NamedTuple):
         return BLENDS[self.blend_index]
 
 
-GRID = [
-    Params(f, lift, i) for f, lift, i in itertools.product(SKELETON_FLOORS, SKELETON_LIFTS, range(len(BLENDS)))
-]
+GRID = [Params(f, lift, i) for f, lift, i in itertools.product(SKELETON_FLOORS, SKELETON_LIFTS, range(len(BLENDS)))]
 THRESHOLDS = [round(0.50 + 0.01 * i, 2) for i in range(50)]  # 0.50 to 0.99
 # Positive groups: (dev count, test count).
 POSITIVE_GROUPS = {
@@ -229,7 +227,10 @@ def build_near_misses(
     eligible = [
         e
         for e in targets
-        if e["schema"] == "Person" and e["id"] not in used and e["birth_dates"] and e["countries"]
+        if e["schema"] == "Person"
+        and e["id"] not in used
+        and e["birth_dates"]
+        and e["countries"]
         and any(script_class(n) in ("Latin", "Cyrillic", "Arabic") for n in e["names"])
     ]
     random.Random(f"{SEED}-{key}").shuffle(eligible)
@@ -550,11 +551,11 @@ def main() -> None:
     adjustments = Adjustments()
     t0 = time.perf_counter()
     held_list = [{**e, "names": kept_names.get(e["id"], e["names"])} for e in targets]
-    screener = Screener.build(held_list, max_df=args.max_df, adjustments=adjustments)
+    screener = Screener.build(held_list, max_df=args.max_df, adjustments=adjustments, skeleton_idf=False)
     build_seconds = time.perf_counter() - t0
     latencies = run_queries(screener, positives)
     del screener, held_list
-    full = Screener.build(targets, max_df=args.max_df, adjustments=adjustments)
+    full = Screener.build(targets, max_df=args.max_df, adjustments=adjustments, skeleton_idf=False)
     negatives = synthetic + near
     latencies += run_queries(full, negatives)
     del full

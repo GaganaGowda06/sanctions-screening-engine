@@ -73,9 +73,7 @@ def fpr_at(neg_rows: list[tuple], script: str, threshold: float) -> float:
     return sum(r[3] >= threshold for r in rows) / len(rows) if rows else 0.0
 
 
-def choose_script_thresholds(
-    pos_rows: list[tuple], neg_rows: list[tuple], global_threshold: float
-) -> dict[str, float]:
+def choose_script_thresholds(pos_rows: list[tuple], neg_rows: list[tuple], global_threshold: float) -> dict[str, float]:
     """Per script: lowest false positive rate with recall no lower than at the global threshold.
 
     "Other" gets the global threshold. A script with no positives keeps the global threshold too.
@@ -152,8 +150,10 @@ def main() -> None:
     targets = [e for e in entities if e["target"]]
     all_positives, negatives, held = build_query_sets(entities, targets)
 
-    held_screener = Screener.build([{**e, "names": held.get(e["id"], e["names"])} for e in targets], max_df=args.max_df)
-    full = Screener.build(targets, max_df=args.max_df)
+    held_screener = Screener.build(
+        [{**e, "names": held.get(e["id"], e["names"])} for e in targets], max_df=args.max_df, skeleton_idf=False
+    )
+    full = Screener.build(targets, max_df=args.max_df, skeleton_idf=False)
 
     def pick(queries: list[dict], *splits: str, headline: bool = False) -> list[dict]:
         return [q for q in queries if q["split"] in splits and (not headline or q["group"] in ev.HEADLINE_GROUPS)]

@@ -273,9 +273,12 @@ def part_b(args: argparse.Namespace, model_json: dict) -> dict:
     positives, negatives, held = build_query_sets(entities, targets)
     df, documents = load_table()
     held_screener = Screener.build(
-        [{**e, "names": held.get(e["id"], e["names"])} for e in targets], blend=BLEND, idf_table=(df, documents)
+        [{**e, "names": held.get(e["id"], e["names"])} for e in targets],
+        blend=BLEND,
+        idf_table=(df, documents),
+        skeleton_idf=False,
     )
-    full_screener = Screener.build(targets, blend=BLEND, idf_table=(df, documents))
+    full_screener = Screener.build(targets, blend=BLEND, idf_table=(df, documents), skeleton_idf=False)
 
     dev_pos = [q for q in positives if q["split"] == "dev" and q["group"] in ev.HEADLINE_GROUPS]
     dev_neg = [q for q in negatives if q["split"] == "dev"]

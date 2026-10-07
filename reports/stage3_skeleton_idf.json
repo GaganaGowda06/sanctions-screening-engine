@@ -1,0 +1,520 @@
+{
+ "engine": "frozen config, threshold 0.86",
+ "change": "rarity-weighted skeleton tokens",
+ "dev": {
+  "baseline": {
+   "overall": {
+    "recall": 0.726,
+    "precision": 0.6772,
+    "f1": 0.7008,
+    "false_positive_rate": 0.15
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.0683,
+     "ci95": [
+      0.0508,
+      0.0914
+     ],
+     "k": 41,
+     "n": 600
+    },
+    "Cyrillic": {
+     "value": 0.0533,
+     "ci95": [
+      0.0348,
+      0.0809
+     ],
+     "k": 20,
+     "n": 375
+    },
+    "Arabic": {
+     "value": 0.3259,
+     "ci95": [
+      0.2916,
+      0.3622
+     ],
+     "k": 220,
+     "n": 675
+    }
+   },
+   "fpr_all_clean": {
+    "Latin": {
+     "value": 0.0567,
+     "ci95": [
+      0.0427,
+      0.0751
+     ],
+     "k": 45,
+     "n": 793
+    },
+    "Cyrillic": {
+     "value": 0.0465,
+     "ci95": [
+      0.0303,
+      0.0707
+     ],
+     "k": 20,
+     "n": 430
+    },
+    "Arabic": {
+     "value": 0.325,
+     "ci95": [
+      0.2908,
+      0.3611
+     ],
+     "k": 220,
+     "n": 677
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7186,
+     "ci95": [
+      0.6841,
+      0.7506
+     ],
+     "k": 503,
+     "n": 700
+    },
+    "Cyrillic": {
+     "value": 0.88,
+     "ci95": [
+      0.8183,
+      0.9227
+     ],
+     "k": 132,
+     "n": 150
+    },
+    "Arabic": {
+     "value": 0.6067,
+     "ci95": [
+      0.5268,
+      0.6812
+     ],
+     "k": 91,
+     "n": 150
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 4.77,
+     "ratio_ci95": [
+      3.59,
+      6.77
+     ],
+     "difference_points": 25.8,
+     "difference_ci95": [
+      21.8,
+      29.8
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 6.11,
+     "ratio_ci95": [
+      4.16,
+      10.28
+     ],
+     "difference_points": 27.3,
+     "difference_ci95": [
+      23.1,
+      31.3
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  },
+  "rarity_weighted_skeleton": {
+   "overall": {
+    "recall": 0.75,
+    "precision": 0.7303,
+    "f1": 0.74,
+    "false_positive_rate": 0.1221
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.0517,
+     "ci95": [
+      0.0366,
+      0.0724
+     ],
+     "k": 31,
+     "n": 600
+    },
+    "Cyrillic": {
+     "value": 0.0347,
+     "ci95": [
+      0.0204,
+      0.0584
+     ],
+     "k": 13,
+     "n": 375
+    },
+    "Arabic": {
+     "value": 0.2756,
+     "ci95": [
+      0.2432,
+      0.3105
+     ],
+     "k": 186,
+     "n": 675
+    }
+   },
+   "fpr_all_clean": {
+    "Latin": {
+     "value": 0.0416,
+     "ci95": [
+      0.0298,
+      0.0579
+     ],
+     "k": 33,
+     "n": 793
+    },
+    "Cyrillic": {
+     "value": 0.0302,
+     "ci95": [
+      0.0178,
+      0.051
+     ],
+     "k": 13,
+     "n": 430
+    },
+    "Arabic": {
+     "value": 0.2747,
+     "ci95": [
+      0.2425,
+      0.3096
+     ],
+     "k": 186,
+     "n": 677
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7414,
+     "ci95": [
+      0.7077,
+      0.7725
+     ],
+     "k": 519,
+     "n": 700
+    },
+    "Cyrillic": {
+     "value": 0.88,
+     "ci95": [
+      0.8183,
+      0.9227
+     ],
+     "k": 132,
+     "n": 150
+    },
+    "Arabic": {
+     "value": 0.66,
+     "ci95": [
+      0.581,
+      0.731
+     ],
+     "k": 99,
+     "n": 150
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 5.33,
+     "ratio_ci95": [
+      3.85,
+      7.96
+     ],
+     "difference_points": 22.4,
+     "difference_ci95": [
+      18.6,
+      26.3
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 7.95,
+     "ratio_ci95": [
+      4.92,
+      16.11
+     ],
+     "difference_points": 24.1,
+     "difference_ci95": [
+      20.1,
+      27.9
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  }
+ },
+ "test": {
+  "baseline": {
+   "overall": {
+    "recall": 0.7295,
+    "precision": 0.803,
+    "f1": 0.7645,
+    "false_positive_rate": 0.1075
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.0638,
+     "ci95": [
+      0.0488,
+      0.0829
+     ],
+     "k": 51,
+     "n": 800
+    },
+    "Cyrillic": {
+     "value": 0.0714,
+     "ci95": [
+      0.0488,
+      0.1033
+     ],
+     "k": 25,
+     "n": 350
+    },
+    "Arabic": {
+     "value": 0.3857,
+     "ci95": [
+      0.3362,
+      0.4377
+     ],
+     "k": 135,
+     "n": 350
+    }
+   },
+   "fpr_all_clean": {
+    "Latin": {
+     "value": 0.0473,
+     "ci95": [
+      0.0365,
+      0.0611
+     ],
+     "k": 55,
+     "n": 1162
+    },
+    "Cyrillic": {
+     "value": 0.0522,
+     "ci95": [
+      0.0356,
+      0.0759
+     ],
+     "k": 25,
+     "n": 479
+    },
+    "Arabic": {
+     "value": 0.376,
+     "ci95": [
+      0.3275,
+      0.4272
+     ],
+     "k": 135,
+     "n": 359
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7143,
+     "ci95": [
+      0.6901,
+      0.7373
+     ],
+     "k": 1000,
+     "n": 1400
+    },
+    "Cyrillic": {
+     "value": 0.88,
+     "ci95": [
+      0.8383,
+      0.912
+     ],
+     "k": 264,
+     "n": 300
+    },
+    "Arabic": {
+     "value": 0.65,
+     "ci95": [
+      0.5944,
+      0.7018
+     ],
+     "k": 195,
+     "n": 300
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 6.05,
+     "ratio_ci95": [
+      4.57,
+      8.46
+     ],
+     "difference_points": 32.2,
+     "difference_ci95": [
+      26.9,
+      37.6
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 5.4,
+     "ratio_ci95": [
+      3.76,
+      8.59
+     ],
+     "difference_points": 31.4,
+     "difference_ci95": [
+      25.7,
+      37.1
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  },
+  "rarity_weighted_skeleton": {
+   "overall": {
+    "recall": 0.7485,
+    "precision": 0.8501,
+    "f1": 0.7961,
+    "false_positive_rate": 0.0895
+   },
+   "fpr_synthetic": {
+    "Latin": {
+     "value": 0.055,
+     "ci95": [
+      0.0412,
+      0.073
+     ],
+     "k": 44,
+     "n": 800
+    },
+    "Cyrillic": {
+     "value": 0.0571,
+     "ci95": [
+      0.0373,
+      0.0866
+     ],
+     "k": 20,
+     "n": 350
+    },
+    "Arabic": {
+     "value": 0.3229,
+     "ci95": [
+      0.276,
+      0.3735
+     ],
+     "k": 113,
+     "n": 350
+    }
+   },
+   "fpr_all_clean": {
+    "Latin": {
+     "value": 0.0396,
+     "ci95": [
+      0.0298,
+      0.0524
+     ],
+     "k": 46,
+     "n": 1162
+    },
+    "Cyrillic": {
+     "value": 0.0418,
+     "ci95": [
+      0.0272,
+      0.0636
+     ],
+     "k": 20,
+     "n": 479
+    },
+    "Arabic": {
+     "value": 0.3148,
+     "ci95": [
+      0.2689,
+      0.3646
+     ],
+     "k": 113,
+     "n": 359
+    }
+   },
+   "recall": {
+    "Latin": {
+     "value": 0.7357,
+     "ci95": [
+      0.712,
+      0.7581
+     ],
+     "k": 1030,
+     "n": 1400
+    },
+    "Cyrillic": {
+     "value": 0.8867,
+     "ci95": [
+      0.8458,
+      0.9178
+     ],
+     "k": 266,
+     "n": 300
+    },
+    "Arabic": {
+     "value": 0.67,
+     "ci95": [
+      0.6149,
+      0.7208
+     ],
+     "k": 201,
+     "n": 300
+    }
+   },
+   "arabic_ratio_synthetic": {
+    "Latin": {
+     "ratio": 5.87,
+     "ratio_ci95": [
+      4.29,
+      8.3
+     ],
+     "difference_points": 26.8,
+     "difference_ci95": [
+      21.8,
+      31.9
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    },
+    "Cyrillic": {
+     "ratio": 5.65,
+     "ratio_ci95": [
+      3.74,
+      9.64
+     ],
+     "difference_points": 26.6,
+     "difference_ci95": [
+      20.9,
+      32.0
+     ],
+     "bootstrap_resamples_with_zero_reference_rate": 0
+    }
+   }
+  }
+ },
+ "acceptance": {
+  "dev": {
+   "arabic_fpr_clearly_down": false,
+   "arabic_recall_at_least_65": true,
+   "Latin_fpr_unchanged": true,
+   "Latin_recall_unchanged": true,
+   "Cyrillic_fpr_unchanged": true,
+   "Cyrillic_recall_unchanged": true,
+   "all_pass": false
+  },
+  "test": {
+   "arabic_fpr_clearly_down": false,
+   "arabic_recall_at_least_65": true,
+   "Latin_fpr_unchanged": true,
+   "Latin_recall_unchanged": true,
+   "Cyrillic_fpr_unchanged": true,
+   "Cyrillic_recall_unchanged": true,
+   "all_pass": false
+  }
+ }
+}

@@ -233,9 +233,7 @@ def date_comparison(query: str | None, entity_dates: Sequence[str], adj: Adjustm
     return "conflict", -adj.dob_conflict
 
 
-def country_comparison(
-    query: str | None, entity_countries: frozenset[str], adj: Adjustments
-) -> tuple[str, float]:
+def country_comparison(query: str | None, entity_countries: frozenset[str], adj: Adjustments) -> tuple[str, float]:
     """(status, adjustment). Status is agree, conflict or missing."""
     if not query or not entity_countries:
         return "missing", 0.0
@@ -312,9 +310,14 @@ class Screener:
         blend: float = DEFAULT_BLEND,
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
         idf_table: tuple[Mapping[str, int], int] | None = None,
+        skeleton_idf: bool = True,
     ) -> None:
         """`idf_table` is (document frequency, documents) to use instead of counting the records here, so training
-        and serving can share one table (see idf_table.py)."""
+        and serving can share one table (see idf_table.py).
+
+        `skeleton_idf` (on by default since Stage 3) scores the skeleton as a rarity-weighted token overlap instead
+        of a whole-string ratio, so a skeleton match on common tokens (mhmd, ahmd, ali, abd) counts for little and
+        one on a rare token for much."""
         self.index = index
         self.records = records
         self.adjustments = adjustments
@@ -329,6 +332,31 @@ class Screener:
             self._df = document_frequency
             self._n = len(records)
         self._idf_cache: dict[str, float] = {}
+        self.skeleton_idf = skeleton_idf
+        self._skeleton_idf_cache: dict[str, float] = {}
+        self._skeleton_df: Counter[str] = Counter()
+        if skeleton_idf:
+            for record in records.values():
+                self._skeleton_df.update({t for form in record.skeletons for t in form.split()})
+
+    def skeleton_token_idf(self, token: str) -> float:
+        """Inverse document frequency of a skeleton token over the entities in the index (never below 0.1)."""
+        if token not in self._skeleton_idf_cache:
+            df = self._skeleton_df.get(token, 0)
+            self._skeleton_idf_cache[token] = max(0.1, math.log((len(self.records) + 1) / (df + 1)))
+        return self._skeleton_idf_cache[token]
+
+    def skeleton_similarity(self, query_skeleton: str, record: EntityRecord) -> float:
+        if not self.skeleton_idf:
+            return best_similarity(query_skeleton, record.skeletons)
+        query_tokens = query_skeleton.split()
+        return max(
+            (
+                weighted_token_score(query_tokens, form.split(), frozenset(form.split()), self.skeleton_token_idf)
+                for form in record.skeletons
+            ),
+            default=0.0,
+        )
 
     def idf(self, token: str) -> float:
         """Inverse document frequency of a name token over the entities in the index (never below 0.1)."""
@@ -345,14 +373,13 @@ class Screener:
         blend: float = DEFAULT_BLEND,
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
         idf_table: tuple[Mapping[str, int], int] | None = None,
+        skeleton_idf: bool = True,
     ) -> "Screener":
         """Build from dicts with id, names and optionally birth_dates and countries."""
         entities = list(entities)
         index = CandidateIndex.build(((e["id"], e["names"]) for e in entities), max_df=max_df)
-        records = {
-            e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities
-        }
-        return cls(index, records, adjustments or Adjustments(), blend, length_penalty, idf_table)
+        records = {e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities}
+        return cls(index, records, adjustments or Adjustments(), blend, length_penalty, idf_table, skeleton_idf)
 
     def components(
         self,
@@ -382,7 +409,7 @@ class Screener:
                 Components(
                     entity_id,
                     names,
-                    best_similarity(query_skeleton, record.skeletons),
+                    self.skeleton_similarity(query_skeleton, record),
                     date_adjustment(birth_date, record.birth_dates, self.adjustments),
                     country_adjustment(country, record.countries, self.adjustments),
                     query_arabic or record.arabic,

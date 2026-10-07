@@ -340,3 +340,16 @@ def test_components_rank_by_best_reachable_score_so_a_boost_can_lift_an_entity_i
     ]
     kept = Screener.build(entities, blend=0.0).components("Karim Nasser", "1970-05-12", None, keep=1)
     assert [c.entity_id for c in kept] == ["b"]  # name scores tie, "b" can reach 1.0 with the full-date boost
+
+
+def test_rarity_weighted_skeleton_is_on_by_default_and_discounts_common_tokens():
+    from scoring import Screener
+
+    common = [{"id": f"c{i}", "names": [f"Mohammed Zxq{i}rt"]} for i in range(30)]
+    target = [{"id": "t", "names": ["Mohammed Khalid"]}]
+    plain = Screener.build(common + target, skeleton_idf=False)
+    weighted = Screener.build(common + target)
+    assert weighted.skeleton_idf is True
+    query = "Mohammed Qqqq"
+    sk = lambda s: next(c.skeleton for c in s.components(query) if c.entity_id == "t")  # noqa: E731
+    assert sk(weighted) < sk(plain)

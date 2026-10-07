@@ -285,6 +285,14 @@ Deduplication, on the Pairs final hold-out (45,381 cleaned entity pairs, 27,842 
 
 The constrained model separates matches from non-matches much better than the hand-tuned rule (AUC 0.984 against 0.957) with a lower false positive rate (3.9% against 7.3%), at slightly lower recall (94.1% against 95.4%). Its test-set AUC was 0.985, so it generalised. The two kinds of pair differ as before: pairs that share an entity with train are easier (0.993 AUC) than those that do not (0.942), and the model's lead over the hand-tuned rule holds in both.
 
+## Stage 3: Arabic alert disparity
+
+Arabic-script names alert about five times as often as Latin or Cyrillic ones. The third screening hold-out (`holdout/screening_holdout_v3.json`, SHA-256 `963b278b...`) measured the baseline once: on synthetic clean names Arabic alerts 32.6% (95% interval 27.9 to 37.7), Latin 6.5% and Cyrillic 6.0%, a ratio of 5.1 (3.96 to 6.74) against both pooled. See `reports/fairness_baseline.json`.
+
+Diagnosis on dev (`reports/stage3_arabic_diagnosis.json`): 89% of Arabic false alerts needed the skeleton, and 85% rested only on common skeleton tokens such as `b`, `mhmd`, `hmd` and `l`.
+
+First fix, on by default: the skeleton similarity is a rarity-weighted token overlap (`skeleton_idf` in `src/scoring.py`) instead of a whole-string ratio. It lowers the Arabic false positive rate and raises Arabic recall (dev 32.6% to 27.6% and 60.7% to 66.0%; test 38.6% to 32.3% and 65.0% to 67.0%), but it does not improve the Arabic to Latin ratio, because the Latin rate falls too (`reports/stage3_skeleton_idf.json`). It missed the acceptance bar I set for a clear drop, and was kept for the gain it does give.
+
 ## Known limitations
 
 These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.

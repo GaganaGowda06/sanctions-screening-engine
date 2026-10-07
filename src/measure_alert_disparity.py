@@ -92,8 +92,8 @@ def main(argv: list[str] | None = None) -> None:
     entities = load_named_entities(args.input)
     targets = [e for e in entities if e["target"]]
     held = Screener.build([{**e, "names": kept.get(e["id"], e["names"])} for e in targets],
-                          max_df=args.max_df, blend=FROZEN.blend)  # fmt: skip
-    full = Screener.build(targets, max_df=args.max_df, blend=FROZEN.blend)
+                          max_df=args.max_df, blend=FROZEN.blend, skeleton_idf=False)  # fmt: skip
+    full = Screener.build(targets, max_df=args.max_df, blend=FROZEN.blend, skeleton_idf=False)
     for screener, group in ((held, positives), (full, negatives)):
         for q in group:
             q["comps"] = screener.components(q["name"], q["dob"], q["country"], always=q["true_id"],

@@ -55,8 +55,13 @@ def variants(model: dict) -> dict[str, dict]:
         "country_agree_zero": changed(country_agree=0.0),
         "names_only": changed(**dict.fromkeys(ATTRIBUTE_WEIGHTS, 0.0)),
         "hand_set_attributes": changed(
-            birth_agree=0.5, birth_close=0.0, birth_conflict=-4.0, country_agree=0.3, country_conflict=-2.0,
-            identifier_agree=0.5, identifier_conflict=-2.0,
+            birth_agree=0.5,
+            birth_close=0.0,
+            birth_conflict=-4.0,
+            country_agree=0.3,
+            country_conflict=-2.0,
+            identifier_agree=0.5,
+            identifier_conflict=-2.0,
         ),  # fmt: skip
     }
 
@@ -77,9 +82,9 @@ def main(argv: list[str] | None = None) -> None:
     positives, negatives, held = build_query_sets(entities, targets)
     df, documents = load_table()
     held_screener = Screener.build(
-        [{**e, "names": held.get(e["id"], e["names"])} for e in targets], idf_table=(df, documents)
+        [{**e, "names": held.get(e["id"], e["names"])} for e in targets], idf_table=(df, documents), skeleton_idf=False
     )
-    full_screener = Screener.build(targets, idf_table=(df, documents))
+    full_screener = Screener.build(targets, idf_table=(df, documents), skeleton_idf=False)
     pos = [q for q in positives if q["split"] == "dev" and q["group"] in ev.HEADLINE_GROUPS][: args.queries]
     neg = [q for q in negatives if q["split"] == "dev"][: args.queries]
 

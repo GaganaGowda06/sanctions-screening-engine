@@ -1,0 +1,1954 @@
+{
+ "dev_only": true,
+ "threshold": 0.86,
+ "common_df_cutoff": 50,
+ "skeleton_tokens_at_or_above_cutoff": 950,
+ "skeleton_token_types": 39995,
+ "most_common_skeleton_tokens": [
+  [
+   "l",
+   9761
+  ],
+  [
+   "mhmd",
+   5532
+  ],
+  [
+   "s",
+   4347
+  ],
+  [
+   "hmd",
+   3202
+  ],
+  [
+   "d",
+   3165
+  ],
+  [
+   "n",
+   2788
+  ],
+  [
+   "t",
+   2654
+  ],
+  [
+   "b",
+   2571
+  ],
+  [
+   "nd",
+   2444
+  ],
+  [
+   "hsn",
+   2333
+  ],
+  [
+   "k",
+   2318
+  ],
+  [
+   "bd",
+   2313
+  ],
+  [
+   "f",
+   2247
+  ],
+  [
+   "sd",
+   2024
+  ],
+  [
+   "r",
+   1992
+  ],
+  [
+   "lh",
+   1968
+  ],
+  [
+   "sn",
+   1876
+  ],
+  [
+   "rs",
+   1721
+  ],
+  [
+   "st",
+   1571
+  ],
+  [
+   "mr",
+   1558
+  ],
+  [
+   "hn",
+   1395
+  ],
+  [
+   "lksndr",
+   1295
+  ],
+  [
+   "m",
+   1253
+  ],
+  [
+   "ns",
+   1230
+  ],
+  [
+   "h",
+   1228
+  ],
+  [
+   "bdl",
+   1198
+  ],
+  [
+   "ls",
+   1154
+  ],
+  [
+   "hrp",
+   1122
+  ],
+  [
+   "srh",
+   1073
+  ],
+  [
+   "tsnlh",
+   1054
+  ]
+ ],
+ "by_query_script": {
+  "Latin": {
+   "names": 793,
+   "alerts": 45,
+   "needed_skeleton": 38,
+   "arabic_involved_pair": 27,
+   "only_common_tokens": 40,
+   "has_rare_token": 5,
+   "no_token_pair": 0,
+   "alert_rate": 0.0567,
+   "share_of_alerts_needing_skeleton": 0.844,
+   "share_of_alerts_on_only_common_tokens": 0.889
+  },
+  "Cyrillic": {
+   "names": 430,
+   "alerts": 20,
+   "needed_skeleton": 19,
+   "arabic_involved_pair": 5,
+   "only_common_tokens": 13,
+   "has_rare_token": 7,
+   "no_token_pair": 0,
+   "alert_rate": 0.0465,
+   "share_of_alerts_needing_skeleton": 0.95,
+   "share_of_alerts_on_only_common_tokens": 0.65
+  },
+  "Arabic": {
+   "names": 677,
+   "alerts": 220,
+   "needed_skeleton": 196,
+   "arabic_involved_pair": 220,
+   "only_common_tokens": 187,
+   "has_rare_token": 32,
+   "no_token_pair": 1,
+   "alert_rate": 0.325,
+   "share_of_alerts_needing_skeleton": 0.891,
+   "share_of_alerts_on_only_common_tokens": 0.85
+  }
+ },
+ "tokens_in_alerts_most_frequent_first": {
+  "Latin": [
+   [
+    "mhmd",
+    6,
+    5532
+   ],
+   [
+    "l",
+    4,
+    9761
+   ],
+   [
+    "b",
+    4,
+    2571
+   ],
+   [
+    "hsn",
+    3,
+    2333
+   ],
+   [
+    "lksndr",
+    3,
+    1295
+   ],
+   [
+    "hn",
+    2,
+    1395
+   ],
+   [
+    "ldmrs",
+    2,
+    1017
+   ],
+   [
+    "hns",
+    1,
+    351
+   ],
+   [
+    "kml",
+    1,
+    143
+   ],
+   [
+    "lnd",
+    1,
+    174
+   ],
+   [
+    "hd",
+    1,
+    695
+   ],
+   [
+    "bs",
+    1,
+    645
+   ],
+   [
+    "md",
+    1,
+    368
+   ],
+   [
+    "bls",
+    1,
+    98
+   ],
+   [
+    "mrn",
+    1,
+    565
+   ],
+   [
+    "klmn",
+    1,
+    15
+   ],
+   [
+    "prs",
+    1,
+    249
+   ],
+   [
+    "br",
+    1,
+    529
+   ],
+   [
+    "sdr",
+    1,
+    77
+   ],
+   [
+    "str",
+    1,
+    325
+   ],
+   [
+    "sr",
+    1,
+    960
+   ],
+   [
+    "brkt",
+    1,
+    70
+   ],
+   [
+    "lh",
+    1,
+    1968
+   ],
+   [
+    "trs",
+    1,
+    214
+   ],
+   [
+    "lksndrs",
+    1,
+    963
+   ]
+  ],
+  "Cyrillic": [
+   [
+    "ldmr",
+    4,
+    620
+   ],
+   [
+    "srh",
+    2,
+    1073
+   ],
+   [
+    "ntls",
+    2,
+    480
+   ],
+   [
+    "lr",
+    2,
+    394
+   ],
+   [
+    "ldmrs",
+    2,
+    1017
+   ],
+   [
+    "ktrs",
+    1,
+    585
+   ],
+   [
+    "mrs",
+    1,
+    177
+   ],
+   [
+    "mhl",
+    1,
+    492
+   ],
+   [
+    "nkl",
+    1,
+    426
+   ],
+   [
+    "lpn",
+    1,
+    24
+   ],
+   [
+    "sl",
+    1,
+    1003
+   ],
+   [
+    "lksndrs",
+    1,
+    963
+   ],
+   [
+    "nkfr",
+    1,
+    8
+   ],
+   [
+    "l",
+    1,
+    9761
+   ],
+   [
+    "fs",
+    1,
+    229
+   ],
+   [
+    "mrn",
+    1,
+    565
+   ],
+   [
+    "hk",
+    1,
+    401
+   ],
+   [
+    "klsnk",
+    1,
+    49
+   ],
+   [
+    "ktr",
+    1,
+    481
+   ],
+   [
+    "bsdn",
+    1,
+    8
+   ],
+   [
+    "kjnk",
+    1,
+    9
+   ],
+   [
+    "brs",
+    1,
+    464
+   ],
+   [
+    "fdr",
+    1,
+    55
+   ],
+   [
+    "strsnsk",
+    1,
+    2
+   ],
+   [
+    "nkrs",
+    1,
+    10
+   ]
+  ],
+  "Arabic": [
+   [
+    "b",
+    49,
+    2571
+   ],
+   [
+    "mhmd",
+    33,
+    5532
+   ],
+   [
+    "hmd",
+    23,
+    3202
+   ],
+   [
+    "l",
+    14,
+    9761
+   ],
+   [
+    "hsn",
+    10,
+    2333
+   ],
+   [
+    "sf",
+    8,
+    722
+   ],
+   [
+    "nsr",
+    7,
+    450
+   ],
+   [
+    "krm",
+    7,
+    475
+   ],
+   [
+    "mr",
+    6,
+    1558
+   ],
+   [
+    "hms",
+    6,
+    300
+   ],
+   [
+    "sd",
+    6,
+    2024
+   ],
+   [
+    "brhm",
+    5,
+    809
+   ],
+   [
+    "ld",
+    5,
+    306
+   ],
+   [
+    "hd",
+    5,
+    695
+   ],
+   [
+    "s",
+    5,
+    4347
+   ],
+   [
+    "slm",
+    5,
+    687
+   ],
+   [
+    "md",
+    4,
+    368
+   ],
+   [
+    "bl",
+    4,
+    377
+   ],
+   [
+    "skr",
+    4,
+    451
+   ],
+   [
+    "ns",
+    4,
+    1230
+   ],
+   [
+    "ml",
+    3,
+    426
+   ],
+   [
+    "nr",
+    3,
+    442
+   ],
+   [
+    "thr",
+    3,
+    148
+   ],
+   [
+    "rdn",
+    3,
+    157
+   ],
+   [
+    "kl",
+    3,
+    494
+   ]
+  ]
+ },
+ "examples": {
+  "Latin": [
+   {
+    "query": "Khanchi BERIOZA",
+    "entity_name": "Lionel DUMONT",
+    "final_score": 0.883,
+    "name_score": 0.24,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "hns",
+      "hns",
+      1.0,
+      351
+     ]
+    ]
+   },
+   {
+    "query": "BEDİR Kamal",
+    "entity_name": "Mueyyad Kamal Ahmed Mohammed",
+    "final_score": 0.883,
+    "name_score": 0.614,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "kml",
+      "kml",
+      1.0,
+      143
+     ]
+    ]
+   },
+   {
+    "query": "Leonid Hamid",
+    "entity_name": "شركة ارض الخير",
+    "final_score": 0.923,
+    "name_score": 0.238,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "lnd",
+      "lnd",
+      1.0,
+      174
+     ],
+     [
+      "hmd",
+      "hd",
+      0.8,
+      695
+     ]
+    ]
+   },
+   {
+    "query": "Avilov Basov",
+    "entity_name": "أمجد عباس",
+    "final_score": 1.0,
+    "name_score": 0.42,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ],
+     [
+      "bs",
+      "bs",
+      1.0,
+      645
+     ]
+    ]
+   },
+   {
+    "query": "Medvediev Vitalii",
+    "entity_name": "MEDVEDEV, Valery Kirillovich",
+    "final_score": 0.881,
+    "name_score": 0.881,
+    "skeleton_similarity": 0.4,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "md",
+      "md",
+      1.0,
+      368
+     ]
+    ]
+   },
+   {
+    "query": "Valerii BELOUSOV",
+    "entity_name": "Белоусов Юрий Игоревич",
+    "final_score": 0.927,
+    "name_score": 0.697,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "bls",
+      "bls",
+      1.0,
+      98
+     ]
+    ]
+   },
+   {
+    "query": "David Marvin",
+    "entity_name": "Марвин АДАМС",
+    "final_score": 0.863,
+    "name_score": 0.649,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "mrn",
+      "mrn",
+      1.0,
+      565
+     ]
+    ]
+   },
+   {
+    "query": "KLIMINA Adanov",
+    "entity_name": "KLIMINA, Yevgeniya",
+    "final_score": 0.876,
+    "name_score": 0.646,
+    "skeleton_similarity": 0.857,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "klmn",
+      "klmn",
+      1.0,
+      15
+     ]
+    ]
+   },
+   {
+    "query": "Pervaiz Muhammad",
+    "entity_name": "Muhammad Pervez",
+    "final_score": 1.0,
+    "name_score": 0.864,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "prs",
+      "prs",
+      1.0,
+      249
+     ],
+     [
+      "mhmd",
+      "mhmd",
+      1.0,
+      5532
+     ]
+    ]
+   },
+   {
+    "query": "Abu al-Jiburi",
+    "entity_name": "Hassan Ahmed Hassan Saleh",
+    "final_score": 0.923,
+    "name_score": 0.572,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ],
+     [
+      "jbr",
+      "br",
+      0.8,
+      529
+     ]
+    ]
+   },
+   {
+    "query": "Abu SIDOROV",
+    "entity_name": "Ali Yusuf Abd Dhanun Al-Abadi",
+    "final_score": 1.0,
+    "name_score": 0.519,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "sdr",
+      "sdr",
+      1.0,
+      77
+     ]
+    ]
+   },
+   {
+    "query": "Abu Husain",
+    "entity_name": "یوسف المداني",
+    "final_score": 1.0,
+    "name_score": 0.894,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "hsn",
+      "hsn",
+      1.0,
+      2333
+     ]
+    ]
+   },
+   {
+    "query": "Satar Ilsur",
+    "entity_name": "Saraya",
+    "final_score": 0.933,
+    "name_score": 0.517,
+    "skeleton_similarity": 0.933,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "str",
+      "str",
+      1.0,
+      325
+     ],
+     [
+      "lsr",
+      "sr",
+      0.8,
+      960
+     ]
+    ]
+   },
+   {
+    "query": "BARAKAT Lee",
+    "entity_name": "ديالا بركات",
+    "final_score": 0.923,
+    "name_score": 0.609,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "brkt",
+      "brkt",
+      1.0,
+      70
+     ]
+    ]
+   },
+   {
+    "query": "Olga TARASIUK",
+    "entity_name": "Тараш Ольга Володимирівна",
+    "final_score": 0.953,
+    "name_score": 0.826,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "lh",
+      "lh",
+      1.0,
+      1968
+     ],
+     [
+      "trsk",
+      "trs",
+      0.86,
+      214
+     ]
+    ]
+   },
+   {
+    "query": "Alexander Oleksandrovych",
+    "entity_name": "Alexander Alexandrovich Zhdanov",
+    "final_score": 0.887,
+    "name_score": 0.657,
+    "skeleton_similarity": 0.875,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "lksndr",
+      "lksndr",
+      1.0,
+      1295
+     ],
+     [
+      "lksndrs",
+      "lksndrs",
+      1.0,
+      963
+     ]
+    ]
+   },
+   {
+    "query": "María 'Adnan",
+    "entity_name": "アダノブ・ムニール",
+    "final_score": 0.909,
+    "name_score": 0.501,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "mr",
+      "mnr",
+      0.8,
+      92
+     ],
+     [
+      "dn",
+      "dn",
+      1.0,
+      815
+     ]
+    ]
+   },
+   {
+    "query": "Abou Yevhenivna",
+    "entity_name": "Shamil Izmaylov",
+    "final_score": 1.0,
+    "name_score": 0.482,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "hn",
+      "hn",
+      1.0,
+      1395
+     ]
+    ]
+   },
+   {
+    "query": "Ali David",
+    "entity_name": "PRC- PALESTINIAN RETURN",
+    "final_score": 1.0,
+    "name_score": 0.426,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ],
+     [
+      "d",
+      "d",
+      1.0,
+      3165
+     ]
+    ]
+   },
+   {
+    "query": "Dr Ramaz",
+    "entity_name": "REVIVAL OF ISLAMIC HERITAGE SOCIETY",
+    "final_score": 0.863,
+    "name_score": 0.211,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "dr",
+      "dr",
+      1.0,
+      386
+     ]
+    ]
+   },
+   {
+    "query": "BOYCOV Waleed",
+    "entity_name": "خالد علي جاسم محمد",
+    "final_score": 0.889,
+    "name_score": 0.457,
+    "skeleton_similarity": 0.889,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ld",
+      "ld",
+      1.0,
+      306
+     ]
+    ]
+   },
+   {
+    "query": "Josue Alem",
+    "entity_name": "ג'יש אלאמה",
+    "final_score": 1.0,
+    "name_score": 0.3,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "js",
+      "js",
+      1.0,
+      438
+     ],
+     [
+      "lm",
+      "lm",
+      1.0,
+      376
+     ]
+    ]
+   },
+   {
+    "query": "Abdul AL-HAQ",
+    "entity_name": "Abdul Haq",
+    "final_score": 0.911,
+    "name_score": 0.881,
+    "skeleton_similarity": 0.857,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "bdl",
+      "bdl",
+      1.0,
+      1198
+     ],
+     [
+      "hk",
+      "hk",
+      1.0,
+      401
+     ]
+    ]
+   },
+   {
+    "query": "Aweys Hasan",
+    "entity_name": "Dr. Hazwan AL WEZ",
+    "final_score": 1.0,
+    "name_score": 0.399,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "s",
+      "s",
+      1.0,
+      4347
+     ],
+     [
+      "hsn",
+      "hsn",
+      1.0,
+      2333
+     ]
+    ]
+   },
+   {
+    "query": "Hafiz MIKHEYEV",
+    "entity_name": "Hafiz Mohammad Sayid",
+    "final_score": 0.887,
+    "name_score": 0.543,
+    "skeleton_similarity": 0.857,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "hfs",
+      "hfs",
+      1.0,
+      162
+     ]
+    ]
+   }
+  ],
+  "Cyrillic": [
+   {
+    "query": "Торри Викторович",
+    "entity_name": "לאשקר אלטיבה",
+    "final_score": 0.923,
+    "name_score": 0.258,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ktrs",
+      "ktrs",
+      1.0,
+      585
+     ]
+    ]
+   },
+   {
+    "query": "Морозов Юріївна",
+    "entity_name": "Întreprinderea unitară federală de stat «Uzina Morozov»",
+    "final_score": 0.861,
+    "name_score": 0.631,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "mrs",
+      "mrs",
+      1.0,
+      177
+     ]
+    ]
+   },
+   {
+    "query": "Михайлов Николаевна",
+    "entity_name": "Михайлов Микола Леонідович",
+    "final_score": 0.933,
+    "name_score": 0.81,
+    "skeleton_similarity": 0.933,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "mhl",
+      "mhl",
+      1.0,
+      492
+     ],
+     [
+      "nkln",
+      "nkl",
+      0.86,
+      426
+     ]
+    ]
+   },
+   {
+    "query": "Лапин Васильович",
+    "entity_name": "Lapin Vyacheslav",
+    "final_score": 0.881,
+    "name_score": 0.651,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "lpn",
+      "lpn",
+      1.0,
+      24
+     ],
+     [
+      "sls",
+      "sl",
+      0.8,
+      1003
+     ]
+    ]
+   },
+   {
+    "query": "Сергей Анатольевич",
+    "entity_name": "Сергей Анатольевич СЫЧКОВ",
+    "final_score": 0.872,
+    "name_score": 0.73,
+    "skeleton_similarity": 0.842,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "srh",
+      "srh",
+      1.0,
+      1073
+     ],
+     [
+      "ntls",
+      "ntls",
+      1.0,
+      480
+     ]
+    ]
+   },
+   {
+    "query": "Валерий Александрович",
+    "entity_name": "Сук Виталий Александрович",
+    "final_score": 0.894,
+    "name_score": 0.694,
+    "skeleton_similarity": 0.9,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "lksndrs",
+      "lksndrs",
+      1.0,
+      963
+     ]
+    ]
+   },
+   {
+    "query": "Никифоров Володимирович",
+    "entity_name": "Nikiforov Vladimir",
+    "final_score": 0.939,
+    "name_score": 0.739,
+    "skeleton_similarity": 0.947,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "nkfr",
+      "nkfr",
+      1.0,
+      8
+     ],
+     [
+      "ldmrs",
+      "ldmr",
+      0.89,
+      620
+     ]
+    ]
+   },
+   {
+    "query": "Ал-Фаууаз Юрьевич",
+    "entity_name": "Fayez Al-Asi",
+    "final_score": 0.923,
+    "name_score": 0.298,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ],
+     [
+      "fs",
+      "fs",
+      1.0,
+      229
+     ]
+    ]
+   },
+   {
+    "query": "Смирнова ХУК",
+    "entity_name": "ماريان حويك",
+    "final_score": 0.923,
+    "name_score": 0.25,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "smrn",
+      "mrn",
+      0.86,
+      565
+     ],
+     [
+      "hk",
+      "hk",
+      1.0,
+      401
+     ]
+    ]
+   },
+   {
+    "query": "Валерий Валерійович",
+    "entity_name": "Лавров Валерій Васильович",
+    "final_score": 0.897,
+    "name_score": 0.667,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "lr",
+      "lr",
+      1.0,
+      394
+     ],
+     [
+      "lrs",
+      "lr",
+      0.8,
+      394
+     ]
+    ]
+   },
+   {
+    "query": "КАЛАШНІКОВ Сергійович",
+    "entity_name": "Kalashnik Sergey Viktorovich",
+    "final_score": 0.947,
+    "name_score": 0.769,
+    "skeleton_similarity": 0.947,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "klsnk",
+      "klsnk",
+      1.0,
+      49
+     ],
+     [
+      "srhs",
+      "srh",
+      0.86,
+      1073
+     ]
+    ]
+   },
+   {
+    "query": "Виктория Анатолійович",
+    "entity_name": "Якушев Виктор Анатольевич",
+    "final_score": 0.872,
+    "name_score": 0.74,
+    "skeleton_similarity": 0.842,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ktr",
+      "ktr",
+      1.0,
+      481
+     ],
+     [
+      "ntls",
+      "ntls",
+      1.0,
+      480
+     ]
+    ]
+   },
+   {
+    "query": "Мальгин БЕСЕДИНА",
+    "entity_name": "Besedina Olga Igorevna",
+    "final_score": 0.875,
+    "name_score": 0.677,
+    "skeleton_similarity": 0.875,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "bsdn",
+      "bsdn",
+      1.0,
+      8
+     ]
+    ]
+   },
+   {
+    "query": "Кожевніков Борисович",
+    "entity_name": "Кожевников Борис Аширбаевич",
+    "final_score": 0.935,
+    "name_score": 0.735,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "kjnk",
+      "kjnk",
+      1.0,
+      9
+     ],
+     [
+      "brs",
+      "brs",
+      1.0,
+      464
+     ]
+    ]
+   },
+   {
+    "query": "Фьодоров Владимирович",
+    "entity_name": "Fedorov Vladimir",
+    "final_score": 0.941,
+    "name_score": 0.817,
+    "skeleton_similarity": 0.941,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "fdr",
+      "fdr",
+      1.0,
+      55
+     ],
+     [
+      "ldmrs",
+      "ldmr",
+      0.89,
+      620
+     ]
+    ]
+   },
+   {
+    "query": "Владимир Володимирович",
+    "entity_name": "Бєляєв Володимир Володимирович",
+    "final_score": 0.87,
+    "name_score": 0.713,
+    "skeleton_similarity": 0.87,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ldmr",
+      "ldmr",
+      1.0,
+      620
+     ],
+     [
+      "ldmrs",
+      "ldmrs",
+      1.0,
+      1017
+     ]
+    ]
+   },
+   {
+    "query": "Стрешинский Владимирович",
+    "entity_name": "Streshinskii Vladimir",
+    "final_score": 0.99,
+    "name_score": 0.861,
+    "skeleton_similarity": 0.96,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "strsnsk",
+      "strsnsk",
+      1.0,
+      2
+     ],
+     [
+      "ldmrs",
+      "ldmr",
+      0.89,
+      620
+     ]
+    ]
+   },
+   {
+    "query": "Евгений НЕКРАСОВА",
+    "entity_name": "Mohsen NIKVARZ",
+    "final_score": 0.875,
+    "name_score": 0.226,
+    "skeleton_similarity": 0.875,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "nkrs",
+      "nkrs",
+      1.0,
+      10
+     ]
+    ]
+   },
+   {
+    "query": "Константин Владимирович",
+    "entity_name": "Emelianov Konstantin",
+    "final_score": 0.917,
+    "name_score": 0.771,
+    "skeleton_similarity": 0.867,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "knstntn",
+      "knstntn",
+      1.0,
+      170
+     ],
+     [
+      "ldmrs",
+      "ldmrs",
+      1.0,
+      1017
+     ]
+    ]
+   },
+   {
+    "query": "Абдеррахман Сабиров",
+    "entity_name": "Abdurrahman Ba’asyir",
+    "final_score": 0.9,
+    "name_score": 0.593,
+    "skeleton_similarity": 0.9,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "bdrhmn",
+      "bdrhmn",
+      1.0,
+      74
+     ]
+    ]
+   }
+  ],
+  "Arabic": [
+   {
+    "query": "أبو رهام",
+    "entity_name": "ムニール・ベン・ダアウ・ベン・ブラヒム・ベン・ヘラル",
+    "final_score": 0.959,
+    "name_score": 0.333,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "rhm",
+      "rhmh",
+      0.86,
+      7
+     ]
+    ]
+   },
+   {
+    "query": "إميلي عاصم",
+    "entity_name": "Areia (formerly Emily S)",
+    "final_score": 0.919,
+    "name_score": 0.312,
+    "skeleton_similarity": 0.889,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ml",
+      "ml",
+      1.0,
+      426
+     ]
+    ]
+   },
+   {
+    "query": "حمید طه",
+    "entity_name": "CHATAEV AKHMED RAJAPOVIC",
+    "final_score": 0.939,
+    "name_score": 0.33,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "hmd",
+      "hmd",
+      1.0,
+      3202
+     ]
+    ]
+   },
+   {
+    "query": "علی سيف",
+    "entity_name": "Asif Ali",
+    "final_score": 1.0,
+    "name_score": 0.286,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ],
+     [
+      "sf",
+      "sf",
+      1.0,
+      722
+     ]
+    ]
+   },
+   {
+    "query": "ابو نوری",
+    "entity_name": "Manawar Abdeljabar Idris Almolah",
+    "final_score": 1.0,
+    "name_score": 0.919,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "nr",
+      "nr",
+      1.0,
+      442
+     ]
+    ]
+   },
+   {
+    "query": "ثناء آغا",
+    "entity_name": "Aqua Titan (formerly Lang Ya)",
+    "final_score": 1.0,
+    "name_score": 0.263,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "tn",
+      "tn",
+      1.0,
+      808
+     ],
+     [
+      "k",
+      "k",
+      1.0,
+      2318
+     ]
+    ]
+   },
+   {
+    "query": "نادر ليلى",
+    "entity_name": "Andrey LILYA",
+    "final_score": 1.0,
+    "name_score": 0.2,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ndr",
+      "ndr",
+      1.0,
+      856
+     ],
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ]
+    ]
+   },
+   {
+    "query": "علی أجكزاي",
+    "entity_name": "Лара ДЖЕЙКС",
+    "final_score": 0.909,
+    "name_score": 0.211,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "jks",
+      "jks",
+      1.0,
+      28
+     ]
+    ]
+   },
+   {
+    "query": "ابو آيراس",
+    "entity_name": "Bobby Lee Rush",
+    "final_score": 1.0,
+    "name_score": 0.263,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "rs",
+      "rs",
+      1.0,
+      1721
+     ]
+    ]
+   },
+   {
+    "query": "أبو ابراهیمی",
+    "entity_name": "Ahmad Ibrahim Zidan Khalaf",
+    "final_score": 1.0,
+    "name_score": 0.957,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "brhm",
+      "brhm",
+      1.0,
+      809
+     ]
+    ]
+   },
+   {
+    "query": "أبو مصطفوى",
+    "entity_name": "ايمن عامر ابراهيم مجول",
+    "final_score": 1.0,
+    "name_score": 0.943,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "mstf",
+      "mstf",
+      1.0,
+      339
+     ]
+    ]
+   },
+   {
+    "query": "حسن طاهر",
+    "entity_name": "Tahir Khan",
+    "final_score": 0.953,
+    "name_score": 0.659,
+    "skeleton_similarity": 0.923,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "hsn",
+      "hn",
+      0.8,
+      1395
+     ],
+     [
+      "thr",
+      "thr",
+      1.0,
+      148
+     ]
+    ]
+   },
+   {
+    "query": "وليد طاهر",
+    "entity_name": "TYURIN, Vladimir Anatolyevich",
+    "final_score": 0.863,
+    "name_score": 0.25,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ld",
+      "ld",
+      1.0,
+      306
+     ]
+    ]
+   },
+   {
+    "query": "أبو محمدی",
+    "entity_name": "احمد ذياب احمد حمداوي حميد",
+    "final_score": 1.0,
+    "name_score": 0.936,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": false,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "mhmd",
+      "mhmd",
+      1.0,
+      5532
+     ]
+    ]
+   },
+   {
+    "query": "أبو کوثرﻯ",
+    "entity_name": "VIKTOR BAKAEV",
+    "final_score": 0.909,
+    "name_score": 0.217,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "ktr",
+      "ktr",
+      1.0,
+      481
+     ]
+    ]
+   },
+   {
+    "query": "أبو خوداي",
+    "entity_name": "ALJOHRI, AHMED MOHAMMAD ALI",
+    "final_score": 1.0,
+    "name_score": 0.278,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "hd",
+      "hd",
+      1.0,
+      695
+     ]
+    ]
+   },
+   {
+    "query": "رادان يوسف",
+    "entity_name": "Ridvan Öz",
+    "final_score": 0.959,
+    "name_score": 0.418,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "rdn",
+      "rdn",
+      1.0,
+      157
+     ]
+    ]
+   },
+   {
+    "query": "محمود امير",
+    "entity_name": "MOHAMMAD SADIQ",
+    "final_score": 1.0,
+    "name_score": 0.668,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "mhmd",
+      "mhmd",
+      1.0,
+      5532
+     ],
+     [
+      "mr",
+      "mr",
+      1.0,
+      1558
+     ]
+    ]
+   },
+   {
+    "query": "ابو مددﻯ",
+    "entity_name": "DENIS MAMADOU GERHARD CUSPERT",
+    "final_score": 1.0,
+    "name_score": 0.294,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "md",
+      "md",
+      1.0,
+      368
+     ]
+    ]
+   },
+   {
+    "query": "خدادادی دجانة",
+    "entity_name": "Ahmed Jan",
+    "final_score": 0.909,
+    "name_score": 0.368,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "hd",
+      "hmd",
+      0.8,
+      3202
+     ],
+     [
+      "jn",
+      "jn",
+      1.0,
+      583
+     ]
+    ]
+   },
+   {
+    "query": "لیلا لاریجانی",
+    "entity_name": "Ali Larijani",
+    "final_score": 1.0,
+    "name_score": 0.761,
+    "skeleton_similarity": 1.0,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "l",
+      "l",
+      1.0,
+      9761
+     ],
+     [
+      "lrjn",
+      "lrjn",
+      1.0,
+      12
+     ]
+    ]
+   },
+   {
+    "query": "ابو الانصاري",
+    "entity_name": "يونس عبد الله حجي محمد",
+    "final_score": 0.909,
+    "name_score": 0.515,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "b",
+      "b",
+      1.0,
+      2571
+     ],
+     [
+      "lnsr",
+      "nsr",
+      0.86,
+      450
+     ]
+    ]
+   },
+   {
+    "query": "‫بلال‬ فنيانوس",
+    "entity_name": "Blue Lines Company",
+    "final_score": 0.863,
+    "name_score": 0.227,
+    "skeleton_similarity": 0.833,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "bl",
+      "bl",
+      1.0,
+      377
+     ]
+    ]
+   },
+   {
+    "query": "أبو روحانی",
+    "entity_name": "Bourkhan",
+    "final_score": 0.889,
+    "name_score": 0.278,
+    "skeleton_similarity": 0.889,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "rhn",
+      "brhn",
+      0.86,
+      49
+     ]
+    ]
+   },
+   {
+    "query": "كابدي عمر",
+    "entity_name": "UR-CBD",
+    "final_score": 0.909,
+    "name_score": 0.286,
+    "skeleton_similarity": 0.909,
+    "needed_skeleton": true,
+    "pairs": [
+     [
+      "kbd",
+      "kbd",
+      1.0,
+      6
+     ]
+    ]
+   }
+  ]
+ }
+}
