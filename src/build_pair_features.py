@@ -4,9 +4,9 @@ Features are described in pair_features.py. Nothing is trained here. The final h
 only the train, dev and test splits are featurised, from the cleaned pairs (entity pairs, no conflicting
 labels, no duplicates).
 
-Rarity weights (inverse document frequency of name tokens) come from the entities in the train pairs only,
-so no dev or test name influences a feature. The list the engine screens has its own token statistics; a
-model trained here would meet different weights there, which is worth remembering when it is deployed.
+Rarity weights (inverse document frequency of name tokens) come from the deployment list, the 69,637 named
+targets the engine screens (build_idf.py), and the same table is used for training and for serving. A pair
+that is not a screening query still gets weights from that list.
 
 Each dev and test row records whether either of its entities also appears in a train pair
 (shares_entity_with_train), because every metric is reported separately for the two kinds.
@@ -31,20 +31,22 @@ import os
 import platform
 import sys
 import time
-from collections import Counter
 from collections.abc import Iterator
 from itertools import islice
 from pathlib import Path
 
+from idf_table import load_table
 from pair_features import (
     SCORES,
+    SLICES,
     STATES,
     Forms,
+    arabic_involved,
     auc,
     make_idf,
-    name_tokens,
     pair_features,
     script_class,
+    script_slice,
     state_rates,
 )
 from pairs import PAIRS_PATH, ROOT, SPLIT_DIR, iter_split
@@ -55,7 +57,7 @@ REPORT = ROOT / "reports" / "pairs_features.json"
 SPLITS = ("train", "dev", "test")
 COLUMNS = [
     "index", "split", "label", "shares_entity_with_train", "schema_left", "schema_right", "script_class",
-    *SCORES, *STATES,
+    "script_slice", "arabic_involved", *SCORES, *STATES,
 ]  # fmt: skip
 CHUNK = 400
 
@@ -73,16 +75,19 @@ def _forms(entity: dict) -> Forms:
     return Forms(entity, _state["props"])
 
 
-def featurise(chunk: list[tuple[int, dict]]) -> list[list]:
-    """Rows without the split and the shares-entity flag, which the parent adds."""
+def featurise(chunk: list[tuple[int, dict]]) -> list[dict]:
+    """One dict per pair, keyed by column; the parent adds the split and the shares-entity flag."""
     rows = []
     for index, record in chunk:
         a, b = _forms(record["left"]), _forms(record["right"])
         f = pair_features(a, b, _state["idf"])
         rows.append(
-            [index, int(record["judgement"] == "positive"), record["left"].get("schema"),
-             record["right"].get("schema"), script_class(a, b), record["left"]["id"], record["right"]["id"],
-             *(round(f[s], 4) for s in SCORES), *(f[s] for s in STATES)]
+            {"index": index, "label": int(record["judgement"] == "positive"),
+             "schema_left": record["left"].get("schema"), "schema_right": record["right"].get("schema"),
+             "script_class": script_class(a, b), "script_slice": script_slice(a, b),
+             "arabic_involved": arabic_involved(a, b), "left_id": record["left"]["id"],
+             "right_id": record["right"]["id"], **{s: round(f[s], 4) for s in SCORES},
+             **{s: f[s] for s in STATES}}
         )  # fmt: skip
     return rows
 
@@ -162,31 +167,27 @@ def main(argv: list[str] | None = None) -> None:
         stream = iter_split(split, clean=True, path=args.input, split_dir=args.split_dir)
         return islice(stream, args.limit) if args.limit else stream
 
-    # Pass 1: token document frequencies and the set of entity ids, from train pairs only. An id counts once,
-    # with the properties of the first pair it appears in.
+    # The rarity table is the deployment list's. Pass 1 only collects the entity ids of the train pairs, to flag
+    # dev and test pairs that share an entity with train. An id counts once.
     start = time.perf_counter()
-    document_frequency: Counter = Counter()
     train_entities: set[str] = set()
     for _, record in pairs_of("train"):
-        for side in (record["left"], record["right"]):
-            if side["id"] not in train_entities:
-                train_entities.add(side["id"])
-                document_frequency.update(name_tokens(side))
-    print(f"idf from {len(train_entities):,} train entities in {time.perf_counter() - start:.0f}s", file=sys.stderr)
+        train_entities.update((record["left"]["id"], record["right"]["id"]))
+    document_frequency, documents = load_table()
+    print(f"{len(train_entities):,} train entities in {time.perf_counter() - start:.0f}s", file=sys.stderr)
 
     report: dict = {
         "python_version": platform.python_version(),
         "limit": args.limit,
         "features": {"scores": list(SCORES), "states": list(STATES)},
-        "idf_entities": len(train_entities),
+        "idf_table": {"documents": documents, "tokens": len(document_frequency)},
+        "train_entities": len(train_entities),
         "tables": {},
     }
     rates: dict[str, dict[str, float]] = {}
     dev_rows: list[dict] = []
     context = multiprocessing.get_context("spawn")
-    with context.Pool(
-        args.workers, _init, (dict(document_frequency), len(train_entities), identifier_props)
-    ) as pool:
+    with context.Pool(args.workers, _init, (document_frequency, documents, identifier_props)) as pool:
         for split in SPLITS:
             start = time.perf_counter()
             counts = {"pairs": 0, "positive": 0, "shares_entity": 0}
@@ -195,15 +196,17 @@ def main(argv: list[str] | None = None) -> None:
             def rows(split: str = split, counts: dict = counts, states: dict = states) -> Iterator[list]:
                 for batch in pool.imap(featurise, chunks(pairs_of(split), CHUNK)):
                     for row in batch:
-                        shares = int(split != "train" and (row[5] in train_entities or row[6] in train_entities))
+                        seen = row["left_id"] in train_entities or row["right_id"] in train_entities
+                        shares = int(split != "train" and seen)
                         counts["pairs"] += 1
-                        counts["positive"] += row[1]
+                        counts["positive"] += row["label"]
                         counts["shares_entity"] += shares
                         if split == "train":
-                            for k, name in enumerate(STATES):
-                                states[name][0].append(row[-3 + k])
-                                states[name][1].append(row[1])
-                        yield [row[0], split, row[1], shares if split != "train" else "", *row[2:5], *row[7:]]
+                            for name in STATES:
+                                states[name][0].append(row[name])
+                                states[name][1].append(row["label"])
+                        row = {**row, "split": split, "shares_entity_with_train": shares if split != "train" else ""}
+                        yield [row[c] for c in COLUMNS]
 
             path = args.out / f"{split}.csv.gz"
             digest = write_table(path, rows())
@@ -228,6 +231,15 @@ def main(argv: list[str] | None = None) -> None:
     columns = {name: [float(r[name]) for r in dev_rows] for name in SCORES}
     report["score_correlations_on_dev"] = {
         a: {b: round(pearson(columns[a], columns[b]), 3) for b in SCORES} for a in SCORES
+    }
+    slice_names = [c for c in SLICES if any(r["script_slice"] == c for r in dev_rows)]
+    report["separation_on_dev_by_script_slice"] = {
+        label: {c: separation([r for r in dev_rows if r["script_slice"] == c and keep(r)], rates) for c in slice_names}
+        for label, keep in (
+            ("all", lambda r: True),
+            ("shares_entity_with_train", lambda r: r["shares_entity_with_train"] == "1"),
+            ("no_entity_in_train", lambda r: r["shares_entity_with_train"] == "0"),
+        )
     }
     classes = sorted({r["script_class"] for r in dev_rows})
     report["separation_on_dev_by_script_class"] = {

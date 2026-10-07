@@ -1,0 +1,128 @@
+{
+  "queries": {
+    "positive": 600,
+    "negative": 600
+  },
+  "variants": {
+    "as_trained": {
+      "coefficients": {
+        "name_score": 8.818,
+        "skeleton_score": -0.055,
+        "weighted_score": 4.908,
+        "phonetic_score": -3.195,
+        "arabic_score": -5.486,
+        "birth_agree": 2.154,
+        "birth_close": -2.195,
+        "birth_conflict": -4.033,
+        "country_agree": -1.762,
+        "country_conflict": -4.37,
+        "identifier_agree": 1.408,
+        "identifier_conflict": -2.87
+      },
+      "best_f1": {
+        "threshold": 0.76,
+        "recall": 0.8,
+        "precision": 0.5839,
+        "f1": 0.6751,
+        "false_positive_rate": 0.475
+      },
+      "at_false_positive_rate_up_to_10_percent": {
+        "threshold": 0.96,
+        "recall": 0.4467,
+        "precision": 0.7746,
+        "top1_accuracy": 0.7667,
+        "false_positive_rate": 0.0817
+      }
+    },
+    "country_agree_zero": {
+      "coefficients": {
+        "name_score": 8.818,
+        "skeleton_score": -0.055,
+        "weighted_score": 4.908,
+        "phonetic_score": -3.195,
+        "arabic_score": -5.486,
+        "birth_agree": 2.154,
+        "birth_close": -2.195,
+        "birth_conflict": -4.033,
+        "country_agree": 0.0,
+        "country_conflict": -4.37,
+        "identifier_agree": 1.408,
+        "identifier_conflict": -2.87
+      },
+      "best_f1": {
+        "threshold": 0.96,
+        "recall": 0.7283,
+        "precision": 0.8123,
+        "f1": 0.768,
+        "false_positive_rate": 0.1133
+      },
+      "at_false_positive_rate_up_to_10_percent": {
+        "threshold": 0.97,
+        "recall": 0.6733,
+        "precision": 0.8487,
+        "top1_accuracy": 0.795,
+        "false_positive_rate": 0.075
+      }
+    },
+    "names_only": {
+      "coefficients": {
+        "name_score": 8.818,
+        "skeleton_score": -0.055,
+        "weighted_score": 4.908,
+        "phonetic_score": -3.195,
+        "arabic_score": -5.486,
+        "birth_agree": 0.0,
+        "birth_close": 0.0,
+        "birth_conflict": 0.0,
+        "country_agree": 0.0,
+        "country_conflict": 0.0,
+        "identifier_agree": 0.0,
+        "identifier_conflict": 0.0
+      },
+      "best_f1": {
+        "threshold": 0.96,
+        "recall": 0.6467,
+        "precision": 0.6916,
+        "f1": 0.6684,
+        "false_positive_rate": 0.2033
+      },
+      "at_false_positive_rate_up_to_10_percent": {
+        "threshold": 0.98,
+        "recall": 0.3583,
+        "precision": 0.7517,
+        "top1_accuracy": 0.725,
+        "false_positive_rate": 0.0633
+      }
+    },
+    "hand_set_attributes": {
+      "coefficients": {
+        "name_score": 8.818,
+        "skeleton_score": -0.055,
+        "weighted_score": 4.908,
+        "phonetic_score": -3.195,
+        "arabic_score": -5.486,
+        "birth_agree": 0.5,
+        "birth_close": 0.0,
+        "birth_conflict": -4.0,
+        "country_agree": 0.3,
+        "country_conflict": -2.0,
+        "identifier_agree": 0.5,
+        "identifier_conflict": -2.0
+      },
+      "best_f1": {
+        "threshold": 0.96,
+        "recall": 0.7217,
+        "precision": 0.8201,
+        "f1": 0.7677,
+        "false_positive_rate": 0.09
+      },
+      "at_false_positive_rate_up_to_10_percent": {
+        "threshold": 0.96,
+        "recall": 0.7217,
+        "precision": 0.8201,
+        "top1_accuracy": 0.7867,
+        "false_positive_rate": 0.09
+      }
+    }
+  }
+}

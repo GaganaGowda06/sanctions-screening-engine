@@ -1,0 +1,37 @@
+{
+  "model": "L2 logistic regression over twelve inputs; see src/matcher_model.py",
+  "C": 1.0,
+  "inputs": [
+    "name_score",
+    "skeleton_score",
+    "weighted_score",
+    "phonetic_score",
+    "arabic_score",
+    "birth_agree",
+    "birth_close",
+    "birth_conflict",
+    "country_agree",
+    "country_conflict",
+    "identifier_agree",
+    "identifier_conflict"
+  ],
+  "coefficients": {
+    "name_score": 8.81824546499879,
+    "skeleton_score": -0.05501928583384861,
+    "weighted_score": 4.908233025511251,
+    "phonetic_score": -3.194935788974175,
+    "arabic_score": -5.486271808364095,
+    "birth_agree": 2.1542309575274072,
+    "birth_close": -2.1948156865393433,
+    "birth_conflict": -4.03274168166569,
+    "country_agree": -1.7615478027066016,
+    "country_conflict": -4.3700622951794275,
+    "identifier_agree": 1.4081599565826857,
+    "identifier_conflict": -2.8700682133172326
+  },
+  "intercept": -0.7317671845335975,
+  "dev_f1_threshold": 0.76,
+  "trained_on_feature_table_sha256": "001d86fd3d51215f5b16dc3f85d8979316f1feef2963ee8883e9caae1cdf59da",
+  "idf_table_sha256": "87e59ec639d18deb415fba025af3347a74f0cceeb77ff8b7d36414a3108a34ff",
+  "scikit_learn": "1.9.1"
+}

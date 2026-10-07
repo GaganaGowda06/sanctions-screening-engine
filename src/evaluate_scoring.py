@@ -374,6 +374,13 @@ def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float | dict[str, 
     for script in NEGATIVE_SCRIPTS:
         rows = [a for a, p in zip(alerted_true, head, strict=True) if len(p) > 5 and p[5] == script]
         recall_by_script[script] = round(sum(rows) / len(rows), 4) if rows else None
+    precision_by_script = {}
+    for script in NEGATIVE_SCRIPTS:
+        found = sum(a for a, p in zip(alerted_true, head, strict=True) if len(p) > 5 and p[5] == script)
+        wrong = sum(w for w, p in zip(wrong_only, head, strict=True) if len(p) > 5 and p[5] == script)
+        false_alarms = sum(a for a, n in zip(neg_alert, head_neg, strict=True) if n[1] == script)
+        alerts = found + wrong + false_alarms
+        precision_by_script[script] = round(found / alerts, 4) if alerts else None
     any_alert = sum(a or p[3] >= thr(p) for a, p in zip(alerted_true, head, strict=True)) + fp_neg
     return {
         "threshold": threshold,
@@ -391,6 +398,7 @@ def metrics_at(pos: list[tuple], neg: list[tuple], threshold: float | dict[str, 
         "alert_rate_overall": round(any_alert / (len(head) + len(head_neg)), 4),
         "recall_by_group": group_recall,
         "recall_by_script": recall_by_script,
+        "precision_by_script": precision_by_script,
     }
 
 

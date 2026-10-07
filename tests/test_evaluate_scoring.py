@@ -211,6 +211,8 @@ def test_metrics_at_with_one_threshold_per_script():
     assert m["precision"] == pytest.approx(2 / 3, abs=1e-4)  # 2 true positives, 1 false positive
     assert m["fpr_by_script"] == {"Latin": 0.0, "Cyrillic": 1.0, "Arabic": None, "other": 1.0}
     assert m["recall_by_script"] == {"Latin": 1.0, "Cyrillic": 1.0, "Arabic": None, "other": None}
+    # Latin: 1 found, no false alarm (0.8 is under 0.85). Cyrillic: 1 found and 1 false alarm. "other" is not pooled.
+    assert m["precision_by_script"] == {"Latin": 1.0, "Cyrillic": 0.5, "Arabic": None, "other": None}
     # One global threshold of 0.85 would lose the Cyrillic positive.
     assert ev.metrics_at(pos, neg, 0.85)["recall"] == 0.5
 

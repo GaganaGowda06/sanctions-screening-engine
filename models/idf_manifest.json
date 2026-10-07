@@ -1,0 +1,8 @@
+{
+  "entities": 69637,
+  "tokens": 131898,
+  "table_sha256": "87e59ec639d18deb415fba025af3347a74f0cceeb77ff8b7d36414a3108a34ff",
+  "dataset_version": "20261006074704-hib",
+  "dataset_sha1": "08f7f5b3eaf9c08877cf073ca5426344ad742de7",
+  "source": "named target entities of the OpenSanctions sanctions list the engine screens"
+}

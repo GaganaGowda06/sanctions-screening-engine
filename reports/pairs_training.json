@@ -1,0 +1,433 @@
+{
+  "python_version": "3.14.7",
+  "scikit_learn": "1.9.1",
+  "numpy": "2.5.3",
+  "inputs": [
+    "name_score",
+    "skeleton_score",
+    "weighted_score",
+    "phonetic_score",
+    "arabic_score",
+    "birth_agree",
+    "birth_close",
+    "birth_conflict",
+    "country_agree",
+    "country_conflict",
+    "identifier_agree",
+    "identifier_conflict"
+  ],
+  "regularisation_tuned_on_dev": {
+    "grid": [
+      {
+        "C": 0.0001,
+        "train_log_loss": 0.257,
+        "dev_log_loss": 0.25555,
+        "dev_auc": 0.9762
+      },
+      {
+        "C": 0.001,
+        "train_log_loss": 0.16866,
+        "dev_log_loss": 0.16581,
+        "dev_auc": 0.9811
+      },
+      {
+        "C": 0.01,
+        "train_log_loss": 0.14655,
+        "dev_log_loss": 0.14343,
+        "dev_auc": 0.9854
+      },
+      {
+        "C": 0.1,
+        "train_log_loss": 0.14242,
+        "dev_log_loss": 0.13913,
+        "dev_auc": 0.9859
+      },
+      {
+        "C": 1.0,
+        "train_log_loss": 0.14205,
+        "dev_log_loss": 0.13868,
+        "dev_auc": 0.9858
+      },
+      {
+        "C": 10.0,
+        "train_log_loss": 0.14195,
+        "dev_log_loss": 0.13853,
+        "dev_auc": 0.9858
+      },
+      {
+        "C": 100.0,
+        "train_log_loss": 0.14195,
+        "dev_log_loss": 0.13851,
+        "dev_auc": 0.9858
+      },
+      {
+        "C": 1000.0,
+        "train_log_loss": 0.14195,
+        "dev_log_loss": 0.13851,
+        "dev_auc": 0.9859
+      }
+    ],
+    "chosen_C": 1.0,
+    "criterion": "most regularised C within 0.0005 of the best dev log loss"
+  },
+  "coefficients": {
+    "name_score": 8.8182,
+    "skeleton_score": -0.055,
+    "weighted_score": 4.9082,
+    "phonetic_score": -3.1949,
+    "arabic_score": -5.4863,
+    "birth_agree": 2.1542,
+    "birth_close": -2.1948,
+    "birth_conflict": -4.0327,
+    "country_agree": -1.7615,
+    "country_conflict": -4.3701,
+    "identifier_agree": 1.4082,
+    "identifier_conflict": -2.8701,
+    "intercept": -0.7318
+  },
+  "dev_f1_threshold": {
+    "threshold": 0.76,
+    "dev_f1": 0.9589
+  },
+  "performance_at_dev_f1_threshold": {
+    "train": {
+      "auc": 0.9852,
+      "log_loss": 0.1421,
+      "recall": 0.9443,
+      "precision": 0.9708,
+      "false_positive_rate": 0.0455
+    },
+    "dev": {
+      "auc": 0.9858,
+      "log_loss": 0.1387,
+      "recall": 0.9464,
+      "precision": 0.9716,
+      "false_positive_rate": 0.0441
+    },
+    "test": {
+      "auc": 0.9858,
+      "log_loss": 0.1392,
+      "recall": 0.9459,
+      "precision": 0.9719,
+      "false_positive_rate": 0.0436
+    }
+  },
+  "auc_by_script_slice_dev": {
+    "all": 0.9858,
+    "Latin": 0.9781,
+    "Cyrillic": 0.9892,
+    "Arabic": 0.9964,
+    "other": 0.992,
+    "cross-script": 0.9875
+  },
+  "auc_by_script_slice_test": {
+    "all": 0.9858,
+    "Latin": 0.9782,
+    "Cyrillic": 0.9914,
+    "Arabic": 0.9913,
+    "other": 0.994,
+    "cross-script": 0.9869
+  },
+  "ablation_dev": {
+    "name_score": {
+      "dev_auc": 0.9858,
+      "auc_change": {
+        "all": 0.0,
+        "Latin": 0.0,
+        "Cyrillic": 0.0,
+        "Arabic": 0.0,
+        "other": -0.0001,
+        "cross-script": -0.0001
+      },
+      "dev_log_loss_change": 0.0004
+    },
+    "skeleton_score": {
+      "dev_auc": 0.9858,
+      "auc_change": {
+        "all": 0.0,
+        "Latin": 0.0,
+        "Cyrillic": 0.0,
+        "Arabic": 0.0,
+        "other": 0.0,
+        "cross-script": 0.0
+      },
+      "dev_log_loss_change": -0.0
+    },
+    "weighted_score": {
+      "dev_auc": 0.9859,
+      "auc_change": {
+        "all": 0.0001,
+        "Latin": 0.0002,
+        "Cyrillic": 0.0001,
+        "Arabic": 0.0001,
+        "other": 0.0,
+        "cross-script": -0.0002
+      },
+      "dev_log_loss_change": -0.0001
+    },
+    "phonetic_score": {
+      "dev_auc": 0.9858,
+      "auc_change": {
+        "all": 0.0,
+        "Latin": 0.0001,
+        "Cyrillic": 0.0001,
+        "Arabic": 0.0002,
+        "other": 0.0007,
+        "cross-script": -0.0003
+      },
+      "dev_log_loss_change": 0.0007
+    },
+    "arabic_score": {
+      "dev_auc": 0.9858,
+      "auc_change": {
+        "all": 0.0,
+        "Latin": 0.0001,
+        "Cyrillic": 0.0,
+        "Arabic": 0.0001,
+        "other": 0.0,
+        "cross-script": -0.0001
+      },
+      "dev_log_loss_change": 0.0006
+    },
+    "birth_state": {
+      "dev_auc": 0.9745,
+      "auc_change": {
+        "all": -0.0113,
+        "Latin": -0.0108,
+        "Cyrillic": -0.0077,
+        "Arabic": -0.0062,
+        "other": -0.0167,
+        "cross-script": -0.0129
+      },
+      "dev_log_loss_change": 0.0284
+    },
+    "country_state": {
+      "dev_auc": 0.9831,
+      "auc_change": {
+        "all": -0.0027,
+        "Latin": -0.0014,
+        "Cyrillic": 0.003,
+        "Arabic": 0.0007,
+        "other": 0.0014,
+        "cross-script": -0.0113
+      },
+      "dev_log_loss_change": 0.0165
+    },
+    "identifier_state": {
+      "dev_auc": 0.9764,
+      "auc_change": {
+        "all": -0.0094,
+        "Latin": -0.0227,
+        "Cyrillic": -0.0025,
+        "Arabic": -0.0007,
+        "other": -0.0014,
+        "cross-script": -0.0036
+      },
+      "dev_log_loss_change": 0.0443
+    }
+  },
+  "coefficient_stability": {
+    "bootstrap_resamples": 100,
+    "resampling": "train pairs, with replacement",
+    "coefficients": {
+      "name_score": {
+        "fitted": 8.8182,
+        "bootstrap_mean": 8.8798,
+        "bootstrap_std": 0.3563,
+        "ci95": [
+          8.1807,
+          9.4262
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "skeleton_score": {
+        "fitted": -0.055,
+        "bootstrap_mean": -0.0598,
+        "bootstrap_std": 0.1641,
+        "ci95": [
+          -0.4374,
+          0.2468
+        ],
+        "same_sign_as_fitted": 0.62
+      },
+      "weighted_score": {
+        "fitted": 4.9082,
+        "bootstrap_mean": 4.8564,
+        "bootstrap_std": 0.2047,
+        "ci95": [
+          4.5427,
+          5.2204
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "phonetic_score": {
+        "fitted": -3.1949,
+        "bootstrap_mean": -3.1696,
+        "bootstrap_std": 0.1906,
+        "ci95": [
+          -3.5053,
+          -2.7963
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "arabic_score": {
+        "fitted": -5.4863,
+        "bootstrap_mean": -5.5066,
+        "bootstrap_std": 0.2322,
+        "ci95": [
+          -5.9913,
+          -5.1142
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "birth_agree": {
+        "fitted": 2.1542,
+        "bootstrap_mean": 2.1517,
+        "bootstrap_std": 0.0242,
+        "ci95": [
+          2.1064,
+          2.1934
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "birth_close": {
+        "fitted": -2.1948,
+        "bootstrap_mean": -2.1772,
+        "bootstrap_std": 0.0928,
+        "ci95": [
+          -2.3584,
+          -2.0008
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "birth_conflict": {
+        "fitted": -4.0327,
+        "bootstrap_mean": -4.0288,
+        "bootstrap_std": 0.0756,
+        "ci95": [
+          -4.1873,
+          -3.8861
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "country_agree": {
+        "fitted": -1.7615,
+        "bootstrap_mean": -1.7644,
+        "bootstrap_std": 0.0519,
+        "ci95": [
+          -1.859,
+          -1.6829
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "country_conflict": {
+        "fitted": -4.3701,
+        "bootstrap_mean": -4.3714,
+        "bootstrap_std": 0.0583,
+        "ci95": [
+          -4.4716,
+          -4.2703
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "identifier_agree": {
+        "fitted": 1.4082,
+        "bootstrap_mean": 1.4062,
+        "bootstrap_std": 0.0311,
+        "ci95": [
+          1.3535,
+          1.4616
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "identifier_conflict": {
+        "fitted": -2.8701,
+        "bootstrap_mean": -2.8703,
+        "bootstrap_std": 0.019,
+        "ci95": [
+          -2.9069,
+          -2.8389
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "intercept": {
+        "fitted": -0.7318,
+        "bootstrap_mean": -0.7388,
+        "bootstrap_std": 0.0637,
+        "ci95": [
+          -0.8514,
+          -0.6125
+        ],
+        "same_sign_as_fitted": 1.0
+      },
+      "sum_of_the_five_name_score_coefficients": {
+        "fitted": 4.9903,
+        "bootstrap_std": 0.0554,
+        "ci95": [
+          4.9075,
+          5.1198
+        ]
+      }
+    }
+  },
+  "leakage_check": {
+    "dev": {
+      "shares_entity_with_train": {
+        "pairs": 24709,
+        "non_matches": 15941,
+        "model_auc": 0.993,
+        "model_auc_ci95": [
+          0.9922,
+          0.9939
+        ],
+        "raw_name_score_auc": 0.9772,
+        "raw_weighted_score_auc": 0.978
+      },
+      "no_entity_in_train": {
+        "pairs": 20010,
+        "non_matches": 1286,
+        "model_auc": 0.92,
+        "model_auc_ci95": [
+          0.9123,
+          0.9276
+        ],
+        "raw_name_score_auc": 0.82,
+        "raw_weighted_score_auc": 0.8212
+      },
+      "gap_shares_minus_no_entity": {
+        "model": 0.073,
+        "raw_name_score": 0.1572,
+        "raw_weighted_score": 0.1568
+      }
+    },
+    "test": {
+      "shares_entity_with_train": {
+        "pairs": 24575,
+        "non_matches": 15831,
+        "model_auc": 0.9932,
+        "model_auc_ci95": [
+          0.9925,
+          0.9939
+        ],
+        "raw_name_score_auc": 0.9791,
+        "raw_weighted_score_auc": 0.9799
+      },
+      "no_entity_in_train": {
+        "pairs": 19907,
+        "non_matches": 1308,
+        "model_auc": 0.9244,
+        "model_auc_ci95": [
+          0.9165,
+          0.9317
+        ],
+        "raw_name_score_auc": 0.8428,
+        "raw_weighted_score_auc": 0.8436
+      },
+      "gap_shares_minus_no_entity": {
+        "model": 0.0688,
+        "raw_name_score": 0.1363,
+        "raw_weighted_score": 0.1363
+      }
+    }
+  }
+}

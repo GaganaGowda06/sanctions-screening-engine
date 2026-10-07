@@ -34,7 +34,7 @@ An alert is an entity whose final score reaches the alert threshold.
 import math
 import re
 from collections import Counter
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -311,17 +311,23 @@ class Screener:
         adjustments: Adjustments,
         blend: float = DEFAULT_BLEND,
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
+        idf_table: tuple[Mapping[str, int], int] | None = None,
     ) -> None:
+        """`idf_table` is (document frequency, documents) to use instead of counting the records here, so training
+        and serving can share one table (see idf_table.py)."""
         self.index = index
         self.records = records
         self.adjustments = adjustments
         self.blend = blend
         self.length_penalty = length_penalty
-        document_frequency: Counter[str] = Counter()
-        for record in records.values():
-            document_frequency.update(set().union(*record.token_sets))
-        self._df = document_frequency
-        self._n = len(records)
+        if idf_table is not None:
+            self._df, self._n = idf_table
+        else:
+            document_frequency: Counter[str] = Counter()
+            for record in records.values():
+                document_frequency.update(set().union(*record.token_sets))
+            self._df = document_frequency
+            self._n = len(records)
         self._idf_cache: dict[str, float] = {}
 
     def idf(self, token: str) -> float:
@@ -338,6 +344,7 @@ class Screener:
         adjustments: Adjustments | None = None,
         blend: float = DEFAULT_BLEND,
         length_penalty: float = DEFAULT_LENGTH_PENALTY,
+        idf_table: tuple[Mapping[str, int], int] | None = None,
     ) -> "Screener":
         """Build from dicts with id, names and optionally birth_dates and countries."""
         entities = list(entities)
@@ -345,7 +352,7 @@ class Screener:
         records = {
             e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities
         }
-        return cls(index, records, adjustments or Adjustments(), blend, length_penalty)
+        return cls(index, records, adjustments or Adjustments(), blend, length_penalty, idf_table)
 
     def components(
         self,

@@ -213,6 +213,33 @@ def script_class(a: Forms, b: Forms) -> str:
     return "non-Latin on both sides"
 
 
+SLICES = ("Latin", "Cyrillic", "Arabic", "other", "cross-script")
+
+
+def script_slice(a: Forms, b: Forms) -> str:
+    """Which script the pair is about, from the non-Latin scripts present on each side.
+
+    Latin       neither side has a non-Latin name
+    Arabic, Cyrillic, other
+                both sides have a name in that script (Arabic wins over Cyrillic over other)
+    cross-script  a non-Latin script appears on one side and not on the other, so the pair has to be matched
+                across scripts (Cyrillic against Latin, Cyrillic against Arabic, ...)
+    """
+    left, right = a.scripts - {"Latin"}, b.scripts - {"Latin"}
+    if not left and not right:
+        return "Latin"
+    shared = left & right
+    for script in ("Arabic", "Cyrillic"):
+        if script in shared:
+            return script
+    return "other" if shared else "cross-script"
+
+
+def arabic_involved(a: Forms, b: Forms) -> int:
+    """1 if either entity has a name in Arabic script, as the hand-tuned engine's skeleton rule does."""
+    return int("Arabic" in a.scripts or "Arabic" in b.scripts)
+
+
 def auc(scores: Sequence[float], labels: Sequence[int]) -> float | None:
     """Area under the ROC curve (Mann-Whitney, ties count half). None if one class is missing."""
     positives = sum(labels)

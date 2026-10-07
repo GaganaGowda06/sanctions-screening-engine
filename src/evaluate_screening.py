@@ -96,17 +96,12 @@ def spread(fpr_by_script: dict[str, float | None], scripts: tuple[str, ...]) -> 
     return round(max(values) - min(values), 4) if values else 0.0
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--config", type=Path, default=CONFIG_PATH)
-    parser.add_argument("--max-df", type=int, default=1000)
-    args = parser.parse_args()
-    print(f"Python {platform.python_version()}", file=sys.stderr)
+def build_query_sets(entities: list[dict], targets: list[dict]) -> tuple[list[dict], list[dict], dict[str, list[str]]]:
+    """The step 3c dev and test queries plus the step 4 additions, each with its query script.
 
-    entities = load_named_entities(args.input)
-    targets = [e for e in entities if e["target"]]
+    Returns the positives, the negatives, and the names each positive's entity keeps in the list. Never reads
+    the final hold-out: its entities are regenerated in memory, only to keep new queries away from them.
+    """
     persons = [e for e in targets if e["schema"] == "Person"]
     dob_pool = [d for e in persons for d in e["birth_dates"][:1]]
     country_pool = [c for e in persons for c in e["countries"][:1]]
@@ -141,8 +136,22 @@ def main() -> None:
         f" {len(near)} near-miss",
         file=sys.stderr,
     )
+    return all_positives, negatives, {**kept, **extra_kept}
 
-    held = {**kept, **extra_kept}
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--config", type=Path, default=CONFIG_PATH)
+    parser.add_argument("--max-df", type=int, default=1000)
+    args = parser.parse_args()
+    print(f"Python {platform.python_version()}", file=sys.stderr)
+
+    entities = load_named_entities(args.input)
+    targets = [e for e in entities if e["target"]]
+    all_positives, negatives, held = build_query_sets(entities, targets)
+
     held_screener = Screener.build([{**e, "names": held.get(e["id"], e["names"])} for e in targets], max_df=args.max_df)
     full = Screener.build(targets, max_df=args.max_df)
 
@@ -251,7 +260,10 @@ def main() -> None:
             "median": round(percentile(latencies, 0.5) * 1000, 2),
             "p95": round(percentile(latencies, 0.95) * 1000, 2),
         },
-        "final_holdout": {"checked_against_checksum": frozen[:12], "scored": False},
+        "final_holdout": {
+            "checked_against_checksum": (ROOT / "holdout" / "final_holdout.sha256").read_text().strip()[:12],
+            "scored": False,
+        },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")

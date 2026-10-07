@@ -235,8 +235,9 @@ def tiny_dataset(tmp_path, n=400):
     return path
 
 
-def test_the_whole_pipeline_runs_on_a_tiny_dataset(tmp_path):
+def test_the_whole_pipeline_runs_on_a_tiny_dataset(tmp_path, monkeypatch):
     path = tiny_dataset(tmp_path)
+    monkeypatch.setattr(bpf, "load_table", lambda: ({"person": 3, "alpha": 3}, 100))
     split_dir = tmp_path / "splits"
     common = ["--input", str(path), "--split-dir", str(split_dir)]
     bps.main([*common, "--report", str(tmp_path / "splits_report.json")])
@@ -259,7 +260,8 @@ def test_the_whole_pipeline_runs_on_a_tiny_dataset(tmp_path):
 
 
 def test_tables_are_written_reproducibly(tmp_path):
-    rows = [[1, "dev", 1, 0, "Person", "Person", "Latin on both sides only", *[1.0] * 5, "agree", "agree", "agree"]]
+    head = [1, "dev", 1, 0, "Person", "Person", "Latin on both sides only", "Latin", 0]
+    rows = [[*head, *[1.0] * 5, "agree", "agree", "agree"]]
     first = bpf.write_table(tmp_path / "a.csv.gz", iter(rows))
     second = bpf.write_table(tmp_path / "b.csv.gz", iter(rows))
     assert first == second
@@ -274,3 +276,22 @@ def test_pearson():
     assert bpf.pearson([1, 2, 3, 4], [2, 4, 6, 8]) == pytest.approx(1.0)
     assert bpf.pearson([1, 2, 3, 4], [8, 6, 4, 2]) == pytest.approx(-1.0)
     assert bpf.pearson([1, 2, 3], [5, 5, 5]) == 0.0
+
+
+def test_script_slice():
+    latin, cyrillic, arabic = forms(["Ivan"]), forms(["Иван"]), forms(["محمد"])
+    mixed_cyrillic = forms(["Ivan", "Иван"])
+    mixed_arabic = forms(["Mohammed", "محمد"])
+    assert pf.script_slice(latin, forms(["Petr"])) == "Latin"
+    assert pf.script_slice(cyrillic, mixed_cyrillic) == "Cyrillic"
+    assert pf.script_slice(arabic, mixed_arabic) == "Arabic"
+    assert pf.script_slice(cyrillic, latin) == "cross-script"  # Cyrillic on one side only
+    assert pf.script_slice(cyrillic, arabic) == "cross-script"  # no non-Latin script in common
+    assert pf.script_slice(forms(["张伟"]), forms(["张伟 Wei"])) == "other"
+    assert pf.script_slice(forms(["Иван", "محمد"]), forms(["محمد"])) == "Arabic"  # Arabic wins when shared
+
+
+def test_arabic_involved():
+    assert pf.arabic_involved(forms(["محمد"]), forms(["Ivan"])) == 1
+    assert pf.arabic_involved(forms(["Ivan"]), forms(["Petr"])) == 0
+    assert pf.arabic_involved(forms(["Иван"]), forms(["Ivan"])) == 0

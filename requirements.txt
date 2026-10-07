@@ -5,6 +5,12 @@
 rapidfuzz==3.14.6
 Metaphone==0.6
 
+# Training only: the trained model is served from its coefficients with the standard library
+numpy==2.5.3
+scipy==1.18.1
+scikit-learn==1.9.1
+joblib==1.6.0
+
 # Dev dependencies (tests and lint only)
 pytest==9.1.1
 ruff==0.16.10

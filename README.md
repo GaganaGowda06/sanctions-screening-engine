@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. Training the matcher on the OpenSanctions Pairs dataset has started: the data and the splits are in place. The fuller evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. A logistic regression matcher has been trained on the OpenSanctions Pairs dataset. It beats the hand-tuned engine at deduplicating pairs but not at screening, so screening still uses the hand-tuned engine. The fuller evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -149,6 +149,81 @@ The five name scores are close to one another and highly correlated (0.93 to 0.9
 
 The Pairs data measures whether two records are the same entity. Screening is a different question: given a customer name, does the engine alert on the right listed entity, and how often on innocent names. A second screening hold-out was built from our own list for the trained matcher, with the same design as the first (cross-script and variant positives, synthetic and near-miss negatives, plus negatives and same-script positives in other scripts): 4,800 queries on 2,900 entities used in no earlier set, frozen in `holdout/screening_holdout_v2.json` (SHA-256 `e5a9b7af6b94...`). It has not been scored.
 
+## The trained matcher
+
+A logistic regression over the eight features, trained on the Pairs train split (`src/train_matcher.py`), as an alternative to the hand-tuned blend. Rarity weights come from one table built from the 69,637 named targets of the deployment list (131,898 name tokens, `models/idf_manifest.json`), the same table for training and serving. Training uses scikit-learn; serving needs only the coefficients in `models/pairs_lr_v1.json` and `src/matcher_model.py`.
+
+Model. The regularisation strength was chosen on dev: dev log loss is flat from C = 0.1 up, so the rule is the most regularised C within 0.0005 of the best, which is C = 1. AUC is 0.985 on train, 0.986 on dev and 0.986 on test, so it is not overfitting. Each name feature's AUC on dev, overall and by script slice:
+
+| Feature | All dev pairs | Latin | Cyrillic | Arabic | other | cross-script |
+|---|---|---|---|---|---|---|
+| Name score (current engine) | 0.953 | 0.934 | 0.979 | 0.989 | 0.981 | 0.940 |
+| Skeleton | 0.948 | 0.929 | 0.976 | 0.983 | 0.979 | 0.936 |
+| Rarity-weighted tokens | 0.954 | 0.934 | 0.980 | 0.989 | 0.981 | 0.943 |
+| Phonetic (Double Metaphone) | 0.948 | 0.929 | 0.976 | 0.984 | 0.979 | 0.937 |
+| Arabic-normalised | 0.950 | 0.931 | 0.977 | 0.987 | 0.982 | 0.937 |
+| Pairs in the slice | 44,719 | 16,876 | 11,805 | 2,989 | 2,213 | 10,836 |
+
+Ablation. Each feature dropped in turn, the model refitted, change in dev AUC:
+
+| Feature dropped | All | Latin | Cyrillic | Arabic | other | cross-script |
+|---|---|---|---|---|---|---|
+| name score | +0.0000 | +0.0000 | +0.0000 | +0.0000 | -0.0001 | -0.0001 |
+| skeleton | +0.0000 | +0.0000 | +0.0000 | +0.0000 | +0.0000 | +0.0000 |
+| rarity-weighted | +0.0001 | +0.0002 | +0.0001 | +0.0001 | +0.0000 | -0.0002 |
+| phonetic | +0.0000 | +0.0001 | +0.0001 | +0.0002 | +0.0007 | -0.0003 |
+| Arabic-normalised | +0.0000 | +0.0001 | +0.0000 | +0.0001 | +0.0000 | -0.0001 |
+| birth date | -0.0113 | -0.0108 | -0.0077 | -0.0062 | -0.0167 | -0.0129 |
+| country | -0.0027 | -0.0014 | +0.0030 | +0.0007 | +0.0014 | -0.0113 |
+| identifier | -0.0094 | -0.0227 | -0.0025 | -0.0007 | -0.0014 | -0.0036 |
+
+Dropping any one name feature moves dev AUC by no more than 0.0007 in any script slice (the largest loss is 0.0003, for the phonetic score in the cross-script slice, and in the other slice dropping the phonetic score even raises AUC by 0.0007): the five name scores are highly correlated (0.93 to 0.99) and the Arabic-normalised and phonetic scores add nothing the others do not. Birth date, identifier and country each add more than any name feature.
+
+Coefficient stability, from 100 bootstrap resamples of the train pairs. The attribute coefficients are tight (standard deviation 0.02 to 0.09). The name coefficients are not: they are large and offset one another (8.8 on the name score, -5.5 on the Arabic score, -3.2 on the phonetic score) and the skeleton coefficient changes sign in 38% of resamples. Their sum is stable (4.99, 95% interval 4.91 to 5.12), so what the model learned about names is stable and how it splits that weight is not. The bootstrap resamples pairs, and pairs that share entities are not independent, so these spreads are somewhat too narrow.
+
+Leakage check. On dev the model's AUC is 0.993 for pairs that share an entity with train and 0.920 for pairs that do not (95% interval 0.912 to 0.928); on test 0.993 and 0.924. The gap is 0.073 for the model and 0.157 for the raw name score, so the model gains nothing extra on pairs whose entities it has seen: the gap comes from what the two kinds of pair are (the unseen kind is 94% matches with few hard non-matches), not from memorising entities.
+
+On the Pairs test set the trained model is better than the hand-tuned engine applied to two entities (AUC 0.986 against 0.956). Recall / precision / false positive rate:
+
+| Pairs test | Hand-tuned (threshold 0.86) | Trained (threshold 0.76) |
+|---|---|---|
+| All pairs | 95.6% / 95.3% / 7.5% | 94.6% / 97.2% / 4.4% |
+| Latin | 94.7% / 94.6% / 10.8% | 93.3% / 97.0% / 5.8% |
+| Cyrillic | 98.5% / 93.7% / 7.5% | 96.2% / 96.8% / 3.6% |
+| Arabic | 99.7% / 94.7% / 4.7% | 99.5% / 95.7% / 3.8% |
+| other | 99.1% / 96.2% / 5.9% | 98.8% / 96.9% / 4.7% |
+| cross-script | 93.0% / 98.2% / 3.7% | 93.6% / 98.3% / 3.4% |
+| Share an entity with train | 97.1% / 90.3% / 5.8% | 97.4% / 95.0% / 2.8% |
+| No entity in train | 94.9% / 97.9% / 28.4% | 93.3% / 98.3% / 23.0% |
+
+On screening it is much worse. The same queries as the hand-tuned engine's test, the same candidates, the trained model scoring every candidate:
+
+| Screening test, all scripts | Recall | Precision | False positive rate | Top-1 |
+|---|---|---|---|---|
+| Hand-tuned engine (threshold 0.86) | 73.0% | 80.2% | 10.8% | 77.9% |
+| Trained, threshold 0.96 (same dev false positive rate) | 32.9% | 58.8% | 9.8% | 56.6% |
+| Trained, threshold 0.02 (best dev F1) | 91.8% | 46.3% | 98.7% | 56.6% |
+
+| By script of the query | Hand-tuned recall / precision / FPR | Trained (same dev FPR) recall / precision / FPR |
+|---|---|---|
+| Latin | 71.4% / 86.5% / 4.7% | 35.3% / 68.0% / 7.7% |
+| Cyrillic | 88.0% / 88.9% / 5.2% | 44.3% / 79.6% / 5.9% |
+| Arabic | 65.0% / 53.4% / 37.6% | 10.0% / 13.4% / 22.3% |
+| other | n/a / n/a / 0.2% | n/a / n/a / 2.0% |
+
+Its best F1 on the screening dev queries is at a threshold of 0.02, which alerts on nearly everything, so that row is not a usable operating point.
+
+The cause is in the attribute weights, not the names. In the Pairs data a missing attribute goes with matches (pairs with no country on either side are 85% matches, pairs whose countries agree 66%), because of which sources the pairs come from. The model learned that, and gives an agreeing country a negative weight (-1.76). A customer query is not like that. Swapping weights in the same model, on 600 dev positives and 600 dev negatives (an exploratory comparison: the threshold is chosen on that sample):
+
+| Variant of the trained model | Recall at false positive rate up to 10% | Top-1 |
+|---|---|---|
+| As trained | 44.7% | 76.7% |
+| Country agreement weight set to zero | 67.3% | 79.5% |
+| Names only (all attribute weights zero) | 35.8% | 72.5% |
+| Attribute weights set by hand | 72.2% | 78.7% |
+
+So the name side of the model is as good as the hand-tuned engine's, and the attribute weights learned from this dataset do not transfer to screening. The trained model is therefore not used for screening. Fixing it means training the attribute weights on something that has not got this artefact, for example restricting them to the pairs where both sides carry the attribute, or constraining agreement to help and conflict to hurt.
+
 ## Known limitations
 
 These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.
@@ -161,7 +236,7 @@ These come from the measurements in `reports/stage2_candidates.json`, `reports/s
 
 ## How to run
 
-Developed and tested on Python 3.14. The data pipeline and candidate index use only the standard library, scoring uses rapidfuzz, and the phonetic feature uses Metaphone. Do not install followthemoney: version 4.x depends on PyICU, which needs system ICU libraries to build.
+Developed and tested on Python 3.14. The data pipeline and candidate index use only the standard library, scoring uses rapidfuzz, the phonetic feature uses Metaphone, and training uses scikit-learn. Do not install followthemoney: version 4.x depends on PyICU, which needs system ICU libraries to build.
 
 ```
 python3 -m venv venv
@@ -179,6 +254,10 @@ python src/build_pair_splits.py     # frozen train/dev/test/hold-out split in sp
 python src/clean_pairs.py           # frozen cleaning mask: entity pairs, no conflicts, no duplicates
 python src/build_pair_features.py   # feature tables in data/pairs/features/, reports/pairs_features.json
 python src/build_screening_holdout.py   # the second screening hold-out, frozen once
+python src/build_idf.py             # the deployment rarity table, models/idf_manifest.json
+python src/train_matcher.py         # train, ablate, bootstrap; models/pairs_lr_v1.json
+python src/compare_matchers.py      # trained against hand-tuned: reports/pairs_comparison.json
+python src/diagnose_screening.py    # why the trained model does worse at screening
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
@@ -206,6 +285,9 @@ src/
   download_pairs.py, pairs.py, profile_pairs.py, build_pair_splits.py, clean_pairs.py   the Pairs data, splits, cleaning
   pair_features.py, arabic_names.py, build_pair_features.py   the eight pairwise features and the table builder
   build_screening_holdout.py   the second screening hold-out
+  idf_table.py, build_idf.py   the deployment rarity table used for training and serving
+  matcher_model.py, train_matcher.py   the trained matcher: serving (standard library) and training (scikit-learn)
+  compare_matchers.py, diagnose_screening.py   trained against hand-tuned, and why it falls short at screening
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/
@@ -216,6 +298,7 @@ reports/
 holdout/
   final_holdout.json     frozen final hold-out queries of the hand-tuned matcher, scored once
   screening_holdout_v2.json   the second screening hold-out, for the trained matcher, not yet scored
+models/                  the trained coefficients and the rarity table manifest
 splits/pairs/            frozen split of the Pairs data: assignment, cleaning mask, manifests with checksums
 data/                    downloaded data (not committed)
 reference/yente/         yente source for study (not committed)
