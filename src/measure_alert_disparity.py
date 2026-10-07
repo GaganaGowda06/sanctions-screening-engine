@@ -70,7 +70,16 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--max-df", type=int, default=1000)
+    parser.add_argument(
+        "--engine",
+        choices=("baseline", "current"),
+        default="baseline",
+        help="baseline: the Stage 2 frozen engine (skeleton_idf off); current: the engine as it is now",
+    )
     args = parser.parse_args(argv)
+    skeleton_idf = args.engine == "current"
+    if args.engine == "current" and args.output == DEFAULT_OUTPUT:
+        args.output = ROOT / "reports" / "fairness_current.json"
     print(f"Python {platform.python_version()}", file=sys.stderr)
 
     if args.output.exists():
@@ -92,8 +101,8 @@ def main(argv: list[str] | None = None) -> None:
     entities = load_named_entities(args.input)
     targets = [e for e in entities if e["target"]]
     held = Screener.build([{**e, "names": kept.get(e["id"], e["names"])} for e in targets],
-                          max_df=args.max_df, blend=FROZEN.blend, skeleton_idf=False)  # fmt: skip
-    full = Screener.build(targets, max_df=args.max_df, blend=FROZEN.blend, skeleton_idf=False)
+                          max_df=args.max_df, blend=FROZEN.blend, skeleton_idf=skeleton_idf)  # fmt: skip
+    full = Screener.build(targets, max_df=args.max_df, blend=FROZEN.blend, skeleton_idf=skeleton_idf)
     for screener, group in ((held, positives), (full, negatives)):
         for q in group:
             q["comps"] = screener.components(q["name"], q["dob"], q["country"], always=q["true_id"],
@@ -149,7 +158,9 @@ def main(argv: list[str] | None = None) -> None:
             "skeleton_floor": FROZEN.skeleton_floor,
             "skeleton_lift": FROZEN.skeleton_lift,
             "per_script_thresholds": False,
-            "changed": False,
+            "changed": skeleton_idf,
+            "engine_option": args.engine,
+            "skeleton_idf": skeleton_idf,
         },  # fmt: skip
         "metric": "share of clean names (matching no listed entity) that raise an alert, by query script",
         "headline_synthetic_clean_names": {

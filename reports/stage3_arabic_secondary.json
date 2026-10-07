@@ -1,0 +1,39 @@
+{
+ "dev_only": true,
+ "arabic_script_clean_names": 677,
+ "alerts": 186,
+ "birth_date_status": {
+  "agree": 27,
+  "missing_query": 66,
+  "close": 16,
+  "missing_entity": 77
+ },
+ "country_status": {
+  "missing_query": 86,
+  "missing_entity": 56,
+  "agree": 42,
+  "conflict": 2
+ },
+ "joint": {
+  "birth missing_entity / country missing_query": 41,
+  "birth missing_query / country missing_entity": 27,
+  "birth missing_query / country missing_query": 25,
+  "birth missing_entity / country agree": 25,
+  "birth missing_query / country agree": 14,
+  "birth agree / country missing_entity": 13,
+  "birth agree / country missing_query": 11,
+  "birth missing_entity / country missing_entity": 11,
+  "birth close / country missing_query": 9,
+  "birth close / country missing_entity": 5,
+  "birth close / country agree": 2,
+  "birth agree / country conflict": 2,
+  "birth agree / country agree": 1
+ },
+ "pushed_over_the_threshold": {
+  "country_agreement_pushed_over": 5,
+  "birth_agreement_pushed_over": 6,
+  "either_agreement_pushed_over": 9,
+  "over_even_with_conflicts_present": 2,
+  "over_with_neither_adjustment": 177
+ }
+}

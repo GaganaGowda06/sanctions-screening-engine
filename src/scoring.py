@@ -139,6 +139,50 @@ def evidence_skeleton_form(normalised: str) -> str:
     return " ".join(kept)
 
 
+_LONG_U = re.compile("oo|ou|uu|ow")
+_LONG_I = re.compile("ee|ie|ii|ai|ay|ei|ey|iy")
+ORTHO_CUTOFF = 85  # fuzz.ratio a pair of orthographic skeleton tokens needs to count as the same token
+
+
+def orthographic_token(token: str) -> str:
+    """Skeleton that keeps long vowels and the initial alif, for Arabic-involved pairs.
+
+    The plain skeleton drops every vowel, so Mohammed (mhmd) and Mahmoud (mhmd) collide. Here the long u and i
+    are kept, as `uw` and `iy`, and so is a vowel that opens the token (the alif), written `a`:
+      mohammed muhammad -> mhmd        mahmoud mahmood mahmud -> mhmuwd      hussein husayn -> hsiyn
+    Long u is ou, oo, uu, ow, a waw after the first letter (Arabic script), or a u that is the token's last
+    vowel; long i is ee, ie, ii, ai, ay, ei, ey, iy, a ya after the first letter, or an i that is the last vowel.
+    Short vowels and the middle alifs are dropped. Non-ASCII tokens are returned unchanged.
+    """
+    token = fold(token)
+    if not token.isascii() or not token:
+        return token
+    body = _LONG_I.sub("I", _LONG_U.sub("U", token))
+    body = body[0] + body[1:].replace("w", "U").replace("y", "I")
+    vowels = [i for i, ch in enumerate(body) if ch in "aeiouUI"]
+    if vowels and vowels[-1] > 0 and body[vowels[-1]] in "ui":
+        i = vowels[-1]
+        body = body[:i] + body[i].upper() + body[i + 1 :]
+    out = []
+    for i, ch in enumerate(body):
+        if ch in "UI":
+            out.append("uw" if ch == "U" else "iy")
+        elif ch in "aeiou":
+            if i == 0:
+                out.append("a")
+        else:
+            out.append(ch)
+    return _REPEATS_ORTHO.sub(r"\1", "".join(out))
+
+
+_REPEATS_ORTHO = re.compile(r"(.)\1+")
+
+
+def orthographic_form(normalised: str) -> str:
+    """Per-token orthographic skeleton of a normalised name, tokens kept in order."""
+    return " ".join(sk for token in normalised.split() if (sk := orthographic_token(token)))
+
+
 def has_arabic(text: str) -> bool:
     return _ARABIC.search(text) is not None
 
@@ -172,10 +216,12 @@ def best_similarity(query: str, forms: Sequence[str]) -> float:
     return best[1] / 100 if best else 0.0
 
 
-def _token_match(token: str, tokens: Sequence[str], token_set: frozenset[str]) -> float:
+def _token_match(
+    token: str, tokens: Sequence[str], token_set: frozenset[str], cutoff: int = TOKEN_MATCH_CUTOFF
+) -> float:
     if token in token_set:
         return 1.0
-    best = process.extractOne(token, tokens, scorer=fuzz.ratio, score_cutoff=TOKEN_MATCH_CUTOFF)
+    best = process.extractOne(token, tokens, scorer=fuzz.ratio, score_cutoff=cutoff)
     return best[1] / 100 if best else 0.0
 
 
@@ -184,6 +230,7 @@ def weighted_token_score(
     entity_tokens: Sequence[str],
     entity_set: frozenset[str],
     idf: Callable[[str], float],
+    cutoff: int = TOKEN_MATCH_CUTOFF,
 ) -> float:
     """Rarity-weighted soft token overlap, symmetric: unmatched rare tokens on either side cost the most."""
     query_set = frozenset(query_tokens)
@@ -191,11 +238,11 @@ def weighted_token_score(
     for token in query_tokens:
         weight = idf(token)
         total += weight
-        matched += weight * _token_match(token, entity_tokens, entity_set)
+        matched += weight * _token_match(token, entity_tokens, entity_set, cutoff)
     for token in entity_tokens:
         weight = idf(token)
         total += weight
-        matched += weight * _token_match(token, query_tokens, query_set)
+        matched += weight * _token_match(token, query_tokens, query_set, cutoff)
     return matched / total if total else 0.0
 
 
@@ -345,6 +392,7 @@ class Screener:
         skeleton_idf: bool = True,
         skeleton_particles: bool = False,
         common_df: int | None = None,
+        orthographic: bool = False,
     ) -> None:
         """`idf_table` is (document frequency, documents) to use instead of counting the records here, so training
         and serving can share one table (see idf_table.py).
@@ -372,6 +420,12 @@ class Screener:
         self.skeleton_particles = skeleton_particles
         self.common_df = common_df  # skeleton tokens in this many entities or more are common; None: not flagged
         self._evidence_forms: dict[int, tuple[str, ...]] = {}
+        self.orthographic = orthographic  # Arabic-involved pairs use the orthographic skeleton
+        self._ortho_forms: dict[int, tuple[str, ...]] = {}
+        self._ortho_df: Counter[str] = Counter()
+        if orthographic:
+            for record in records.values():
+                self._ortho_df.update({t for form in self._orthographic_forms(record) for t in form.split()})
         if skeleton_idf:
             for record in records.values():
                 self._skeleton_df.update({t for form in self._forms(record) for t in form.split()})
@@ -393,6 +447,27 @@ class Screener:
                 dict.fromkeys(f for f in map(evidence_skeleton_form, record.norms) if f)
             )
         return self._evidence_forms[key]
+
+    def _orthographic_forms(self, record: EntityRecord) -> tuple[str, ...]:
+        key = id(record)
+        if key not in self._ortho_forms:
+            self._ortho_forms[key] = tuple(dict.fromkeys(f for f in map(orthographic_form, record.norms) if f))
+        return self._ortho_forms[key]
+
+    def orthographic_similarity(self, query_form: str, record: EntityRecord) -> float:
+        """Rarity-weighted overlap of orthographic skeleton tokens, with a stricter token match."""
+
+        def idf(token: str) -> float:
+            return max(0.1, math.log((len(self.records) + 1) / (self._ortho_df.get(token, 0) + 1)))
+
+        query_tokens = query_form.split()
+        return max(
+            (
+                weighted_token_score(query_tokens, form.split(), frozenset(form.split()), idf, ORTHO_CUTOFF)
+                for form in self._orthographic_forms(record)
+            ),
+            default=0.0,
+        )
 
     def skeleton_match(self, query_skeleton: str, record: EntityRecord) -> tuple[list[tuple[str, str]], int]:
         """Query skeleton tokens paired with their partner on the entity's best-matching skeleton form.
@@ -457,6 +532,7 @@ class Screener:
         skeleton_idf: bool = True,
         skeleton_particles: bool = False,
         common_df: int | None = None,
+        orthographic: bool = False,
     ) -> "Screener":
         """Build from dicts with id, names and optionally birth_dates and countries."""
         entities = list(entities)
@@ -464,7 +540,7 @@ class Screener:
         records = {e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities}
         return cls(
             index, records, adjustments or Adjustments(), blend, length_penalty, idf_table,
-            skeleton_idf, skeleton_particles, common_df,
+            skeleton_idf, skeleton_particles, common_df, orthographic,
         )  # fmt: skip
 
     def components(
@@ -485,13 +561,17 @@ class Screener:
         query = scoring_form(name)
         query_skeleton = evidence_skeleton_form(query) if self.skeleton_particles else skeleton_form(query)
         query_arabic = has_arabic(name)
+        query_orthographic = orthographic_form(query) if self.orthographic else ""
         scored = []
         for entity_id, _ in self.index.query(name):
             record = self.records[entity_id]
             names = name_scores(query, record, self.idf, blends, self.length_penalty)
             if max(names) < MIN_NAME_SCORE:
                 continue
-            skeleton_score = self.skeleton_similarity(query_skeleton, record)
+            if self.orthographic and (query_arabic or record.arabic):
+                skeleton_score = self.orthographic_similarity(query_orthographic, record)
+            else:
+                skeleton_score = self.skeleton_similarity(query_skeleton, record)
             common_only = (
                 self.common_df is not None
                 and skeleton_score > max(names)  # only a skeleton that can raise the name score matters

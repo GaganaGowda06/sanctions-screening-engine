@@ -297,6 +297,8 @@ Second fix, tried and rejected: leave Arabic particles (al, el, bin, ibn, bint, 
 
 Third fix, tried and rejected: hold a skeleton match back from a full alert, into a "needs secondary identifier" tier, when it carried the match and every matched skeleton token is common (`common_df`, off by default). On dev it removed 16 of 186 Arabic false alerts and cost Arabic recall 12 points (66% to 54%; test 67% to 53%), below the 65% floor, with the Arabic to Latin ratio unchanged. 93% of the clean dev queries supply a birth date or country, which the rule exempts. Before it, 156 of 186 Arabic false alerts were full-name collisions (every skeleton token matched) and 139 of them rest only on common tokens. See `reports/stage3_common_tier.json`.
 
+Fourth fix, tried and rejected: an orthographic skeleton for Arabic-involved pairs that keeps long vowels and the initial alif (`orthographic`, off by default), so Mohammed and Mahmoud stop colliding. Arabic false positives fell sharply (dev 27.6% to 9.6%, test 32.3% to 10.3%) and the Arabic to Latin ratio with them (dev 5.3 to 4.1, test 5.9 to 2.9, intervals overlapping), but Arabic recall halved (dev 66% to 33%, test 67% to 30%) and Latin recall fell too (test 73.6% to 65.3%), because spellings of one name no longer meet (Khaled and Khalid, Yusuf and Youssef). Birth date and country were not the cause: agreement pushed only 9 of 186 Arabic false alerts over the threshold, and 177 were over with neither. See `reports/stage3_orthographic.json` and `reports/stage3_arabic_secondary.json`.
+
 ## Known limitations
 
 These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.
