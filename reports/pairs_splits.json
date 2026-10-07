@@ -1,0 +1,91 @@
+{
+  "manifest": {
+    "dataset_file": "pairs-20251209.json.gz",
+    "dataset_sha256": "4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1",
+    "seed": "opensanctions-pairs-split-v1",
+    "fractions": {
+      "train": 0.7,
+      "dev": 0.1,
+      "test": 0.1,
+      "final": 0.1
+    },
+    "large_component_pairs": 100,
+    "codes": {
+      "train": "0",
+      "dev": "1",
+      "test": "2",
+      "final": "3",
+      "final_clean": "4"
+    },
+    "pairs": 755540,
+    "assignment_sha256": "186248a0047d3ed2f7323057b68d1c9a9bf077a64ea6e57598bcc2880a83ef98",
+    "pair_keys_sha256": "0f2ebc66be4ed6b1b004dea803ea1e7b1929407a72284311f8a83a4f92bf50d4",
+    "final_holdout_membership_sha256": "5439a1090adc6e2434b22c2f0227d9ff6c655d10dd8bce534fad9e0e3f8cb3b6",
+    "rule": "see src/build_pair_splits.py"
+  },
+  "splits": {
+    "train": {
+      "pairs": 528358,
+      "positive": 406625,
+      "positive_share": 0.7696,
+      "entity_pairs": 331614,
+      "entity_pairs_positive_share": 0.6389,
+      "pairs_sharing_an_entity_with_a_train_pair": 528358,
+      "share_sharing_an_entity_with_a_train_pair": 1.0
+    },
+    "dev": {
+      "pairs": 75548,
+      "positive": 58092,
+      "positive_share": 0.7689,
+      "entity_pairs": 47623,
+      "entity_pairs_positive_share": 0.6376,
+      "pairs_sharing_an_entity_with_a_train_pair": 27074,
+      "share_sharing_an_entity_with_a_train_pair": 0.3584
+    },
+    "test": {
+      "pairs": 75439,
+      "positive": 58015,
+      "positive_share": 0.769,
+      "entity_pairs": 47472,
+      "entity_pairs_positive_share": 0.6381,
+      "pairs_sharing_an_entity_with_a_train_pair": 27052,
+      "share_sharing_an_entity_with_a_train_pair": 0.3586
+    },
+    "final": {
+      "pairs": 27259,
+      "positive": 11066,
+      "positive_share": 0.406,
+      "entity_pairs": 27157,
+      "entity_pairs_positive_share": 0.4075,
+      "pairs_sharing_an_entity_with_a_train_pair": 27153,
+      "share_sharing_an_entity_with_a_train_pair": 0.9961
+    },
+    "final_clean": {
+      "pairs": 48936,
+      "positive": 47351,
+      "positive_share": 0.9676,
+      "entity_pairs": 21084,
+      "entity_pairs_positive_share": 0.9297,
+      "pairs_sharing_an_entity_with_a_train_pair": 0,
+      "share_sharing_an_entity_with_a_train_pair": 0.0
+    }
+  },
+  "schemas_left_side_by_split": {
+    "train": {
+      "Person": 199516,
+      "Occupancy": 149596,
+      "Company": 65777,
+      "Organization": 43631,
+      "Succession": 23482,
+      "Position": 18627
+    },
+    "final": {
+      "Person": 13632,
+      "Company": 7097,
+      "Organization": 4925,
+      "LegalEntity": 1134,
+      "Vessel": 258,
+      "Position": 102
+    }
+  }
+}

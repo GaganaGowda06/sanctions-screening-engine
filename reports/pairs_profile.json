@@ -1,0 +1,344 @@
+{
+  "file": "data/pairs/pairs-20251209.json.gz",
+  "python_version": "3.14.7",
+  "pairs": 755540,
+  "positive_share_by_tenth_of_file": {
+    "0 to 10%": 0.8661,
+    "10 to 20%": 0.9321,
+    "20 to 30%": 0.9261,
+    "30 to 40%": 0.6732,
+    "40 to 50%": 1.0,
+    "50 to 60%": 1.0,
+    "60 to 70%": 0.9928,
+    "70 to 80%": 0.9064,
+    "80 to 90%": 0.3766,
+    "90 to 100%": 0.0186
+  },
+  "schemas_left_right": {
+    "Person/Person": 284808,
+    "Occupancy/Occupancy": 213448,
+    "Company/Company": 70885,
+    "Organization/Organization": 35429,
+    "Succession/Succession": 33607,
+    "Position/Position": 26330,
+    "Organization/Company": 25849,
+    "Company/Organization": 21953,
+    "LegalEntity/Company": 7738,
+    "Vessel/Vessel": 7550,
+    "LegalEntity/LegalEntity": 6424,
+    "LegalEntity/Organization": 4648,
+    "LegalEntity/Person": 3969,
+    "Ownership/Ownership": 2392,
+    "Family/Family": 2301,
+    "Directorship/Directorship": 2099,
+    "Security/Security": 1661,
+    "Company/LegalEntity": 1314,
+    "Organization/LegalEntity": 1071,
+    "CryptoWallet/CryptoWallet": 818,
+    "Person/LegalEntity": 466,
+    "UnknownLink/UnknownLink": 395,
+    "Organization/Person": 123,
+    "Airplane/Airplane": 84,
+    "Person/Organization": 52,
+    "Company/Person": 51,
+    "Person/Company": 44,
+    "Organization/PublicBody": 8,
+    "Representation/Representation": 7,
+    "Documentation/Documentation": 6,
+    "PublicBody/Organization": 4,
+    "Employment/Employment": 4,
+    "Company/PublicBody": 1,
+    "Associate/Associate": 1
+  },
+  "unique_entities": 1002093,
+  "entities_in_more_than_one_pair": 66158,
+  "most_pairs_for_one_entity": 376,
+  "duplicate_unordered_pairs": 8280,
+  "pairs_with_conflicting_labels": 14,
+  "connected_components": {
+    "count": 420846,
+    "largest": 108643,
+    "five_largest": [
+      108643,
+      1268,
+      159,
+      144,
+      126
+    ],
+    "pairs_in_largest": 265710,
+    "pairs_in_largest_share": 0.3517,
+    "singletons": 256,
+    "size_2_to_10": 420029,
+    "size_over_10": 561
+  },
+  "all_pairs": {
+    "pairs": 755540,
+    "judgements": {
+      "positive": 581149,
+      "negative": 174391
+    },
+    "positive_share": 0.7692,
+    "script_class": {
+      "Latin on both sides only": {
+        "pairs": 493336,
+        "positive": 413004,
+        "negative": 80332,
+        "positive_share": 0.8372
+      },
+      "non-Latin on both sides": {
+        "pairs": 147041,
+        "positive": 99932,
+        "negative": 47109,
+        "positive_share": 0.6796
+      },
+      "non-Latin on one side only": {
+        "pairs": 115163,
+        "positive": 68213,
+        "negative": 46950,
+        "positive_share": 0.5923
+      }
+    },
+    "pairs_with_script_on_either_side": {
+      "Latin": {
+        "pairs": 744014,
+        "positive": 571626,
+        "negative": 172388,
+        "positive_share": 0.7683
+      },
+      "Cyrillic": {
+        "pairs": 184033,
+        "positive": 118252,
+        "negative": 65781,
+        "positive_share": 0.6426
+      },
+      "Arabic": {
+        "pairs": 91796,
+        "positive": 60181,
+        "negative": 31615,
+        "positive_share": 0.6556
+      },
+      "other": {
+        "pairs": 104349,
+        "positive": 69480,
+        "negative": 34869,
+        "positive_share": 0.6658
+      }
+    },
+    "pairs_with_no_script_in_common": {
+      "pairs": 10949,
+      "positive": 7814,
+      "negative": 3135,
+      "positive_share": 0.7137
+    },
+    "attribute_coverage_both_sides": {
+      "birth_date": {
+        "pairs": 207589,
+        "positive": 157791,
+        "negative": 49798,
+        "positive_share": 0.7601,
+        "share_of_pairs": 0.2748
+      },
+      "country": {
+        "pairs": 401192,
+        "positive": 260047,
+        "negative": 141145,
+        "positive_share": 0.6482,
+        "share_of_pairs": 0.531
+      },
+      "identifier": {
+        "pairs": 225042,
+        "positive": 104537,
+        "negative": 120505,
+        "positive_share": 0.4645,
+        "share_of_pairs": 0.2979
+      },
+      "identifier_without_programId": {
+        "pairs": 136702,
+        "positive": 65227,
+        "negative": 71475,
+        "positive_share": 0.4771,
+        "share_of_pairs": 0.1809
+      },
+      "birth_date_country_and_identifier_all_present": {
+        "pairs": 16891,
+        "positive": 7120,
+        "negative": 9771,
+        "positive_share": 0.4215,
+        "share_of_pairs": 0.0224
+      }
+    },
+    "attribute_agreement_when_both_present": {
+      "birth_year_conflict": {
+        "pairs": 46285,
+        "positive": 1148,
+        "negative": 45137,
+        "positive_share": 0.0248
+      },
+      "birth_year_shared": {
+        "pairs": 161304,
+        "positive": 156643,
+        "negative": 4661,
+        "positive_share": 0.9711
+      },
+      "country_conflict": {
+        "pairs": 48231,
+        "positive": 2532,
+        "negative": 45699,
+        "positive_share": 0.0525
+      },
+      "country_shared": {
+        "pairs": 352961,
+        "positive": 257515,
+        "negative": 95446,
+        "positive_share": 0.7296
+      },
+      "identifier_differs": {
+        "pairs": 85083,
+        "positive": 14374,
+        "negative": 70709,
+        "positive_share": 0.1689
+      },
+      "identifier_shared": {
+        "pairs": 51619,
+        "positive": 50853,
+        "negative": 766,
+        "positive_share": 0.9852
+      }
+    }
+  },
+  "entity_pairs": {
+    "pairs": 474950,
+    "judgements": {
+      "positive": 303183,
+      "negative": 171767
+    },
+    "positive_share": 0.6383,
+    "script_class": {
+      "Latin on both sides only": {
+        "pairs": 213286,
+        "positive": 135559,
+        "negative": 77727,
+        "positive_share": 0.6356
+      },
+      "non-Latin on both sides": {
+        "pairs": 146550,
+        "positive": 99460,
+        "negative": 47090,
+        "positive_share": 0.6787
+      },
+      "non-Latin on one side only": {
+        "pairs": 115114,
+        "positive": 68164,
+        "negative": 46950,
+        "positive_share": 0.5921
+      }
+    },
+    "pairs_with_script_on_either_side": {
+      "Latin": {
+        "pairs": 463889,
+        "positive": 294124,
+        "negative": 169765,
+        "positive_share": 0.634
+      },
+      "Cyrillic": {
+        "pairs": 183661,
+        "positive": 117880,
+        "negative": 65781,
+        "positive_share": 0.6418
+      },
+      "Arabic": {
+        "pairs": 91796,
+        "positive": 60181,
+        "negative": 31615,
+        "positive_share": 0.6556
+      },
+      "other": {
+        "pairs": 104180,
+        "positive": 69330,
+        "negative": 34850,
+        "positive_share": 0.6655
+      }
+    },
+    "pairs_with_no_script_in_common": {
+      "pairs": 10913,
+      "positive": 7778,
+      "negative": 3135,
+      "positive_share": 0.7127
+    },
+    "attribute_coverage_both_sides": {
+      "birth_date": {
+        "pairs": 207589,
+        "positive": 157791,
+        "negative": 49798,
+        "positive_share": 0.7601,
+        "share_of_pairs": 0.4371
+      },
+      "country": {
+        "pairs": 375334,
+        "positive": 236699,
+        "negative": 138635,
+        "positive_share": 0.6306,
+        "share_of_pairs": 0.7903
+      },
+      "identifier": {
+        "pairs": 225042,
+        "positive": 104537,
+        "negative": 120505,
+        "positive_share": 0.4645,
+        "share_of_pairs": 0.4738
+      },
+      "identifier_without_programId": {
+        "pairs": 136702,
+        "positive": 65227,
+        "negative": 71475,
+        "positive_share": 0.4771,
+        "share_of_pairs": 0.2878
+      },
+      "birth_date_country_and_identifier_all_present": {
+        "pairs": 16891,
+        "positive": 7120,
+        "negative": 9771,
+        "positive_share": 0.4215,
+        "share_of_pairs": 0.0356
+      }
+    },
+    "attribute_agreement_when_both_present": {
+      "birth_year_conflict": {
+        "pairs": 46285,
+        "positive": 1148,
+        "negative": 45137,
+        "positive_share": 0.0248
+      },
+      "birth_year_shared": {
+        "pairs": 161304,
+        "positive": 156643,
+        "negative": 4661,
+        "positive_share": 0.9711
+      },
+      "country_conflict": {
+        "pairs": 46150,
+        "positive": 2523,
+        "negative": 43627,
+        "positive_share": 0.0547
+      },
+      "country_shared": {
+        "pairs": 329184,
+        "positive": 234176,
+        "negative": 95008,
+        "positive_share": 0.7114
+      },
+      "identifier_differs": {
+        "pairs": 85083,
+        "positive": 14374,
+        "negative": 70709,
+        "positive_share": 0.1689
+      },
+      "identifier_shared": {
+        "pairs": 51619,
+        "positive": 50853,
+        "negative": 766,
+        "positive_share": 0.9852
+      }
+    }
+  }
+}

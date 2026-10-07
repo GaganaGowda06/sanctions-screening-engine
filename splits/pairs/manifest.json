@@ -1,0 +1,24 @@
+{
+  "dataset_file": "pairs-20251209.json.gz",
+  "dataset_sha256": "4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1",
+  "seed": "opensanctions-pairs-split-v1",
+  "fractions": {
+    "train": 0.7,
+    "dev": 0.1,
+    "test": 0.1,
+    "final": 0.1
+  },
+  "large_component_pairs": 100,
+  "codes": {
+    "train": "0",
+    "dev": "1",
+    "test": "2",
+    "final": "3",
+    "final_clean": "4"
+  },
+  "pairs": 755540,
+  "assignment_sha256": "186248a0047d3ed2f7323057b68d1c9a9bf077a64ea6e57598bcc2880a83ef98",
+  "pair_keys_sha256": "0f2ebc66be4ed6b1b004dea803ea1e7b1929407a72284311f8a83a4f92bf50d4",
+  "final_holdout_membership_sha256": "5439a1090adc6e2434b22c2f0227d9ff6c655d10dd8bce534fad9e0e3f8cb3b6",
+  "rule": "see src/build_pair_splits.py"
+}

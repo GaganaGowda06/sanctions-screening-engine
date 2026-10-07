@@ -4,7 +4,7 @@ A two-stage sanctions screening engine built on OpenSanctions data: a candidate 
 
 This is a portfolio project for a graduate data science application in an economic crime team. yente, the open-source OpenSanctions matching API, is the engine I study and aim to improve on. It is kept for reference and is not part of this repository.
 
-Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. The fuller evaluation harness, monitoring and audit log come in later stages.
+Status: Stage 1 (setup and data) is complete. Stage 2 (baseline matcher: normalisation, candidate generation, scoring, and a callable screening interface) is built, tuned and finally evaluated on a frozen hold-out. Training the matcher on the OpenSanctions Pairs dataset has started: the data and the splits are in place. The fuller evaluation harness, monitoring and audit log come in later stages.
 
 ## The data
 
@@ -94,6 +94,35 @@ The Arabic false positive rate is far above the others, so I tried alert thresho
 
 A threshold cannot lower the Arabic false positive rate without losing Arabic recall, because in this data the scores of true and false Arabic matches overlap. The cause is in the scoring: for any pair involving Arabic the vowel-stripped skeleton can stand in for the name score, and Arabic names are made of a small set of very common consonant skeletons.
 
+## Training data: OpenSanctions Pairs
+
+The matcher so far is hand tuned. The next phase trains a logistic regression over explicit features, the approach nomenklatura's RegressionV1 takes, on the OpenSanctions Pairs dataset: 755,540 pairs of entities that analysts labelled as the same entity (positive) or different entities (negative). Nothing has been trained yet; this section records the data and how it was split.
+
+Licence: non-commercial use only (CC-BY-NC-4.0 on the Hugging Face dataset card, "non-commercial use" on the OpenSanctions page). The paper is licensed separately and that licence does not apply to the data. Cite: Smith, Sesodia, Lindenberg and Schroeder de Witt (2026), OpenSanctions Pairs: Large-Scale Entity Matching with LLMs, arXiv:2603.11051, and OpenSanctions, Pairs: Cross-Referencing Training Data, snapshot 2025-12-09 (https://www.opensanctions.org/docs/opensource/pairs/). The file (390 MiB compressed) is downloaded with `src/download_pairs.py`, which checks the size, the MD5 published by OpenSanctions and the SHA-256 published by Hugging Face. It is not stored in this repository.
+
+What is in it (full output in `reports/pairs_profile.json`):
+
+- 581,149 positive and 174,391 negative pairs (76.9% positive). The file is ordered by source, not shuffled: the share of positives runs from 1.9% in the last tenth of the file to 100% in the middle. Never take a slice of it as a sample.
+- 280,590 pairs (37.1%) label relationship and role records (Occupancy, Succession, Position, Ownership, Family and others), not named things. The 474,950 pairs of name-bearing entities (persons, companies, organisations, legal entities, vessels and a few others) are 63.8% positive, and those are the ones that matter for name matching.
+- Among those entity pairs, 44.9% have Latin names only, 30.9% have non-Latin names on both sides and 24.2% on one side. Cyrillic appears on either side in 183,661 pairs, Arabic in 91,796 and other scripts in 104,180.
+- Both sides of the entity pairs carry a birth date in 207,589 (43.7%), a country in 375,334 (79.0%) and an identifier in 225,042 (47.4%, or 28.8% leaving out programId). All three together: 16,891 (3.6%). The attributes are strongly tied to the labels: when both sides have a birth year and they share one, 97.1% of the pairs are positive, and 2.5% when they conflict.
+- 8,280 pairs appear more than once and 14 of those have conflicting labels. One connected group of entities holds 35.2% of all pairs, and one entity appears in 376 pairs.
+
+### Splits and the new final hold-out
+
+The earlier hold-out belonged to the hand-tuned matcher and is spent. A fresh split was made by `src/build_pair_splits.py`: 70% train, 10% dev, 10% test and 10% final hold-out. The rule uses a hash of a group key and a fixed seed, so file order plays no part. Pairs in a small connected group (up to 100 pairs) are kept together with their whole group, so those entities appear in one split only. Pairs in the giant group are assigned one pair at a time, which keeps duplicates together but cannot keep entities apart.
+
+| Split | Pairs | Positive | Name-bearing entity pairs | Positive among those | Pairs sharing an entity with a train pair |
+|---|---|---|---|---|---|
+| train | 528,358 | 77.0% | 331,614 | 63.9% | not applicable |
+| dev | 75,548 | 76.9% | 47,623 | 63.8% | 35.8% |
+| test | 75,439 | 76.9% | 47,472 | 63.8% | 35.9% |
+| final hold-out | 76,195 | 76.7% | 48,241 | 63.6% | 35.6% |
+
+Cautions. About a third of the dev, test and hold-out pairs share an entity with a train pair, all of them from the large connected groups (mostly the giant one), so scores on them are somewhat optimistic compared with entirely unseen entities. The hold-out pairs that share no entity with any other split (48,936 pairs, 21,084 of them entity pairs) are marked, but they are 93.0% positive, so they can check for leakage and cannot measure false positives. Use the whole hold-out for headline figures.
+
+The assignment is frozen in `splits/pairs/` with the dataset checksum, a checksum of the pair ids in file order, and a checksum of the hold-out membership (`5439a1090adc...`). `pairs.iter_split()` refuses the hold-out unless it is asked for explicitly, and only the final evaluation may do that.
+
 ## Known limitations
 
 These come from the measurements in `reports/stage2_candidates.json`, `reports/stage2_screening.json` and `reports/final_evaluation.json`.
@@ -118,6 +147,9 @@ python src/profile_normaliser.py    # normalisation report, reports/stage2_norma
 python src/evaluate_candidates.py   # candidate recall, reports/stage2_candidates.json
 python src/evaluate_scoring.py      # precision, recall, false positives, reports/stage2_scoring.json
 python src/evaluate_screening.py    # tuning on dev, test report, reports/stage2_screening.json
+python src/download_pairs.py        # the Pairs training data, about 390 MiB, verified
+python src/profile_pairs.py         # reports/pairs_profile.json
+python src/build_pair_splits.py     # frozen train/dev/test/hold-out split in splits/pairs/
 pytest                              # tests run on a small fixture, no download needed
 ruff check .
 ```
@@ -142,14 +174,17 @@ src/
   entities.py            load named entities from the OpenSanctions file
   profile_normaliser.py, evaluate_candidates.py, evaluate_scoring.py, evaluate_screening.py   measurement scripts
   evaluate_final.py      the one-time final evaluation on the frozen hold-out
+  download_pairs.py, pairs.py, profile_pairs.py, build_pair_splits.py   the Pairs training data and its splits
 tests/
   test_*.py              unit tests on small hand-built data, one file per module
 reports/
   stage1_profile.json    profile of the downloaded data
   stage2_*.json          candidate, scoring and screening evaluations used to build it
   final_evaluation.json  the final hold-out evaluation
+  pairs_profile.json, pairs_splits.json   the Pairs data profile and split statistics
 holdout/
-  final_holdout.json     frozen final hold-out queries, scored once
+  final_holdout.json     frozen final hold-out queries of the hand-tuned matcher, scored once
+splits/pairs/            frozen split of the Pairs data: assignment, manifest with checksums
 data/                    downloaded data (not committed)
 reference/yente/         yente source for study (not committed)
 .github/workflows/ci.yml lint and tests on every push and pull request
