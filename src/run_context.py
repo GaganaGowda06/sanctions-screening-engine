@@ -33,7 +33,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from scoring import Screener
-from screening import CONFIG_PATH, ScreeningEngine
+from screening import CANDIDATE_CAP, CONFIG_PATH, ScreeningEngine
 
 SCHEMA_VERSION = 1
 SRC_DIR = Path(__file__).resolve().parent
@@ -43,9 +43,8 @@ ROOT = SRC_DIR.parent
 SCORE_PATH_SOURCES = ("candidates.py", "entities.py", "normalise.py", "profile_data.py", "scoring.py", "screening.py")
 # Third-party libraries imported on the score path. Checked in the same test.
 SCORE_PATH_LIBRARIES = ("rapidfuzz",)
-# ScreeningEngine.screen() asks the screener for this many candidates. It is a literal in screening.py, so it
-# is mirrored here and a test checks that the two agree.
-SCREEN_CANDIDATE_CAP = 10_000
+# ScreeningEngine.screen() asks the screener for this many candidates per query.
+SCREEN_CANDIDATE_CAP = CANDIDATE_CAP
 
 
 def canonical_json(value: object) -> str:

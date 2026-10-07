@@ -29,6 +29,7 @@ from scoring import (
     DEFAULT_SKELETON_FLOOR,
     DEFAULT_SKELETON_LIFT,
     DEFAULT_THRESHOLD,
+    Components,
     Screener,
     best_matching_name,
     combine,
@@ -41,6 +42,7 @@ from scoring import (
 SCRIPTS = ("Latin", "Cyrillic", "Arabic", "other")
 CONFIG_PATH = Path(__file__).with_name("screening_config.json")
 MAX_NAMES_SHOWN = 5
+CANDIDATE_CAP = 10_000  # candidates asked of the screener per query
 
 
 def query_script(name: str) -> str:
@@ -139,37 +141,64 @@ class ScreeningEngine:
         config, screener = self.config, self.screener
         script = query_script(name)
         threshold = config.threshold_for(script)
-        query = scoring_form(name)
-        matches = []
-        for c in screener.components(name, birth_date, country, keep=10_000, blends=(config.blend,)):
-            score = combine(c, config.skeleton_floor, config.skeleton_lift)
-            if score < threshold:
-                continue
-            record = screener.records[c.entity_id]
-            _, used = name_with_skeleton(c, config.skeleton_floor, config.skeleton_lift)
-            date_status, date_adj = date_comparison(birth_date, record.birth_dates, screener.adjustments)
-            country_status, country_adj = country_comparison(country, record.countries, screener.adjustments)
-            matches.append(
-                ScreenMatch(
-                    entity_id=c.entity_id,
-                    score=score,
-                    names=record.raw_names[:MAX_NAMES_SHOWN],
-                    explanation=Explanation(
-                        script=script,
-                        threshold=threshold,
-                        matched_name=best_matching_name(query, record, screener.idf, config.blend),
-                        name_score=c.names[0],
-                        skeleton_score=c.skeleton,
-                        skeleton_used=used,
-                        birth_date=date_status,
-                        country=country_status,
-                        birth_date_adjustment=date_adj,
-                        country_adjustment=country_adj,
-                    ),
-                )
+        components = screener.components(name, birth_date, country, keep=CANDIDATE_CAP, blends=(config.blend,))
+        scored = score_components(components, config)
+        return build_matches(screener, config, name, birth_date, country, scored, script, threshold)[:limit]
+
+
+def score_components(components: list[Components], config: ScreeningConfig) -> list[tuple[Components, float, bool]]:
+    """(components, final score, whether the skeleton raised the name score) for each candidate."""
+    scored = []
+    for c in components:
+        score = combine(c, config.skeleton_floor, config.skeleton_lift)
+        _, used = name_with_skeleton(c, config.skeleton_floor, config.skeleton_lift)
+        scored.append((c, score, used))
+    return scored
+
+
+def build_matches(
+    screener: Screener,
+    config: ScreeningConfig,
+    name: str,
+    birth_date: str | None,
+    country: str | None,
+    scored: list[tuple[Components, float, bool]],
+    script: str,
+    threshold: float,
+) -> list[ScreenMatch]:
+    """The matches among scored candidates: those at or over the threshold, best first, each with its explanation.
+
+    The one place matches are built, for screen() here and for the audited call, so they cannot differ.
+    """
+    query = scoring_form(name)
+    matches = []
+    for c, score, used in scored:
+        if score < threshold:
+            continue
+        record = screener.records[c.entity_id]
+        date_status, date_adj = date_comparison(birth_date, record.birth_dates, screener.adjustments)
+        country_status, country_adj = country_comparison(country, record.countries, screener.adjustments)
+        matches.append(
+            ScreenMatch(
+                entity_id=c.entity_id,
+                score=score,
+                names=record.raw_names[:MAX_NAMES_SHOWN],
+                explanation=Explanation(
+                    script=script,
+                    threshold=threshold,
+                    matched_name=best_matching_name(query, record, screener.idf, config.blend),
+                    name_score=c.names[0],
+                    skeleton_score=c.skeleton,
+                    skeleton_used=used,
+                    birth_date=date_status,
+                    country=country_status,
+                    birth_date_adjustment=date_adj,
+                    country_adjustment=country_adj,
+                ),
             )
-        matches.sort(key=lambda m: (-m.score, m.entity_id))
-        return matches[:limit]
+        )
+    matches.sort(key=lambda m: (-m.score, m.entity_id))
+    return matches
 
 
 _engine: ScreeningEngine | None = None

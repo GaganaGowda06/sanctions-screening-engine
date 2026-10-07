@@ -281,9 +281,11 @@ def test_the_score_path_lists_match_what_importing_screening_loads():
     assert loaded - local - {"cython_runtime"} == set(rc.SCORE_PATH_LIBRARIES)
 
 
-def test_the_candidate_cap_mirrors_the_literal_in_screening():
-    source = (rc.SRC_DIR / "screening.py").read_text()
-    assert f"keep={rc.SCREEN_CANDIDATE_CAP:_}" in source
+def test_the_candidate_cap_is_the_one_screening_uses():
+    import screening
+
+    assert rc.SCREEN_CANDIDATE_CAP == screening.CANDIDATE_CAP == 10_000
+    assert "keep=CANDIDATE_CAP" in (rc.SRC_DIR / "screening.py").read_text()
 
 
 # ---------- the real list ----------
