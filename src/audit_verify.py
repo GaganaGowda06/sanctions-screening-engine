@@ -199,3 +199,10 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
             failures.append(Failure("orphan_payload", f"{path.name}: no header points to it", request_id=path.stem))
 
     return VerifyResult(len(records), checked, tuple(failures))
+
+
+def classify_missing_payload(log: AuditLog, request_id: str) -> str:
+    """Why a record's payload is not there, using verify_chain's classification: "purged" for a payload covered by a
+    chained purge tombstone, otherwise "payload_missing", the tampering-class failure verify_chain reports. No purge
+    exists yet, so no tombstone can, and the answer is always "payload_missing" (step 7 adds the tombstone check)."""
+    return "payload_missing"

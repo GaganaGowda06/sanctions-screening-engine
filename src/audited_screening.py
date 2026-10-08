@@ -29,21 +29,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from audit import (
-    TOP_CANDIDATES,
     AuditConfigError,
     AuditError,
     AuditLog,
     PayloadRecord,
-    build_header,
-    candidate_entry,
     new_request_id,
     new_salt,
     payload_digest,
 )
+from audit_schema import build_header, candidate_entry
 from candidates import name_keys
 from normalise import normalise
 from profile_data import DEFAULT_INPUT
-from run_context import RunContext, build_run_context
+from run_context import RunContext, build_run_context, store_context
 from scoring import scoring_form, skeleton_form
 from screening import (
     CANDIDATE_CAP,
@@ -62,6 +60,17 @@ AUDIT_DIR_ENV = "SCREENING_AUDIT_DIR"
 class AuditedResult:
     request_id: str
     matches: list[ScreenMatch]
+
+
+@dataclass(frozen=True)
+class Evaluation:
+    """The matcher's answer for one input, before anything is logged: used by audited_screen and by replay."""
+
+    script: str
+    threshold: float
+    matches: list[ScreenMatch]
+    entries: list[dict]  # one candidate_entry per scored candidate
+    derived: dict  # the name-derived payload fields (everything but the raw input and the customer ref)
 
 
 def resolve_audit_dir(setting: str | Path | None = None) -> Path:
@@ -88,14 +97,19 @@ class AuditedEngine:
         log: AuditLog,
         *,
         clock: Callable[[], datetime] = utc_now,
-        top_candidates: int = TOP_CANDIDATES,
+        record_context: bool = True,
     ) -> None:
+        """With record_context True the run context is written to <audit_dir>/contexts/<hash>.json (see
+        run_context.store_context). Replay builds its engine with False: it writes nothing."""
         self.engine = engine
         self.run_context = run_context
         self.context_hash = run_context.context_hash  # fixed here; never recomputed from files
         self.log = log
         self.clock = clock
-        self.top_candidates = top_candidates
+        self.top_candidates = run_context.top_candidates  # from the context, so replay uses the record's own value
+        self.contexts_dir = log.headers.path.parent / "contexts"
+        if record_context:
+            store_context(self.contexts_dir, run_context)
 
     @classmethod
     def from_file(
@@ -104,6 +118,7 @@ class AuditedEngine:
         audit_dir: Path | str | None = None,
         config: ScreeningConfig | None = None,
         fsync: bool = True,
+        top_candidates: int | None = None,
         **kwargs: object,
     ) -> "AuditedEngine":
         """Build from a list file. `audit_dir` is resolved by resolve_audit_dir() before the list is read, so a
@@ -111,7 +126,32 @@ class AuditedEngine:
         log = AuditLog.in_directory(resolve_audit_dir(audit_dir), fsync=fsync)
         log.headers.require_initialised()  # before the slow list build: a missing store fails at once
         engine = ScreeningEngine.from_file(path, config)
-        return cls(engine, build_run_context(engine, path), log, **kwargs)  # type: ignore[arg-type]
+        context = build_run_context(engine, path, top_candidates=top_candidates)
+        return cls(engine, context, log, **kwargs)  # type: ignore[arg-type]
+
+    def evaluate(self, name: str, birth_date: str | None = None, country: str | None = None) -> Evaluation:
+        """Screen one input and return everything the record is made from. Calls components() exactly once, applies
+        config.threshold_for(script) itself, and logs nothing."""
+        config, screener = self.engine.config, self.engine.screener
+        script = query_script(name)
+        threshold = config.threshold_for(script)
+        query = scoring_form(name)
+        components = screener.components(name, birth_date, country, keep=CANDIDATE_CAP, blends=(config.blend,))
+        scored = score_components(components, config)
+        matches = build_matches(screener, config, name, birth_date, country, scored, script, threshold)
+        entries = [
+            candidate_entry(c.entity_id, score, c.names[0], c.skeleton, c.dob, c.country, c.arabic, used, threshold)
+            for c, score, used in scored
+        ]
+        index = screener.index
+        derived = {
+            "query_script": script,
+            "normalised": {"normalise": normalise(name), "scoring_form": query, "skeleton": skeleton_form(query)},
+            "name_tokens": query.split(),
+            "retrieval_keys": sorted(name_keys(name, index.do_fold, index.join, index.strip_article)),
+            "matches": [{"entity_id": m.entity_id, **asdict(m.explanation)} for m in matches],
+        }
+        return Evaluation(script, threshold, matches, entries, derived)
 
     def audited_screen(
         self,
@@ -122,28 +162,11 @@ class AuditedEngine:
     ) -> AuditedResult:
         if customer_ref is not None and not isinstance(customer_ref, str):
             raise ValueError("customer_ref must be a string or None")
-        config, screener = self.engine.config, self.engine.screener
-        script = query_script(name)
-        threshold = config.threshold_for(script)
-
-        query = scoring_form(name)
-        components = screener.components(name, birth_date, country, keep=CANDIDATE_CAP, blends=(config.blend,))
-        scored = score_components(components, config)
-        matches = build_matches(screener, config, name, birth_date, country, scored, script, threshold)
-        entries = [
-            candidate_entry(c.entity_id, score, c.names[0], c.skeleton, c.dob, c.country, c.arabic, used, threshold)
-            for c, score, used in scored
-        ]
-
-        index = screener.index
+        result = self.evaluate(name, birth_date, country)
         data = {
             "customer_ref": customer_ref,
             "raw_input": {"name": name, "birth_date": birth_date, "country": country},
-            "query_script": script,
-            "normalised": {"normalise": normalise(name), "scoring_form": query, "skeleton": skeleton_form(query)},
-            "name_tokens": query.split(),
-            "retrieval_keys": sorted(name_keys(name, index.do_fold, index.join, index.strip_article)),
-            "matches": [{"entity_id": m.entity_id, **asdict(m.explanation)} for m in matches],
+            **result.derived,
         }
         salt, request_id = new_salt(), new_request_id()
         try:
@@ -151,8 +174,8 @@ class AuditedEngine:
                 request_id=request_id,
                 moment=self.clock(),
                 run_context_hash=self.context_hash,
-                entries=entries,
-                threshold=threshold,
+                entries=result.entries,
+                threshold=result.threshold,
                 digest=payload_digest(salt, data),
                 top=self.top_candidates,
             )
@@ -161,7 +184,7 @@ class AuditedEngine:
             raise
         except (ValueError, TypeError, OSError) as exc:
             raise AuditError(f"could not build or write the audit record: {exc}") from exc
-        return AuditedResult(request_id, matches)
+        return AuditedResult(request_id, result.matches)
 
 
 _audited: AuditedEngine | None = None

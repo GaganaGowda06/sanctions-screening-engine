@@ -54,7 +54,7 @@ def world(bare):
 
 
 def run(world, *args: str, audit_dir: bool = True) -> list[str]:
-    argv = [*args, "--input", str(world["entities"])]
+    argv = ["screen", *args, "--input", str(world["entities"])]
     if audit_dir:
         argv += ["--audit-dir", str(world["audit_dir"])]
     return argv
@@ -193,7 +193,7 @@ def test_there_is_no_default_audit_directory(world):
 
 def test_a_separate_process_without_the_setting_exits_2_and_prints_nothing(world):
     done = subprocess.run(
-        [sys.executable, str(SRC / "screen_cli.py"), "Ivan Petrov", "--input", str(world["entities"])],
+        [sys.executable, str(SRC / "screen_cli.py"), "screen", "Ivan Petrov", "--input", str(world["entities"])],
         capture_output=True, text=True, cwd=SRC, env={"PYTHONPATH": str(SRC), "PATH": ""},
     )  # fmt: skip
     assert done.returncode == 2 and done.stdout == "" and "refusing to start" in done.stderr
@@ -393,3 +393,39 @@ def test_a_partial_batch_exits_nonzero_and_reports_how_many_were_recorded(world,
     assert captured.out.count("record ") == 3
     log = log_of(world)
     assert len(log.headers.read_all()) == 3 and verify_chain(log).ok
+
+
+# ---------- explicit subcommands ----------
+
+
+@pytest.mark.parametrize("name", ["init", "replay", "screen"])
+def test_a_customer_called_like_a_subcommand_is_screened_and_recorded(world, capsys, name):
+    assert screen_cli.main(run(world, name, "--json")) == 0
+    printed = json.loads(capsys.readouterr().out)
+    log = log_of(world)
+    (header,) = [h for h in log.headers.read_all() if h["request_id"] == printed["request_id"]]
+    assert log.payloads.read(header["request_id"]).data["raw_input"]["name"] == name
+    assert verify_chain(log).ok
+
+
+def test_a_bare_name_with_no_subcommand_exits_2_with_a_usage_message(world, capsys):
+    with pytest.raises(SystemExit) as stop:
+        screen_cli.main(["Ivan Petrov", "--input", str(world["entities"]), "--audit-dir", str(world["audit_dir"])])
+    assert stop.value.code == 2
+    err = capsys.readouterr().err
+    assert "usage:" in err and "invalid choice" in err
+    assert log_of(world).headers.read_all() == []
+
+
+def test_no_arguments_at_all_exits_2(capsys):
+    with pytest.raises(SystemExit) as stop:
+        screen_cli.main([])
+    assert stop.value.code == 2 and "usage:" in capsys.readouterr().err
+
+
+def test_a_separate_process_with_a_bare_name_exits_2_and_prints_nothing_on_stdout(world):
+    done = subprocess.run(
+        [sys.executable, str(SRC / "screen_cli.py"), "Ivan Petrov", "--audit-dir", str(world["audit_dir"])],
+        capture_output=True, text=True, cwd=SRC, env={"PYTHONPATH": str(SRC), "PATH": ""},
+    )  # fmt: skip
+    assert done.returncode == 2 and done.stdout == "" and "usage:" in done.stderr

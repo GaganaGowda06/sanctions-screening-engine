@@ -45,12 +45,13 @@ The same function is available from the command line:
 
 ```
 python src/screen_cli.py init --audit-dir /path/to/audit
-python src/screen_cli.py "Vladimir Putin" --birth-date 1952-10-07 --country ru --audit-dir /path/to/audit
-python src/screen_cli.py "محمد علي" --json --limit 5 --customer-ref cust-123 --audit-dir /path/to/audit
-python src/screen_cli.py --batch names.jsonl --audit-dir /path/to/audit
+python src/screen_cli.py screen "Vladimir Putin" --birth-date 1952-10-07 --country ru --audit-dir /path/to/audit
+python src/screen_cli.py screen "محمد علي" --json --limit 5 --customer-ref cust-123 --audit-dir /path/to/audit
+python src/screen_cli.py screen --batch names.jsonl --audit-dir /path/to/audit
+python src/screen_cli.py replay REQUEST_ID --audit-dir /path/to/audit
 ```
 
-The command line is the production entry point, so it is audited: each name's record is written before its decision is printed, and if a record cannot be written the command prints no decision and exits non-zero. The audit directory comes from `--audit-dir` or `$SCREENING_AUDIT_DIR`; there is no default, and the command refuses to start without one. `init` creates the store once and refuses a directory that is not empty; screening never creates it, and a missing or wiped store stops screening with `log_missing` rather than starting a new one. `screen()` itself is unchanged and is what the evaluation scripts use, so evaluation runs write no audit records.
+Every mode is an explicit subcommand (`init`, `screen`, `replay`); a bare name is a usage error (exit 2), so a customer called `init` or `replay` is screened like anyone else with `screen init`. The command line is the production entry point, so it is audited: each name's record is written before its decision is printed, and if a record cannot be written the command prints no decision and exits non-zero. The audit directory comes from `--audit-dir` or `$SCREENING_AUDIT_DIR`; there is no default, and the command refuses to start without one. `init` creates the store once and refuses a directory that is not empty; screening never creates it, and a missing or wiped store stops screening with `log_missing` rather than starting a new one. `replay REQUEST_ID` rebuilds a recorded decision from its header, payload and run context and exits 0 only if the result is identical; it refuses, with a field-level diff, if the engine's run context differs from the record's. `screen()` itself is unchanged and is what the evaluation scripts use, so evaluation runs write no audit records.
 
 ## Final results
 

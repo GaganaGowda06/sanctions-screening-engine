@@ -1,10 +1,14 @@
 """Command line screening, audited. Production entry point: every decision is written to the audit log first.
 
+Every mode is an explicit subcommand. A bare name is not a command (exit status 2), so a customer called "init",
+"replay" or "screen" is screened like anyone else.
+
 Run:
     python src/screen_cli.py init --audit-dir /var/lib/screening/audit          (once, to create the audit store)
-    python src/screen_cli.py "Vladimir Putin" --birth-date 1952-10-07 --country ru --audit-dir /var/lib/screening/audit
-    python src/screen_cli.py "محمد علي" --json --limit 5 --customer-ref cust-123
-    python src/screen_cli.py --batch names.jsonl --audit-dir /var/lib/screening/audit
+    python src/screen_cli.py screen "Vladimir Putin" --birth-date 1952-10-07 --country ru --audit-dir /var/lib/audit
+    python src/screen_cli.py screen "محمد علي" --json --limit 5 --customer-ref cust-123
+    python src/screen_cli.py screen --batch names.jsonl --audit-dir /var/lib/screening/audit
+    python src/screen_cli.py replay REQUEST_ID --audit-dir /var/lib/screening/audit
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
 refuses to start (exit status 2) before it builds the list. Screening never creates the store: "init" does, once, and
@@ -14,13 +18,17 @@ inside, so a person decides which it is. The record of each name (header and pay
 src/audit.py) is written before the decision is printed. If a record cannot be written the command prints no
 decision for that name, says so on stderr, and exits non-zero (exit status 1).
 
---batch reads a JSON-lines file, or standard input for "-": one object per line with "name" and optionally
+`screen --batch` reads a JSON-lines file, or standard input for "-": one object per line with "name" and optionally
 "birth_date", "country" and "customer_ref". The whole file is checked before anything is screened, so a malformed
 line stops the run with exit status 2 and no records. Names are then screened in order, one record each. If a record
 cannot be written the run stops there: earlier names keep their records and decisions, later ones are not screened.
 
---customer-ref links the record to a customer (opaque to the matcher; stored in the payload only). Exit status is 0
-whether or not there are matches. Building the list takes a few seconds on every run.
+`replay REQUEST_ID` rebuilds one recorded decision from its header, payload and run context and exits 0 only if the
+result is identical. It refuses, with a field-level diff, if the engine's run context differs from the record's, and
+it writes nothing. It prints no names.
+
+`screen --customer-ref` links the record to a customer (opaque to the matcher; stored in the payload only). Exit
+status is 0 whether or not there are matches. Building the list takes a few seconds on every run.
 """
 
 import argparse
@@ -31,6 +39,7 @@ from pathlib import Path
 from audit import AuditConfigError, AuditError, AuditLog, LogMissingError
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
 from profile_data import DEFAULT_INPUT
+from replay import replay
 from screening import ScreenMatch
 
 EXIT_AUDIT_FAILURE = 1
@@ -89,11 +98,8 @@ def read_batch(source: str) -> list[dict]:
     return items
 
 
-def init_main(argv: list[str]) -> int:
+def cmd_init(args: argparse.Namespace) -> int:
     """Create the audit store: the directory, an empty header log and the genesis checkpoint."""
-    parser = argparse.ArgumentParser(prog="screen_cli.py init", description="create a new, empty audit store")
-    parser.add_argument("--audit-dir", help="audit directory (or set $SCREENING_AUDIT_DIR); there is no default")
-    args = parser.parse_args(argv)
     try:
         directory = resolve_audit_dir(args.audit_dir)
     except AuditConfigError as exc:
@@ -108,24 +114,38 @@ def init_main(argv: list[str]) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    argv = sys.argv[1:] if argv is None else argv
-    if argv and argv[0] == "init":
-        return init_main(argv[1:])
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("name", nargs="?", help="the name to screen (not with --batch)")
-    parser.add_argument("--batch", metavar="FILE", help='JSON-lines file of names to screen, or "-" for stdin')
-    parser.add_argument("--birth-date", help="YYYY, YYYY-MM or YYYY-MM-DD")
-    parser.add_argument("--country", help="ISO 3166 two-letter country code, for example ru")
-    parser.add_argument("--customer-ref", help="opaque customer reference, stored in the payload only")
-    parser.add_argument("--limit", type=int, help="show at most this many matches per name (all are recorded)")
-    parser.add_argument(
-        "--json", action="store_true", help="print machine-readable JSON (one line per name with --batch)"
-    )
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="entities file to screen against")
-    parser.add_argument("--audit-dir", help="audit directory (or set $SCREENING_AUDIT_DIR); there is no default")
-    args = parser.parse_args(argv)
+def cmd_replay(args: argparse.Namespace) -> int:
+    """Replay one recorded decision. Exit 0 if the replay is identical, 1 for anything else."""
+    try:
+        audit_dir = resolve_audit_dir(args.audit_dir)
+    except AuditConfigError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    print("Building the list...", file=sys.stderr)
+    try:
+        engine = AuditedEngine.from_file(args.input, audit_dir, record_context=False)
+    except AuditError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    result = replay(engine, args.request_id)
+    print(f"{result.status}: {result.reason}")
+    for line in result.differences:
+        print(f"  {line}")
+    if result.reproduce:
+        r = result.reproduce
+        dirty = (
+            " (the tree was dirty at record time, so git alone may not recover the exact source)"
+            if r["git_dirty_at_record_time"]
+            else ""
+        )
+        print(
+            f"  to reproduce: check out git {r['git_sha']}{dirty}, restore snapshot {r['snapshot_id']} "
+            f"(sha256 {r['snapshot_sha256'][:16]}...), rebuild, then replay"
+        )
+    return 0 if result.identical else 1
 
+
+def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if bool(args.name) == bool(args.batch):
         parser.error("give a name, or --batch FILE, but not both")
     if args.batch and (args.birth_date or args.country or args.customer_ref):
@@ -171,10 +191,46 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
             return EXIT_AUDIT_FAILURE
-        print(
-            render(item["name"], result, args.limit, args.json, compact=bool(args.batch)), flush=True
-        )  # only after the record exists
+        print(render(item["name"], result, args.limit, args.json, compact=bool(args.batch)), flush=True)
     return 0
+
+
+def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
+    parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
+    commands = parser.add_subparsers(dest="command", required=True, metavar="{screen,init,replay}")
+    audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
+
+    screen_cmd = commands.add_parser("screen", help="screen a name, or a batch of names")
+    screen_cmd.add_argument("name", nargs="?", help="the name to screen (not with --batch)")
+    screen_cmd.add_argument("--batch", metavar="FILE", help='JSON-lines file of names to screen, or "-" for stdin')
+    screen_cmd.add_argument("--birth-date", help="YYYY, YYYY-MM or YYYY-MM-DD")
+    screen_cmd.add_argument("--country", help="ISO 3166 two-letter country code, for example ru")
+    screen_cmd.add_argument("--customer-ref", help="opaque customer reference, stored in the payload only")
+    screen_cmd.add_argument("--limit", type=int, help="show at most this many matches per name (all are recorded)")
+    screen_cmd.add_argument(
+        "--json", action="store_true", help="print machine-readable JSON (one line per name with --batch)"
+    )
+    screen_cmd.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="entities file to screen against")
+    screen_cmd.add_argument("--audit-dir", help=audit_dir_help)
+
+    init = commands.add_parser("init", help="create a new, empty audit store")
+    init.add_argument("--audit-dir", help=audit_dir_help)
+
+    rep = commands.add_parser("replay", help="replay a recorded decision")
+    rep.add_argument("request_id", help="the request ID printed when the name was screened")
+    rep.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="entities file the engine is built from")
+    rep.add_argument("--audit-dir", help=audit_dir_help)
+    return parser, screen_cmd
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser, screen_parser = build_parser()
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.command == "init":
+        return cmd_init(args)
+    if args.command == "replay":
+        return cmd_replay(args)
+    return cmd_screen(args, screen_parser)
 
 
 if __name__ == "__main__":

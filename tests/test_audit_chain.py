@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 import audit
+import audit_schema
 from audit import AuditError, AuditLog, CheckpointError, PayloadRecord
 from audit_verify import verify_chain
 
@@ -24,8 +25,8 @@ MOMENT = datetime(2026, 10, 7, 12, 0, 0, tzinfo=timezone.utc)
 def add(log: AuditLog, i: int) -> str:
     request_id = f"{i:032x}"
     payload = PayloadRecord(request_id, bytes([i % 256]) * 32, {"raw_input": {"name": f"name {i}"}})
-    entries = [audit.candidate_entry(f"e{i}", 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]
-    header = audit.build_header(
+    entries = [audit_schema.candidate_entry(f"e{i}", 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]
+    header = audit_schema.build_header(
         request_id=request_id, moment=MOMENT, run_context_hash="c" * 64, entries=entries, threshold=0.86,
         digest=payload.digest(),
     )  # fmt: skip
@@ -461,14 +462,15 @@ def test_parallel_processes_write_one_valid_chain(tmp_path):
         "import sys\n"
         "from datetime import datetime, timezone\n"
         "import audit\n"
+        "import audit_schema\n"
         "from audit import AuditLog, PayloadRecord\n"
         "w, n = int(sys.argv[1]), int(sys.argv[2])\n"
         "log = AuditLog.in_directory(sys.argv[3], fsync=False)\n"
         "for i in range(n):\n"
         "    rid = f'{w * 1000 + i:032x}'\n"
         "    p = PayloadRecord(rid, bytes([w]) * 32, {'raw_input': {'name': f'w{w} {i}'}})\n"
-        "    e = [audit.candidate_entry('e', 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]\n"
-        "    h = audit.build_header(request_id=rid, moment=datetime(2026, 1, 1, tzinfo=timezone.utc),\n"
+        "    e = [audit_schema.candidate_entry('e', 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]\n"
+        "    h = audit_schema.build_header(request_id=rid, moment=datetime(2026, 1, 1, tzinfo=timezone.utc),\n"
         "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest())\n"
         "    log.write(h, p)\n"
     )
@@ -557,14 +559,15 @@ def test_verify_running_alongside_writer_processes_reports_no_orphans(tmp_path):
         "import sys\n"
         "from datetime import datetime, timezone\n"
         "import audit\n"
+        "import audit_schema\n"
         "from audit import AuditLog, PayloadRecord\n"
         "w, n = int(sys.argv[1]), int(sys.argv[2])\n"
         "log = AuditLog.in_directory(sys.argv[3], fsync=False)\n"
         "for i in range(n):\n"
         "    rid = f'{w * 1000 + i:032x}'\n"
         "    p = PayloadRecord(rid, bytes([w]) * 32, {'raw_input': {'name': f'w{w} {i}'}})\n"
-        "    e = [audit.candidate_entry('e', 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]\n"
-        "    h = audit.build_header(request_id=rid, moment=datetime(2026, 1, 1, tzinfo=timezone.utc),\n"
+        "    e = [audit_schema.candidate_entry('e', 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]\n"
+        "    h = audit_schema.build_header(request_id=rid, moment=datetime(2026, 1, 1, tzinfo=timezone.utc),\n"
         "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest())\n"
         "    log.write(h, p)\n"
     )

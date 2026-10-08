@@ -25,13 +25,18 @@ only, apart from reading the version of the libraries it names.
 import hashlib
 import importlib.metadata
 import json
+import os
 import platform
+import re
 import subprocess
 import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from audit import AuditError
+from audit_schema import SCHEMA_VERSION as AUDIT_SCHEMA_VERSION
+from audit_schema import TOP_CANDIDATES
 from scoring import Screener
 from screening import CANDIDATE_CAP, CONFIG_PATH, ScreeningEngine
 
@@ -41,6 +46,9 @@ ROOT = SRC_DIR.parent
 
 # Source files imported on the score path, checked against the interpreter in tests/test_run_context.py.
 SCORE_PATH_SOURCES = ("candidates.py", "entities.py", "normalise.py", "profile_data.py", "scoring.py", "screening.py")
+# Source files hashed into the context: the score path, plus the file that defines what a header says. Storage, the
+# chain, verification and replay are not hashed: the context covers what a record says, not how it is stored.
+HASHED_SOURCES = (*SCORE_PATH_SOURCES, "audit_schema.py")
 # Third-party libraries imported on the score path. Checked in the same test.
 SCORE_PATH_LIBRARIES = ("rapidfuzz",)
 # ScreeningEngine.screen() asks the screener for this many candidates per query.
@@ -72,6 +80,8 @@ def pairs(mapping: Mapping[str, object]) -> tuple[tuple[str, object], ...]:
 @dataclass(frozen=True)
 class RunContext:
     schema_version: int
+    audit_schema_version: int  # the header schema (audit_schema.SCHEMA_VERSION) the records are written in
+    top_candidates: int  # how many top candidates a header logs (audit_schema.TOP_CANDIDATES)
     git_sha: str  # "unknown" if the code is not in a git repository
     git_dirty: bool  # True if there are uncommitted or untracked changes, or the state could not be read
     config: str  # ScreeningConfig values as canonical JSON (a string, so the context holds no mutable dict)
@@ -188,6 +198,7 @@ def build_run_context(
     *,
     src_dir: Path = SRC_DIR,
     config_path: Path = CONFIG_PATH,
+    top_candidates: int | None = None,
     pins_path: Path | None = ROOT / "requirements.txt",
     lockfile_path: Path | None = None,
     git: Callable[[], tuple[str, bool]] = git_state,
@@ -198,6 +209,8 @@ def build_run_context(
     snapshot_id, snapshot_sha = snapshot_identity(entities_path)
     return RunContext(
         schema_version=SCHEMA_VERSION,
+        audit_schema_version=AUDIT_SCHEMA_VERSION,
+        top_candidates=TOP_CANDIDATES if top_candidates is None else top_candidates,
         git_sha=git_sha,
         git_dirty=dirty,
         config=canonical_json(asdict(engine.config)),
@@ -206,7 +219,7 @@ def build_run_context(
         snapshot_id=snapshot_id,
         snapshot_sha256=snapshot_sha,
         rarity_table_sha256=rarity_table_sha256(engine.screener),
-        artefacts=pairs({name: sha256_file(src_dir / name) for name in SCORE_PATH_SOURCES}),
+        artefacts=pairs({name: sha256_file(src_dir / name) for name in HASHED_SOURCES}),
         libraries=pairs(versions()),
         python_version=platform.python_version(),
         python_implementation=platform.python_implementation(),
@@ -214,3 +227,77 @@ def build_run_context(
         pins_file_sha256=sha256_file(pins_path) if pins_path is not None and pins_path.exists() else None,
         lockfile_sha256=sha256_file(lockfile_path) if lockfile_path is not None and lockfile_path.exists() else None,
     )
+
+
+# ---------- context files ----------
+# A record carries only the hash of its run context. To say what differs when a later engine has another context, the
+# full context is written once, under its hash, in <audit_dir>/contexts/. It holds no personal data: code and list
+# hashes, versions and settings.
+
+
+def context_path(directory: Path, context_hash: str) -> Path:
+    if not re.fullmatch(r"[0-9a-f]{64}", context_hash):
+        raise AuditError(f"not a context hash: {context_hash!r}")
+    return Path(directory) / f"{context_hash}.json"
+
+
+def store_context(directory: Path, context: RunContext) -> Path:
+    """Write the context as JSON under its hash. Exclusive create; if the file exists, its content must be identical
+    to this context. Raises AuditError if it cannot be written or the existing file differs."""
+    path = context_path(directory, context.context_hash)
+    text = canonical_json(context.as_dict())
+    try:
+        Path(directory).mkdir(parents=True, exist_ok=True)
+        try:
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        except FileExistsError:
+            if path.read_text(encoding="utf-8") != text:
+                raise AuditError(f"{path} exists with different content: refusing to continue") from None
+            return path
+        try:
+            os.write(fd, text.encode("utf-8"))
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError as exc:
+        raise AuditError(f"could not store the run context {path}: {exc}") from exc
+    return path
+
+
+def load_context(directory: Path, context_hash: str) -> RunContext | None:
+    """The stored context for a hash, or None if there is no file. Raises AuditError if the file does not hold a
+    context with that hash (damaged or edited)."""
+    path = context_path(directory, context_hash)
+    if not path.exists():
+        return None
+    try:
+        context = RunContext.from_dict(json.loads(path.read_text(encoding="utf-8")))
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise AuditError(f"the context file {path.name} cannot be read: {exc}") from exc
+    if context.context_hash != context_hash:
+        raise AuditError(f"the context file {path.name} does not hash to its name: it has been changed")
+    return context
+
+
+_ABSENT = object()
+
+
+def diff_contexts(stored: Mapping[str, object], live: Mapping[str, object], prefix: str = "") -> list[str]:
+    """Field-level differences between two context dicts, one line each: `path: stored X, live Y`."""
+
+    def show(value: object) -> str:
+        if value is _ABSENT:
+            return "<absent>"
+        if isinstance(value, str) and len(value) > 40:
+            return f"'{value[:12]}...'"  # a long hash: enough to tell two apart
+        return repr(value)
+
+    lines = []
+    for key in sorted(set(stored) | set(live)):
+        path = f"{prefix}{key}"
+        a, b = stored.get(key, _ABSENT), live.get(key, _ABSENT)
+        if isinstance(a, Mapping) and isinstance(b, Mapping):
+            lines += diff_contexts(a, b, path + ".")
+        elif a != b:
+            lines.append(f"{path}: stored {show(a)}, live {show(b)}")
+    return lines

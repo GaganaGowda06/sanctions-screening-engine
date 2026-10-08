@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 import audit
+import audit_schema
 from audit import AuditError, AuditLog, PayloadRecord, PayloadStore
 
 SRC = Path(audit.__file__).resolve().parent
@@ -21,7 +22,7 @@ MOMENT = datetime(2026, 10, 7, 12, 30, 15, 123456, tzinfo=timezone.utc)
 
 
 def entry(entity_id: str, score: float, threshold: float = 0.86) -> dict:
-    return audit.candidate_entry(entity_id, score, score, 0.0, 0.0, 0.0, False, False, threshold)
+    return audit_schema.candidate_entry(entity_id, score, score, 0.0, 0.0, 0.0, False, False, threshold)
 
 
 # ---------- canonical JSON ----------
@@ -44,6 +45,7 @@ def test_canonical_json_refuses_nan_and_infinity():
 def test_canonical_json_and_digest_are_stable_across_runs_and_hash_seeds():
     code = (
         "import audit\n"
+        "import audit_schema\n"
         "data = {'name': 'محمد علي', 'tokens': ['a', 'b'], 'keys': sorted({'t:b', 's:a', 't:a'}), 'n': 0.1 + 0.2}\n"
         "print(audit.canonical_json(data)); print(audit.payload_digest(bytes(range(32)), data))\n"
     )
@@ -95,11 +97,11 @@ def test_request_ids_are_unique_and_valid():
 
 
 def test_timestamps_must_be_utc():
-    assert audit.utc_timestamp(MOMENT) == "2026-10-07T12:30:15.123456+00:00"
+    assert audit_schema.utc_timestamp(MOMENT) == "2026-10-07T12:30:15.123456+00:00"
     with pytest.raises(ValueError):
-        audit.utc_timestamp(datetime(2026, 10, 7, 12, 0))
+        audit_schema.utc_timestamp(datetime(2026, 10, 7, 12, 0))
     with pytest.raises(ValueError):
-        audit.utc_timestamp(datetime(2026, 10, 7, 12, 0, tzinfo=timezone(timedelta(hours=1))))
+        audit_schema.utc_timestamp(datetime(2026, 10, 7, 12, 0, tzinfo=timezone(timedelta(hours=1))))
 
 
 # ---------- candidate truncation ----------
@@ -107,7 +109,7 @@ def test_timestamps_must_be_utc():
 
 def test_top_ten_are_kept_when_nothing_reaches_the_threshold():
     entries = [entry(f"e{i:02d}", 0.5 - i / 1000) for i in range(30)]
-    kept = audit.choose_candidates(entries)
+    kept = audit_schema.choose_candidates(entries)
     assert [e["entity_id"] for e in kept] == [f"e{i:02d}" for i in range(10)]
 
 
@@ -115,7 +117,7 @@ def test_every_candidate_at_or_above_the_threshold_is_kept_past_the_top_ten():
     entries = [entry(f"hit{i:02d}", 0.99 - i / 1000) for i in range(15)] + [
         entry(f"low{i:02d}", 0.3) for i in range(20)
     ]
-    kept = audit.choose_candidates(entries)
+    kept = audit_schema.choose_candidates(entries)
     assert [e["entity_id"] for e in kept][:15] == [f"hit{i:02d}" for i in range(15)]
     assert sum(e["at_or_above_threshold"] for e in kept) == 15
     assert len(kept) == 15  # the top ten are all hits, so no low candidate is added
@@ -123,18 +125,18 @@ def test_every_candidate_at_or_above_the_threshold_is_kept_past_the_top_ten():
 
 def test_a_score_exactly_at_the_threshold_is_a_hit():
     entries = [entry(f"low{i}", 0.80) for i in range(12)] + [entry("edge", 0.86)]
-    kept = audit.choose_candidates(entries)
+    kept = audit_schema.choose_candidates(entries)
     assert kept[0]["entity_id"] == "edge" and kept[0]["at_or_above_threshold"]
     assert len(kept) == 10
 
 
 def test_ties_are_ordered_by_entity_id():
-    kept = audit.choose_candidates([entry("b", 0.9), entry("a", 0.9), entry("c", 0.9)])
+    kept = audit_schema.choose_candidates([entry("b", 0.9), entry("a", 0.9), entry("c", 0.9)])
     assert [e["entity_id"] for e in kept] == ["a", "b", "c"]
 
 
 def header_for(entries, threshold=0.86, **kwargs):
-    return audit.build_header(
+    return audit_schema.build_header(
         request_id="a" * 32, moment=MOMENT, run_context_hash="c" * 64, entries=entries, threshold=threshold,
         digest="d" * 64, **kwargs,
     )  # fmt: skip
@@ -142,8 +144,8 @@ def header_for(entries, threshold=0.86, **kwargs):
 
 def test_header_has_exactly_the_allowed_fields_and_candidate_fields():
     header = header_for([entry("e1", 0.95), entry("e2", 0.4)])
-    assert tuple(header) == audit.HEADER_FIELDS
-    assert all(tuple(c) == audit.CANDIDATE_FIELDS for c in header["candidates"])
+    assert tuple(header) == audit_schema.HEADER_FIELDS
+    assert all(tuple(c) == audit_schema.CANDIDATE_FIELDS for c in header["candidates"])
 
 
 def test_header_decision_and_matches():
@@ -166,7 +168,7 @@ def test_header_counts_all_scored_candidates_not_only_the_logged_ones():
 def test_header_has_the_timestamp_and_no_retention_date():
     header = header_for([])
     assert header["timestamp_utc"] == "2026-10-07T12:30:15.123456+00:00"
-    assert "retention_until" not in header and "retention_until" not in audit.HEADER_FIELDS
+    assert "retention_until" not in header and "retention_until" not in audit_schema.HEADER_FIELDS
 
 
 # ---------- the header log ----------
@@ -182,9 +184,9 @@ def test_header_log_appends_one_line_per_header_and_never_rewrites(tmp_path):
     after = (tmp_path / "headers.jsonl").read_bytes()
     assert after.startswith(before) and after.count(b"\n") == 2
     one, two = log.read_all()
-    assert {k: v for k, v in one.items() if k not in audit.CHAIN_FIELDS} == first
-    assert {k: v for k, v in two.items() if k not in audit.CHAIN_FIELDS} == second
-    assert tuple(sorted(one)) == tuple(sorted(audit.LOGGED_HEADER_FIELDS))
+    assert {k: v for k, v in one.items() if k not in audit_schema.CHAIN_FIELDS} == first
+    assert {k: v for k, v in two.items() if k not in audit_schema.CHAIN_FIELDS} == second
+    assert tuple(sorted(one)) == tuple(sorted(audit_schema.LOGGED_HEADER_FIELDS))
 
 
 def test_header_log_failure_raises_audit_error(tmp_path):
@@ -244,6 +246,6 @@ def test_audit_log_writes_both_when_it_can(tmp_path):
     header = header_for([entry("e1", 0.9)])
     log.write(header, record)
     (logged,) = log.headers.read_all()
-    assert {k: v for k, v in logged.items() if k not in audit.CHAIN_FIELDS} == header
+    assert {k: v for k, v in logged.items() if k not in audit_schema.CHAIN_FIELDS} == header
     assert log.payloads.read("b" * 32) == record
     assert json.loads((tmp_path / "payloads" / ("b" * 32 + ".json")).read_text())["salt_hex"] == (b"s" * 32).hex()

@@ -16,12 +16,13 @@ from pathlib import Path
 
 import pytest
 
-import audit
+import audit_schema
 import audited_screening as asc
 import run_context as rc
 from audit import AuditError, AuditLog
 from audit_verify import verify_chain
 from audited_screening import AuditedEngine
+from replay import replay
 from screening import ScreeningConfig, ScreeningEngine
 
 ENTITIES = [
@@ -136,7 +137,9 @@ def test_the_header_contains_nothing_derived_from_the_name_birth_date_or_country
     payload = audited.log.payloads.read(result.request_id).data
     forbidden = forbidden_strings(name, birth_date, country, payload["normalised"], payload)
     assert forbidden, "the payload should hold the name-derived strings"
-    assert set(header) == set(audit.LOGGED_HEADER_FIELDS)  # the log writes keys sorted, and adds the chain fields
+    assert set(header) == set(
+        audit_schema.LOGGED_HEADER_FIELDS
+    )  # the log writes keys sorted, and adds the chain fields
     random_hex = {"request_id", "run_context_hash", "payload_digest", "prev_hash", "record_hash"}
     # the substring scan skips the hex fields: a short digit string such as a year can occur inside a random hash by
     # chance. Those fields are still checked leaf by leaf below.
@@ -332,11 +335,11 @@ def holdout_queries(sample: int | None) -> list[tuple[str, dict]]:
     return out
 
 
-def check_equivalence(tmp_path, queries: list[tuple[str, dict]]) -> tuple[int, int]:
+def check_equivalence(tmp_path, queries: list[tuple[str, dict]], replays: int) -> tuple[int, int]:
     AuditLog.create_new(tmp_path / "audit", fsync=False)
     audited = AuditedEngine.from_file(REAL_LIST, tmp_path / "audit", clock=CLOCK)
     audited.log.headers.fsync = audited.log.payloads.fsync = False  # speed only
-    alerts = 0
+    alerts, request_ids = 0, []
     for holdout, q in queries:
         plain = audited.engine.screen(q["name"], q["dob"], q["country"])
         result = audited.audited_screen(q["name"], q["dob"], q["country"])
@@ -348,19 +351,25 @@ def check_equivalence(tmp_path, queries: list[tuple[str, dict]]) -> tuple[int, i
         assert header["decision"] == ("alert" if plain else "clear")
         assert header["matched_entity_ids"] == [m.entity_id for m in plain]
         alerts += bool(plain)
+        request_ids.append(result.request_id)
     result = verify_chain(audited.log)  # the whole log the run produced is a clean chain
     assert result.ok and result.records == len(queries), result.failures[:3]
+    before = audited.log.headers.path.read_bytes()
+    sample = random.Random(f"{SAMPLE_SEED}-replay").sample(request_ids, replays)
+    not_identical = [(rid, r.status, r.differences[:2]) for rid in sample if not (r := replay(audited, rid)).identical]
+    assert not_identical == [], not_identical[:3]  # a replayed record gives the identical decision
+    assert audited.log.headers.path.read_bytes() == before  # and replay wrote nothing
     return len(queries), alerts
 
 
 @needs_data
 def test_audited_screen_equals_screen_on_a_seeded_sample_of_each_holdout(tmp_path):
-    checked, alerts = check_equivalence(tmp_path, holdout_queries(SAMPLE_PER_HOLDOUT))
+    checked, alerts = check_equivalence(tmp_path, holdout_queries(SAMPLE_PER_HOLDOUT), replays=100)
     assert checked == 3 * SAMPLE_PER_HOLDOUT and 0 < alerts < checked
 
 
 @pytest.mark.slow
 @needs_data
 def test_audited_screen_equals_screen_on_every_query_of_all_three_holdouts(tmp_path):
-    checked, alerts = check_equivalence(tmp_path, holdout_queries(None))
+    checked, alerts = check_equivalence(tmp_path, holdout_queries(None), replays=500)
     assert checked == 13_800 and 0 < alerts < checked

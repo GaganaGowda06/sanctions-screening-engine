@@ -34,45 +34,15 @@ import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 
-HEADER_SCHEMA_VERSION = 1
+from audit_schema import CHAIN_FIELDS
+
 SALT_BYTES = 32  # at least 16 are required
-TOP_CANDIDATES = 10
 _REQUEST_ID = re.compile(r"[0-9a-f]{32}")
 
-# The only keys a header may have. A test checks a built header against this list, so a new field cannot slip in.
-HEADER_FIELDS = (
-    "schema_version",
-    "request_id",
-    "timestamp_utc",
-    "run_context_hash",
-    "candidates_scored",
-    "candidates",
-    "final_score",
-    "threshold",
-    "decision",
-    "matched_entity_id",
-    "matched_entity_ids",
-    "payload_digest",
-)
-# Added by the log when a header is appended: its position, the hash of the record before it, and its own hash.
-CHAIN_FIELDS = ("seq", "prev_hash", "record_hash")
-LOGGED_HEADER_FIELDS = HEADER_FIELDS + CHAIN_FIELDS
 GENESIS_PREV_HASH = "0" * 64  # prev_hash of the first record
-CANDIDATE_FIELDS = (
-    "entity_id",
-    "score",
-    "name_score",
-    "skeleton_score",
-    "birth_date_adjustment",
-    "country_adjustment",
-    "arabic_pair",
-    "skeleton_used",
-    "at_or_above_threshold",
-)
 
 
 class AuditError(RuntimeError):
@@ -107,12 +77,6 @@ def payload_digest(salt: bytes, data: Mapping[str, object]) -> str:
     return sha256(salt + canonical_json(data).encode("utf-8")).hexdigest()
 
 
-def utc_timestamp(moment: datetime) -> str:
-    if moment.tzinfo is None or moment.utcoffset() != timezone.utc.utcoffset(None):
-        raise ValueError("audit timestamps must be timezone-aware UTC")
-    return moment.isoformat(timespec="microseconds")
-
-
 @dataclass(frozen=True)
 class PayloadRecord:
     request_id: str
@@ -129,68 +93,6 @@ class PayloadRecord:
     def from_json(cls, text: str) -> "PayloadRecord":
         raw = json.loads(text)
         return cls(raw["request_id"], bytes.fromhex(raw["salt_hex"]), raw["data"])
-
-
-def candidate_entry(
-    entity_id: str,
-    score: float,
-    name_score: float,
-    skeleton_score: float,
-    birth_date_adjustment: float,
-    country_adjustment: float,
-    arabic_pair: bool,
-    skeleton_used: bool,
-    threshold: float,
-) -> dict:
-    return {
-        "entity_id": entity_id,
-        "score": score,
-        "name_score": name_score,
-        "skeleton_score": skeleton_score,
-        "birth_date_adjustment": birth_date_adjustment,
-        "country_adjustment": country_adjustment,
-        "arabic_pair": arabic_pair,
-        "skeleton_used": skeleton_used,
-        "at_or_above_threshold": score >= threshold,
-    }
-
-
-def choose_candidates(entries: list[dict], top: int = TOP_CANDIDATES) -> list[dict]:
-    """The top `top` by score, plus every candidate at or above the threshold, best first, ties by entity ID.
-
-    `entries` are candidate_entry() dicts for all scored candidates. Every at-or-above-threshold candidate is kept
-    even if it is ranked past `top`.
-    """
-    ordered = sorted(entries, key=lambda e: (-e["score"], e["entity_id"]))
-    return [e for i, e in enumerate(ordered) if i < top or e["at_or_above_threshold"]]
-
-
-def build_header(
-    *,
-    request_id: str,
-    moment: datetime,
-    run_context_hash: str,
-    entries: list[dict],
-    threshold: float,
-    digest: str,
-    top: int = TOP_CANDIDATES,
-) -> dict:
-    ordered = sorted(entries, key=lambda e: (-e["score"], e["entity_id"]))
-    matched = [e["entity_id"] for e in ordered if e["at_or_above_threshold"]]
-    return {
-        "schema_version": HEADER_SCHEMA_VERSION,
-        "request_id": request_id,
-        "timestamp_utc": utc_timestamp(moment),
-        "run_context_hash": run_context_hash,
-        "candidates_scored": len(entries),
-        "candidates": choose_candidates(entries, top),
-        "final_score": ordered[0]["score"] if ordered else None,  # the best candidate's score, alert or not
-        "threshold": threshold,
-        "decision": "alert" if matched else "clear",
-        "matched_entity_id": matched[0] if matched else None,
-        "matched_entity_ids": matched,
-        "payload_digest": digest,
-    }
 
 
 def compute_record_hash(record: Mapping[str, object]) -> str:

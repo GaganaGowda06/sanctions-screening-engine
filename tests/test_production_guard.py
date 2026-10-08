@@ -25,7 +25,7 @@ import pytest
 SRC = Path(__file__).resolve().parent.parent / "src"
 
 PRODUCTION = {"screen_cli.py", "audited_screening.py"}
-INFRASTRUCTURE = {"audit.py", "audit_verify.py", "run_context.py"}
+INFRASTRUCTURE = {"audit.py", "audit_schema.py", "audit_verify.py", "replay.py", "run_context.py"}
 LIBRARY = {
     "arabic_names.py", "candidates.py", "entities.py", "idf_table.py", "matcher_model.py", "normalise.py",
     "pair_features.py", "pairs.py", "profile_data.py", "scoring.py", "screening.py",
@@ -39,7 +39,7 @@ RESEARCH = {
     "evaluate_skeleton_particles.py", "measure_alert_disparity.py", "profile_normaliser.py", "profile_pairs.py",
     "train_constrained.py", "train_matcher.py",
 }  # fmt: skip
-AUDIT_MODULES = {"audit", "audit_verify", "audited_screening"}
+AUDIT_MODULES = {"audit", "audit_schema", "audit_verify", "audited_screening", "replay"}
 BANNED_NAMES = {"screen", "get_engine"}
 
 

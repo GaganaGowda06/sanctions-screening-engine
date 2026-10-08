@@ -46,7 +46,7 @@ def write_list(
 def world(tmp_path):
     src = tmp_path / "src"
     src.mkdir()
-    for name in rc.SCORE_PATH_SOURCES:
+    for name in rc.HASHED_SOURCES:
         shutil.copy(rc.SRC_DIR / name, src / name)
     config_path = tmp_path / "screening_config.json"
     config_path.write_text(json.dumps({"global_threshold": 0.86}))
@@ -144,7 +144,7 @@ def test_editing_a_score_path_source_file_changes_the_hash(world):
 
 
 def test_every_source_file_is_hashed(world):
-    assert {name for name, _ in make(world).artefacts} == set(rc.SCORE_PATH_SOURCES)
+    assert {name for name, _ in make(world).artefacts} == set(rc.HASHED_SOURCES)
 
 
 def test_a_different_threshold_changes_the_hash(world):
