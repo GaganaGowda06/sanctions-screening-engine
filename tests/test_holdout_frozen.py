@@ -48,8 +48,9 @@ def test_only_the_builder_names_the_second_screening_holdout_file():
     # build_screening_holdout.py writes it once. The final evaluation of the trained matcher will be the only
     # other file allowed to name it, and it does not exist yet.
     for path in (ROOT / "src").glob("*.py"):
-        # the third hold-out's builder reads the second one only to keep its own entities disjoint
-        if path.name not in ("build_screening_holdout.py", "build_screening_holdout_v3.py"):
+        # the third and fourth hold-outs' builders read the second one only to keep their own entities disjoint
+        builders = ("build_screening_holdout.py", "build_screening_holdout_v3.py", "build_screening_holdout_v4.py")
+        if path.name not in builders:
             assert "screening_holdout_v2.json" not in path.read_text(), path.name
 
 

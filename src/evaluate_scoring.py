@@ -94,8 +94,10 @@ SYNTHETIC = {
     "holdout2": {"Latin": 800, "Cyrillic": 350, "Arabic": 350, "other": 400},
     # the third screening hold-out, for the fairness stage: identical design to the second
     "holdout3": {"Latin": 800, "Cyrillic": 350, "Arabic": 350, "other": 400},
+    # the fourth screening hold-out, for the retrieval stage: identical design to the second and third
+    "holdout4": {"Latin": 800, "Cyrillic": 350, "Arabic": 350, "other": 400},
 }
-NEAR_MISS = {"dev": 250, "test": 500, "final": 500, "holdout2": 500, "holdout3": 500}
+NEAR_MISS = {"dev": 250, "test": 500, "final": 500, "holdout2": 500, "holdout3": 500, "holdout4": 500}
 MODES = {
     "neither": (False, False),
     "birth_date_only": (True, False),

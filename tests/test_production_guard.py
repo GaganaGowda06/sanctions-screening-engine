@@ -35,7 +35,8 @@ LIBRARY = {
 }  # fmt: skip
 RESEARCH = {
     "build_idf.py", "build_pair_features.py", "build_pair_splits.py", "build_screening_holdout.py",
-    "build_screening_holdout_v3.py", "clean_pairs.py", "compare_matchers.py", "diagnose_arabic_fp.py",
+    "build_screening_holdout_v3.py", "build_screening_holdout_v4.py", "clean_pairs.py", "compare_matchers.py",
+    "diagnose_arabic_fp.py",
     "diagnose_arabic_secondary.py", "diagnose_screening.py", "download_data.py", "download_pairs.py",
     "download_snapshot.py",
     "evaluate_candidates.py", "evaluate_common_tier.py", "evaluate_final.py", "evaluate_orthographic.py",
