@@ -29,6 +29,7 @@ import os
 import platform
 import re
 import subprocess
+import threading
 import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
@@ -242,23 +243,28 @@ def context_path(directory: Path, context_hash: str) -> Path:
 
 
 def store_context(directory: Path, context: RunContext) -> Path:
-    """Write the context as JSON under its hash. Exclusive create; if the file exists, its content must be identical
-    to this context. Raises AuditError if it cannot be written or the existing file differs."""
+    """Write the context as JSON under its hash. The file appears complete or not at all: it is written to a temporary
+    name, flushed, and hard-linked to its final name, which fails if that exists (so two engines starting together
+    cannot read each other's half-written file). If the file exists, its content must be identical to this context.
+    Raises AuditError if it cannot be written or the existing file differs."""
     path = context_path(directory, context.context_hash)
     text = canonical_json(context.as_dict())
+    tmp = Path(directory) / f".{context.context_hash}.{os.getpid()}.{threading.get_ident()}.tmp"
     try:
         Path(directory).mkdir(parents=True, exist_ok=True)
-        try:
-            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        except FileExistsError:
-            if path.read_text(encoding="utf-8") != text:
-                raise AuditError(f"{path} exists with different content: refusing to continue") from None
-            return path
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
             os.write(fd, text.encode("utf-8"))
             os.fsync(fd)
         finally:
             os.close(fd)
+        try:
+            os.link(tmp, path)
+        except FileExistsError:
+            if path.read_text(encoding="utf-8") != text:
+                raise AuditError(f"{path} exists with different content: refusing to continue") from None
+        finally:
+            tmp.unlink(missing_ok=True)
     except OSError as exc:
         raise AuditError(f"could not store the run context {path}: {exc}") from exc
     return path
@@ -282,7 +288,27 @@ def load_context(directory: Path, context_hash: str) -> RunContext | None:
 _ABSENT = object()
 
 
-def diff_contexts(stored: Mapping[str, object], live: Mapping[str, object], prefix: str = "") -> list[str]:
+def _differences(
+    stored: Mapping[str, object], live: Mapping[str, object], prefix: str = ""
+) -> list[tuple[str, object, object]]:
+    """(path, stored value, live value) for every leaf field that differs, walking nested mappings."""
+    found = []
+    for key in sorted(set(stored) | set(live)):
+        path = f"{prefix}{key}"
+        a, b = stored.get(key, _ABSENT), live.get(key, _ABSENT)
+        if isinstance(a, Mapping) and isinstance(b, Mapping):
+            found += _differences(a, b, path + ".")
+        elif a != b:
+            found.append((path, a, b))
+    return found
+
+
+def changed_field_names(stored: Mapping[str, object], live: Mapping[str, object]) -> list[str]:
+    """The paths of the fields that differ between two context dicts, with no values: `config.global_threshold`."""
+    return [path for path, _, _ in _differences(stored, live)]
+
+
+def diff_contexts(stored: Mapping[str, object], live: Mapping[str, object]) -> list[str]:
     """Field-level differences between two context dicts, one line each: `path: stored X, live Y`."""
 
     def show(value: object) -> str:
@@ -292,12 +318,4 @@ def diff_contexts(stored: Mapping[str, object], live: Mapping[str, object], pref
             return f"'{value[:12]}...'"  # a long hash: enough to tell two apart
         return repr(value)
 
-    lines = []
-    for key in sorted(set(stored) | set(live)):
-        path = f"{prefix}{key}"
-        a, b = stored.get(key, _ABSENT), live.get(key, _ABSENT)
-        if isinstance(a, Mapping) and isinstance(b, Mapping):
-            lines += diff_contexts(a, b, path + ".")
-        elif a != b:
-            lines.append(f"{path}: stored {show(a)}, live {show(b)}")
-    return lines
+    return [f"{path}: stored {show(a)}, live {show(b)}" for path, a, b in _differences(stored, live)]

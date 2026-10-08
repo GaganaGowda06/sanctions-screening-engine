@@ -3,7 +3,7 @@
     result = replay(engine, request_id)
     result.identical            True only if the recomputed decision matches the record exactly
     result.status               identical | different | refused_context | refused_tampered | not_replayable |
-                                unknown_request
+                                not_a_decision | unknown_request
     result.differences          field-level differences, one line each (no names, no payload content)
     result.reproduce            for refused_context: the git SHA and snapshot the record was made under
 
@@ -30,7 +30,7 @@ restore the recorded snapshot, rebuild, then replay.
 from dataclasses import dataclass, field
 
 from audit import AuditError, compute_record_hash
-from audit_schema import DECISION_FIELDS, decision_summary
+from audit_schema import DECISION_FIELDS, KIND_DECISION, decision_summary
 from audit_verify import classify_missing_payload
 from audited_screening import AuditedEngine
 from run_context import diff_contexts, load_context
@@ -41,6 +41,7 @@ REFUSED_CONTEXT = "refused_context"
 REFUSED_TAMPERED = "refused_tampered"
 NOT_REPLAYABLE = "not_replayable"
 UNKNOWN_REQUEST = "unknown_request"
+NOT_A_DECISION = "not_a_decision"
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,12 @@ def replay(engine: AuditedEngine, request_id: str) -> ReplayResult:
         return result(UNKNOWN_REQUEST, "no header with this request ID in the log")
     if compute_record_hash(header) != header.get("record_hash"):
         return result(REFUSED_TAMPERED, "the header does not match its own record hash: it has been edited")
+    if header.get("kind") != KIND_DECISION:
+        return result(
+            NOT_A_DECISION,
+            f"this record is a {header.get('kind')!r} event, not a screening decision: it has no payload and nothing "
+            "to replay. Replay applies to decision records only",
+        )
 
     try:
         payload = engine.log.payloads.read(request_id)

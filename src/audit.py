@@ -291,6 +291,13 @@ class HeaderLog:
         except (OSError, TypeError, ValueError) as exc:
             raise AuditError(f"could not append to the header log {self.path}: {exc}") from exc
 
+    def last_of_kind(self, kind: str) -> dict | None:
+        """The most recent complete record of a kind, or None."""
+        for record in reversed(self.read_all()):
+            if record.get("kind") == kind:
+                return record
+        return None
+
     def read_all(self) -> list[dict]:
         """Every complete line. A torn final line (no newline) is left out; verify_chain reports it."""
         if not self.path.exists():

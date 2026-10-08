@@ -33,6 +33,11 @@ FTM = [
 ]  # fmt: skip
 
 
+def decisions(log):
+    """The decision records of a log, leaving out engine_start and recovery events."""
+    return [h for h in log.headers.read_all() if h["kind"] == "decision"]
+
+
 @pytest.fixture
 def bare(tmp_path, monkeypatch):
     monkeypatch.delenv(audited_screening.AUDIT_DIR_ENV, raising=False)
@@ -77,11 +82,11 @@ def test_one_name_writes_exactly_one_verifiable_record(world, capsys):
     assert code == 0
     printed = json.loads(out)
     log = log_of(world)
-    (header,) = log.headers.read_all()
+    (header,) = decisions(log)
     assert header["request_id"] == printed["request_id"]
     assert header["decision"] == "alert" and printed["matches"][0]["entity_id"] == "e1"
     result = verify_chain(log)
-    assert result.ok and result.records == 1 and result.payloads_checked == 1
+    assert result.ok and result.records == 2 and result.payloads_checked == 1  # engine_start + the decision
     payload = log.payloads.read(header["request_id"]).data
     assert payload["raw_input"]["name"] == "Mohammed Ali Hassan" and payload["customer_ref"] is None
 
@@ -90,7 +95,7 @@ def test_the_text_output_names_the_record_and_a_clear_name_is_recorded_too(world
     assert screen_cli.main(run(world, "Zebulon Quixotic")) == 0
     out = capsys.readouterr().out
     log = log_of(world)
-    (header,) = log.headers.read_all()
+    (header,) = decisions(log)
     assert "No alert" in out and header["request_id"] in out and header["decision"] == "clear"
     assert verify_chain(log).ok
 
@@ -99,7 +104,7 @@ def test_customer_ref_goes_to_the_payload_only(world, capsys):
     assert screen_cli.main(run(world, "Ivan Petrov", "--customer-ref", "cust-123", "--json")) == 0
     printed = json.loads(capsys.readouterr().out)
     log = log_of(world)
-    (header,) = log.headers.read_all()
+    (header,) = decisions(log)
     assert log.payloads.read(printed["request_id"]).data["customer_ref"] == "cust-123"
     assert "cust-123" not in json.dumps(header)
 
@@ -107,7 +112,7 @@ def test_customer_ref_goes_to_the_payload_only(world, capsys):
 def test_limit_only_trims_the_display_not_the_record(world, capsys):
     screen_cli.main(run(world, "Mohammed Ali Hassan", "--limit", "0", "--json"))
     printed = json.loads(capsys.readouterr().out)
-    (header,) = log_of(world).headers.read_all()
+    (header,) = decisions(log_of(world))
     assert printed["matches"] == [] and header["decision"] == "alert"
 
 
@@ -124,7 +129,7 @@ def test_an_audit_failure_gives_a_nonzero_exit_and_no_decision_output(world, cap
     assert code == screen_cli.EXIT_AUDIT_FAILURE != 0
     assert captured.out == ""
     assert "no decision produced" in captured.err and "disk full" in captured.err
-    assert log_of(world).headers.read_all() == []
+    assert decisions(log_of(world)) == []
 
 
 def test_an_unusable_audit_store_refuses_to_start_with_no_output(world, capsys):
@@ -148,7 +153,8 @@ def test_a_tampered_log_stops_screening_with_no_decision(world, capsys):
     log.headers.path.write_bytes(audit.canonical_json(record).encode() + b"\n")
     code = screen_cli.main(run(world, "Ivan Petrov"))
     captured = capsys.readouterr()
-    assert code != 0 and captured.out == "" and "no decision produced" in captured.err
+    # the engine cannot even start: its engine_start record would be chained after an edited one
+    assert code != 0 and captured.out == "" and "does not match its own hash" in captured.err
 
 
 # ---------- no audit directory, no start ----------
@@ -178,10 +184,10 @@ def test_the_environment_variable_works_and_the_flag_wins(world, capsys, monkeyp
     AuditLog.create_new(other, fsync=False)
     monkeypatch.setenv(audited_screening.AUDIT_DIR_ENV, str(other))
     assert screen_cli.main(run(world, "Ivan Petrov", audit_dir=False)) == 0
-    assert len(AuditLog.in_directory(other).headers.read_all()) == 1
+    assert len(decisions(AuditLog.in_directory(other))) == 1
     assert screen_cli.main(run(world, "Ivan Petrov")) == 0  # --audit-dir given too
-    assert len(log_of(world).headers.read_all()) == 1
-    assert len(AuditLog.in_directory(other).headers.read_all()) == 1
+    assert len(decisions(log_of(world))) == 1
+    assert len(decisions(AuditLog.in_directory(other))) == 1
 
 
 def test_there_is_no_default_audit_directory(world):
@@ -223,10 +229,10 @@ def test_a_batch_of_n_names_gives_n_records_and_a_clean_chain(world, capsys):
     assert code == 0 and len(lines) == len(items)
     printed = [json.loads(line) for line in lines]
     log = log_of(world)
-    headers = log.headers.read_all()
+    headers = decisions(log)
     assert [h["request_id"] for h in headers] == [p["request_id"] for p in printed]
     result = verify_chain(log)
-    assert result.ok and result.records == len(items) and result.payloads_checked == len(items)
+    assert result.ok and result.records == len(items) + 1 and result.payloads_checked == len(items)  # + engine_start
     refs = [log.payloads.read(h["request_id"]).data["customer_ref"] for h in headers]
     assert refs == ["c-1", "c-2", None, None, None, "c-6", None]
     assert [log.payloads.read(h["request_id"]).data["raw_input"]["name"] for h in headers] == [i["name"] for i in items]
@@ -237,7 +243,7 @@ def test_a_batch_can_come_from_standard_input(world, capsys, monkeypatch):
 
     monkeypatch.setattr(sys, "stdin", io.StringIO('{"name": "Ivan Petrov"}\n\n{"name": "Zebulon Quixotic"}\n'))
     assert screen_cli.main(run(world, "--batch", "-")) == 0
-    assert len(log_of(world).headers.read_all()) == 2 and capsys.readouterr().out.count("record ") == 2
+    assert len(decisions(log_of(world))) == 2 and capsys.readouterr().out.count("record ") == 2
 
 
 @pytest.mark.parametrize(
@@ -250,7 +256,7 @@ def test_a_malformed_batch_line_stops_the_run_before_anything_is_screened(world,
     code = screen_cli.main(run(world, "--batch", str(path)))
     captured = capsys.readouterr()
     assert code == 2 and captured.out == "" and "line 2" in captured.err
-    assert log_of(world).headers.read_all() == []  # nothing was screened or recorded
+    assert decisions(log_of(world)) == []  # nothing was screened or recorded
 
 
 def test_an_empty_batch_is_refused(world, capsys):
@@ -277,7 +283,7 @@ def test_a_batch_stops_at_the_first_audit_failure_and_prints_no_decision_after_i
     assert len(captured.out.splitlines()) == 2 and "no decision produced" in captured.err
     assert "2 of 5 names were screened and recorded before the failure" in captured.err
     log = log_of(world)
-    assert len(log.headers.read_all()) == 2 and verify_chain(log).ok
+    assert len(decisions(log)) == 2 and verify_chain(log).ok
     assert len(calls) == 3  # the fourth and fifth names were never screened
 
 
@@ -303,7 +309,7 @@ def test_init_creates_a_store_that_verifies_clean_and_then_screening_gives_a_cle
     for name in ("Ivan Petrov", "Mohammed Ali Hassan", "Zebulon Quixotic"):
         assert screen_cli.main(run(bare, name)) == 0
     result = verify_chain(log)
-    assert result.ok and result.records == 3 and result.payloads_checked == 3
+    assert result.ok and result.records == 4 and result.payloads_checked == 3  # 3 decisions + engine_start
 
 
 def test_init_refuses_a_directory_that_exists_and_is_not_empty(world, capsys):
@@ -392,7 +398,7 @@ def test_a_partial_batch_exits_nonzero_and_reports_how_many_were_recorded(world,
     assert "3 of 6 names were screened and recorded before the failure; 3 were not screened" in captured.err
     assert captured.out.count("record ") == 3
     log = log_of(world)
-    assert len(log.headers.read_all()) == 3 and verify_chain(log).ok
+    assert len(decisions(log)) == 3 and verify_chain(log).ok
 
 
 # ---------- explicit subcommands ----------
@@ -403,7 +409,7 @@ def test_a_customer_called_like_a_subcommand_is_screened_and_recorded(world, cap
     assert screen_cli.main(run(world, name, "--json")) == 0
     printed = json.loads(capsys.readouterr().out)
     log = log_of(world)
-    (header,) = [h for h in log.headers.read_all() if h["request_id"] == printed["request_id"]]
+    (header,) = [h for h in decisions(log) if h["request_id"] == printed["request_id"]]
     assert log.payloads.read(header["request_id"]).data["raw_input"]["name"] == name
     assert verify_chain(log).ok
 
@@ -414,7 +420,7 @@ def test_a_bare_name_with_no_subcommand_exits_2_with_a_usage_message(world, caps
     assert stop.value.code == 2
     err = capsys.readouterr().err
     assert "usage:" in err and "invalid choice" in err
-    assert log_of(world).headers.read_all() == []
+    assert decisions(log_of(world)) == []
 
 
 def test_no_arguments_at_all_exits_2(capsys):

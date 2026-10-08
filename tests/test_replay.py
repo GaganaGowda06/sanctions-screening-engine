@@ -53,7 +53,7 @@ def write_list(directory: Path) -> Path:
     return path
 
 
-def make_engine(tmp_path, *, log=None, config=None, src_dir=None, record_context=True) -> AuditedEngine:
+def make_engine(tmp_path, *, log=None, config=None, src_dir=None, for_screening=True) -> AuditedEngine:
     engine = ScreeningEngine.from_entities(ENTITIES, config or ScreeningConfig())
     kwargs = {"src_dir": src_dir} if src_dir else {}
     context = rc.build_run_context(
@@ -64,7 +64,7 @@ def make_engine(tmp_path, *, log=None, config=None, src_dir=None, record_context
         **kwargs,
     )
     log = log or AuditLog.create_new(tmp_path / "audit", fsync=False)
-    return AuditedEngine(engine, context, log, clock=CLOCK, record_context=record_context)
+    return AuditedEngine(engine, context, log, clock=CLOCK, for_screening=for_screening)
 
 
 @pytest.fixture
@@ -86,12 +86,12 @@ def test_replaying_every_record_of_a_batch_log_is_identical(recorded):
     results = [replay(engine, rid) for rid in ids]
     assert [r.status for r in results] == [IDENTICAL] * len(ids), [r for r in results if not r.identical][:2]
     assert all(r.differences == () and r.identical for r in results)
-    assert {"alert", "clear"} <= {h["decision"] for h in engine.log.headers.read_all()}
+    assert {"alert", "clear"} <= {h["decision"] for h in engine.log.headers.read_all() if h["kind"] == "decision"}
 
 
 def test_a_fresh_engine_built_the_same_way_replays_the_records_too(recorded, tmp_path):
     engine, ids = recorded
-    later = make_engine(tmp_path, log=engine.log, record_context=False)
+    later = make_engine(tmp_path, log=engine.log, for_screening=False)
     assert later.context_hash == engine.context_hash
     assert all(replay(later, rid).identical for rid in ids)
 
@@ -126,7 +126,7 @@ def test_components_is_called_once_per_replay(recorded):
 
 def test_a_changed_threshold_makes_replay_refuse_with_a_diff_naming_the_threshold(recorded, tmp_path):
     engine, ids = recorded
-    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), record_context=False)
+    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), for_screening=False)
     result = replay(other, ids[0])
     assert result.status == REFUSED_CONTEXT and not result.identical
     assert any(d.startswith("config.global_threshold: stored 0.86, live 0.85") for d in result.differences)
@@ -137,7 +137,7 @@ def test_a_changed_threshold_makes_replay_refuse_with_a_diff_naming_the_threshol
 
 def test_the_refused_replay_gives_no_answer_for_any_record(recorded, tmp_path):
     engine, ids = recorded
-    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.5), record_context=False)
+    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.5), for_screening=False)
     assert {replay(other, rid).status for rid in ids} == {REFUSED_CONTEXT}
 
 
@@ -148,7 +148,7 @@ def test_a_changed_artefact_is_named_in_the_diff(recorded, tmp_path):
     for name in rc.HASHED_SOURCES:
         shutil.copy(rc.SRC_DIR / name, edited / name)
     (edited / "normalise.py").write_text((edited / "normalise.py").read_text() + "\n# edited\n")
-    other = make_engine(tmp_path, log=engine.log, src_dir=edited, record_context=False)
+    other = make_engine(tmp_path, log=engine.log, src_dir=edited, for_screening=False)
     result = replay(other, ids[0])
     assert result.status == REFUSED_CONTEXT
     assert [d for d in result.differences if d.startswith("artefacts.")] == [
@@ -166,7 +166,7 @@ def test_a_changed_engine_setting_and_a_changed_snapshot_are_named(recorded, tmp
         git=lambda: ("b" * 40, True),
         versions=lambda: {"rapidfuzz": "3.15.0"},
     )
-    other = AuditedEngine(other_engine, other_context, engine.log, record_context=False)
+    other = AuditedEngine(other_engine, other_context, engine.log, for_screening=False)
     result = replay(other, ids[0])
     text = "\n".join(result.differences)
     assert "git_sha: stored" in text and "git_dirty: stored False, live True" in text
@@ -177,7 +177,7 @@ def test_a_changed_engine_setting_and_a_changed_snapshot_are_named(recorded, tmp
 def test_changing_top_candidates_is_refused_with_a_diff_naming_it(recorded, tmp_path, monkeypatch):
     engine, ids = recorded
     monkeypatch.setattr(rc, "TOP_CANDIDATES", 5)  # the constant in audit_schema, as run_context reads it
-    other = make_engine(tmp_path, log=engine.log, record_context=False)
+    other = make_engine(tmp_path, log=engine.log, for_screening=False)
     assert other.top_candidates == 5
     result = replay(other, ids[0])
     assert result.status == REFUSED_CONTEXT
@@ -191,7 +191,7 @@ def test_a_changed_schema_file_is_named_and_storage_code_is_not_hashed(recorded,
     for name in rc.HASHED_SOURCES:
         shutil.copy(rc.SRC_DIR / name, edited / name)
     (edited / "audit_schema.py").write_text((edited / "audit_schema.py").read_text() + "\n# edited\n")
-    other = make_engine(tmp_path, log=engine.log, src_dir=edited, record_context=False)
+    other = make_engine(tmp_path, log=engine.log, src_dir=edited, for_screening=False)
     result = replay(other, ids[0])
     assert result.status == REFUSED_CONTEXT
     assert any(d.startswith("artefacts.audit_schema.py:") for d in result.differences)
@@ -203,7 +203,7 @@ def test_a_changed_schema_file_is_named_and_storage_code_is_not_hashed(recorded,
 def test_a_missing_context_file_is_refused_with_the_reason(recorded, tmp_path):
     engine, ids = recorded
     (engine.contexts_dir / f"{engine.context_hash}.json").unlink()
-    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), record_context=False)
+    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), for_screening=False)
     result = replay(other, ids[0])
     assert result.status == REFUSED_CONTEXT and "no context file" in result.reason and result.differences == ()
 
@@ -214,7 +214,7 @@ def test_a_changed_context_file_is_refused(recorded, tmp_path):
     stored = json.loads(path.read_text())
     stored["config"]["global_threshold"] = 0.1
     path.write_text(json.dumps(stored))
-    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), record_context=False)
+    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), for_screening=False)
     result = replay(other, ids[0])
     assert result.status == REFUSED_CONTEXT and "does not hash to its name" in result.reason
 
@@ -317,6 +317,32 @@ def test_a_context_file_with_different_content_stops_the_engine_from_starting(re
     (engine.contexts_dir / f"{engine.context_hash}.json").write_text("{}")
     with pytest.raises(AuditError, match="different content"):
         make_engine(tmp_path, log=engine.log)
+
+
+def test_engines_storing_the_same_new_context_at_once_never_see_a_half_written_file(recorded, tmp_path):
+    import threading
+
+    engine, _ = recorded
+    other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.7), for_screening=False)
+    errors = []
+
+    def store() -> None:
+        try:
+            rc.store_context(engine.contexts_dir, other.run_context)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    for _ in range(20):
+        for stale in engine.contexts_dir.glob(f"{other.context_hash}.json"):
+            stale.unlink()
+        threads = [threading.Thread(target=store) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+    assert errors == []
+    assert rc.load_context(engine.contexts_dir, other.context_hash) == other.run_context
+    assert not list(engine.contexts_dir.glob("*.tmp"))  # no temporary files left behind
 
 
 def test_two_contexts_give_two_files_and_verify_chain_is_unaffected(recorded, tmp_path):

@@ -45,6 +45,11 @@ QUERIES = [
 ]
 
 
+def decisions(log):
+    """The decision records of a log, leaving out engine_start and recovery events."""
+    return [h for h in log.headers.read_all() if h["kind"] == "decision"]
+
+
 def write_list(directory: Path) -> Path:
     directory.mkdir(parents=True, exist_ok=True)
     body = b'{"id":"e1"}\n'
@@ -88,15 +93,15 @@ def test_audited_screen_gives_the_same_matches_as_screen(tmp_path, name, birth_d
 
 def test_decisions_agree_and_some_queries_alert_and_some_clear(tmp_path):
     audited = make_engine(tmp_path)
-    decisions = []
+    seen = []
     for name, birth_date, country in QUERIES:
         result = audited.audited_screen(name, birth_date, country)
-        header = audited.log.headers.read_all()[-1]
+        header = decisions(audited.log)[-1]
         assert header["request_id"] == result.request_id
         assert header["decision"] == ("alert" if result.matches else "clear")
         assert header["matched_entity_ids"] == [m.entity_id for m in result.matches]
-        decisions.append(header["decision"])
-    assert {"alert", "clear"} <= set(decisions)
+        seen.append(header["decision"])
+    assert {"alert", "clear"} <= set(seen)
 
 
 def test_components_is_called_exactly_once_per_screen(tmp_path):
@@ -115,7 +120,7 @@ def test_the_threshold_is_the_one_for_the_query_script(tmp_path):
     audited = make_engine(tmp_path, config=config)
     audited.audited_screen("Mohammed Ali Hassan")
     audited.audited_screen("محمد علي حسن")
-    latin, arabic = audited.log.headers.read_all()
+    latin, arabic = decisions(audited.log)
     assert latin["threshold"] == 0.80 and arabic["threshold"] == 0.91
 
 
@@ -133,7 +138,7 @@ def forbidden_strings(name, birth_date, country, normalised, payload):
 def test_the_header_contains_nothing_derived_from_the_name_birth_date_or_country(tmp_path, name, birth_date, country):
     audited = make_engine(tmp_path)
     result = audited.audited_screen(name, birth_date, country)
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     payload = audited.log.payloads.read(result.request_id).data
     forbidden = forbidden_strings(name, birth_date, country, payload["normalised"], payload)
     assert forbidden, "the payload should hold the name-derived strings"
@@ -168,7 +173,7 @@ def test_the_payload_holds_the_name_derived_fields(tmp_path):
 def test_header_digest_matches_the_stored_payload(tmp_path):
     audited = make_engine(tmp_path)
     result = audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     record = audited.log.payloads.read(result.request_id)
     assert record.digest() == header["payload_digest"]
     assert len(record.salt) >= 16
@@ -178,7 +183,7 @@ def test_the_same_query_twice_gives_different_salts_and_digests_but_the_same_sco
     audited = make_engine(tmp_path)
     a = audited.audited_screen("Mohammed Ali Hassan")
     b = audited.audited_screen("Mohammed Ali Hassan")
-    ha, hb = audited.log.headers.read_all()
+    ha, hb = decisions(audited.log)
     assert a.request_id != b.request_id
     assert audited.log.payloads.read(a.request_id).salt != audited.log.payloads.read(b.request_id).salt
     assert ha["payload_digest"] != hb["payload_digest"]
@@ -188,7 +193,7 @@ def test_the_same_query_twice_gives_different_salts_and_digests_but_the_same_sco
 def test_the_clear_header_still_logs_candidates(tmp_path):
     audited = make_engine(tmp_path)
     audited.audited_screen("Ivan Hassan")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     assert header["candidates_scored"] >= 1 and len(header["candidates"]) >= 1
     assert all(c["at_or_above_threshold"] is False for c in header["candidates"]) or header["decision"] == "alert"
 
@@ -196,7 +201,7 @@ def test_the_clear_header_still_logs_candidates(tmp_path):
 def test_the_header_candidates_carry_numeric_scores_and_the_matched_entity(tmp_path):
     audited = make_engine(tmp_path)
     audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     top = header["candidates"][0]
     assert top["entity_id"] == "e1" == header["matched_entity_id"]
     for field in ("score", "name_score", "skeleton_score", "birth_date_adjustment", "country_adjustment"):
@@ -209,7 +214,7 @@ def test_all_hits_are_logged_even_past_the_top_ten(tmp_path):
     many += [{"id": f"l{i:02d}", "names": [f"Mohammed Ali Zzz{i}qq"]} for i in range(25)]
     audited = make_engine(tmp_path, entities=many)
     result = audited.audited_screen("Mohammed Ali Hassan")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     assert len(result.matches) == 15
     assert header["matched_entity_ids"] == sorted(header["matched_entity_ids"])
     assert sum(c["at_or_above_threshold"] for c in header["candidates"]) == 15
@@ -221,7 +226,7 @@ def test_only_ten_are_logged_when_nothing_reaches_the_threshold(tmp_path):
     many = [{"id": f"l{i:02d}", "names": [f"Mohammed Ali Zzz{i}qq"]} for i in range(30)]
     audited = make_engine(tmp_path, entities=many)
     result = audited.audited_screen("Mohammed Ali Hassan")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     assert result.matches == [] and header["decision"] == "clear"
     assert header["candidates_scored"] >= 11
     assert len(header["candidates"]) == 10
@@ -230,7 +235,7 @@ def test_only_ten_are_logged_when_nothing_reaches_the_threshold(tmp_path):
 def test_the_timestamp_uses_the_injected_clock_and_there_is_no_retention_date(tmp_path):
     audited = make_engine(tmp_path)
     audited.audited_screen("Ivan Petrov")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     assert header["timestamp_utc"] == "2026-10-07T12:00:00.000000+00:00"
     assert "retention_until" not in header
 
@@ -238,7 +243,7 @@ def test_the_timestamp_uses_the_injected_clock_and_there_is_no_retention_date(tm
 def test_customer_ref_is_in_the_payload_only(tmp_path):
     audited = make_engine(tmp_path)
     result = audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq", customer_ref="cust-7f3a9")
-    header = audited.log.headers.read_all()[-1]
+    header = decisions(audited.log)[-1]
     assert audited.log.payloads.read(result.request_id).data["customer_ref"] == "cust-7f3a9"
     assert "cust-7f3a9" not in json.dumps(header) and "customer_ref" not in header
 
@@ -249,7 +254,7 @@ def test_customer_ref_is_optional_and_must_be_a_string(tmp_path):
     assert audited.log.payloads.read(result.request_id).data["customer_ref"] is None
     with pytest.raises(ValueError):
         audited.audited_screen("Ivan Petrov", customer_ref=12345)  # type: ignore[arg-type]
-    assert len(audited.log.headers.read_all()) == 1  # the refused call wrote nothing
+    assert len(decisions(audited.log)) == 1  # the refused call wrote nothing
 
 
 # ---------- the run context is held, not rebuilt ----------
@@ -264,11 +269,7 @@ def test_the_header_carries_the_hash_of_the_context_the_engine_holds(tmp_path, m
     monkeypatch.setattr(asc, "build_run_context", boom)
     monkeypatch.setattr(rc, "build_run_context", boom)
     audited.audited_screen("Ivan Petrov")
-    assert (
-        audited.log.headers.read_all()[-1]["run_context_hash"]
-        == audited.run_context.context_hash
-        == audited.context_hash
-    )
+    assert decisions(audited.log)[-1]["run_context_hash"] == audited.run_context.context_hash == audited.context_hash
     assert re.fullmatch(r"[0-9a-f]{64}", audited.context_hash)
 
 
@@ -276,7 +277,7 @@ def test_the_held_hash_does_not_change_when_a_source_file_would(tmp_path):
     audited = make_engine(tmp_path)
     first = audited.context_hash
     audited.audited_screen("Ivan Petrov")
-    assert audited.log.headers.read_all()[-1]["run_context_hash"] == first
+    assert decisions(audited.log)[-1]["run_context_hash"] == first
 
 
 # ---------- a logging failure fails the call ----------
@@ -298,14 +299,14 @@ def test_a_payload_write_failure_fails_the_call_and_writes_no_header(tmp_path):
     (tmp_path / "audit" / "payloads").write_text("a file where the store directory should be")
     with pytest.raises(AuditError):
         audited.audited_screen("Mohammed Ali Hassan")
-    assert audited.log.headers.read_all() == []
+    assert decisions(audited.log) == []
 
 
 def test_an_unencodable_name_fails_the_call(tmp_path):
     audited = make_engine(tmp_path)
     with pytest.raises(AuditError):
         audited.audited_screen("bad \ud800 name")
-    assert audited.log.headers.read_all() == []
+    assert decisions(audited.log) == []
 
 
 # ---------- all three hold-outs, on the real list ----------
@@ -353,7 +354,8 @@ def check_equivalence(tmp_path, queries: list[tuple[str, dict]], replays: int) -
         alerts += bool(plain)
         request_ids.append(result.request_id)
     result = verify_chain(audited.log)  # the whole log the run produced is a clean chain
-    assert result.ok and result.records == len(queries), result.failures[:3]
+    # one record per query, plus the engine_start event written when the engine was built
+    assert result.ok and result.records == len(queries) + 1, result.failures[:3]
     before = audited.log.headers.path.read_bytes()
     sample = random.Random(f"{SAMPLE_SEED}-replay").sample(request_ids, replays)
     not_identical = [(rid, r.status, r.differences[:2]) for rid in sample if not (r := replay(audited, rid)).identical]

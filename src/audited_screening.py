@@ -37,11 +37,11 @@ from audit import (
     new_salt,
     payload_digest,
 )
-from audit_schema import build_header, candidate_entry
+from audit_schema import KIND_ENGINE_START, build_engine_start_header, build_header, candidate_entry
 from candidates import name_keys
 from normalise import normalise
 from profile_data import DEFAULT_INPUT
-from run_context import RunContext, build_run_context, store_context
+from run_context import RunContext, build_run_context, changed_field_names, load_context, store_context
 from scoring import scoring_form, skeleton_form
 from screening import (
     CANDIDATE_CAP,
@@ -97,9 +97,9 @@ class AuditedEngine:
         log: AuditLog,
         *,
         clock: Callable[[], datetime] = utc_now,
-        record_context: bool = True,
+        for_screening: bool = True,
     ) -> None:
-        """With record_context True the run context is written to <audit_dir>/contexts/<hash>.json (see
+        """With for_screening True the run context is written to <audit_dir>/contexts/<hash>.json (see
         run_context.store_context). Replay builds its engine with False: it writes nothing."""
         self.engine = engine
         self.run_context = run_context
@@ -108,8 +108,38 @@ class AuditedEngine:
         self.clock = clock
         self.top_candidates = run_context.top_candidates  # from the context, so replay uses the record's own value
         self.contexts_dir = log.headers.path.parent / "contexts"
-        if record_context:
+        if for_screening:
             store_context(self.contexts_dir, run_context)
+            self._record_engine_start()
+
+    def _record_engine_start(self) -> None:
+        """Append an engine_start record unless the most recent one already names this run context. Done under the
+        log's lock, so two engines starting together do not both append. A failure stops the engine from starting:
+        a name is never screened under a configuration the chain does not show."""
+        headers = self.log.headers
+        with headers.locked(create_directory=False):
+            headers.require_initialised()
+            last = headers.last_of_kind(KIND_ENGINE_START)
+            if last is not None and last["context_hash"] == self.context_hash:
+                return
+            previous = last["context_hash"] if last else None
+            changed: list[str] = []
+            if previous is not None:
+                before = load_context(self.contexts_dir, previous)
+                changed = (
+                    ["context_file_missing"]
+                    if before is None
+                    else changed_field_names(before.as_dict(), self.run_context.as_dict())
+                )
+            headers.append_locked(
+                build_engine_start_header(
+                    request_id=new_request_id(),
+                    moment=self.clock(),
+                    context_hash=self.context_hash,
+                    previous_context_hash=previous,
+                    changed_fields=changed,
+                )
+            )
 
     @classmethod
     def from_file(

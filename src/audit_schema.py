@@ -14,12 +14,20 @@ Standard library only.
 
 from datetime import datetime, timezone
 
-SCHEMA_VERSION = 1  # written into every header; bump it when a header's fields or meaning change
+SCHEMA_VERSION = 2  # written into every header; bump it when a header's fields or meaning change
 TOP_CANDIDATES = 10
 
-# The only keys a header may have. A test checks a built header against this list, so a new field cannot slip in.
+# Every record has a kind. Only decision records have a payload; the others are events about the system itself.
+KIND_DECISION = "decision"  # a name was screened
+KIND_ENGINE_START = "engine_start"  # an engine started under a run context the chain had not seen last
+KIND_RECOVERY = "recovery"  # an operator moved a torn final line out of the log
+KINDS = (KIND_DECISION, KIND_ENGINE_START, KIND_RECOVERY)
+
+# The only keys a decision header may have. A test checks a built header against this list, so a new field cannot
+# slip in. Each kind has its own list (FIELDS_BY_KIND below); `request_id` is the record's ID for every kind.
 HEADER_FIELDS = (
     "schema_version",
+    "kind",
     "request_id",
     "timestamp_utc",
     "run_context_hash",
@@ -35,6 +43,40 @@ HEADER_FIELDS = (
 # Added by the log when a header is appended: its position, the hash of the record before it, and its own hash.
 CHAIN_FIELDS = ("seq", "prev_hash", "record_hash")
 LOGGED_HEADER_FIELDS = HEADER_FIELDS + CHAIN_FIELDS
+# engine_start: the engine's run context hash, the one before it, and the NAMES of the context fields that differ. Never
+# values (they are not personal data, but a name list is all an auditor needs; the stored context files hold values).
+ENGINE_START_FIELDS = (
+    "schema_version",
+    "kind",
+    "request_id",
+    "timestamp_utc",
+    "context_hash",
+    "previous_context_hash",
+    "changed_fields",
+)
+# recovery: what an operator removed after a crash, identified by hash and size, never by content. failure_types lists
+# "torn_final_line" (a partial last line, moved to quarantine/) and/or "orphan_payload" (a payload whose header was
+# never written: deleted, because no decision was made and there is no retention basis). Fields for a part that did
+# not happen are None. The orphan's request_id names no person; its payload file hash lets the deletion be checked
+# against a backup.
+RECOVERY_FIELDS = (
+    "schema_version",
+    "kind",
+    "request_id",
+    "timestamp_utc",
+    "failure_types",
+    "quarantine_file",
+    "quarantine_sha256",
+    "quarantine_size",
+    "orphan_request_id",
+    "orphan_payload_sha256",
+)
+FIELDS_BY_KIND = {
+    KIND_DECISION: HEADER_FIELDS,
+    KIND_ENGINE_START: ENGINE_START_FIELDS,
+    KIND_RECOVERY: RECOVERY_FIELDS,
+}
+LOGGED_FIELDS_BY_KIND = {kind: fields + CHAIN_FIELDS for kind, fields in FIELDS_BY_KIND.items()}
 CANDIDATE_FIELDS = (
     "entity_id",
     "score",
@@ -128,9 +170,60 @@ def build_header(
 ) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
+        "kind": KIND_DECISION,
         "request_id": request_id,
         "timestamp_utc": utc_timestamp(moment),
         "run_context_hash": run_context_hash,
         **decision_summary(entries, threshold, top),
         "payload_digest": digest,
+    }
+
+
+def build_engine_start_header(
+    *,
+    request_id: str,
+    moment: datetime,
+    context_hash: str,
+    previous_context_hash: str | None,
+    changed_fields: list[str],
+) -> dict:
+    """An engine started under `context_hash`. `previous_context_hash` is None for the first start in the chain.
+    `changed_fields` are field names (such as "config.global_threshold" or "snapshot_id"), never values."""
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "kind": KIND_ENGINE_START,
+        "request_id": request_id,
+        "timestamp_utc": utc_timestamp(moment),
+        "context_hash": context_hash,
+        "previous_context_hash": previous_context_hash,
+        "changed_fields": sorted(changed_fields),
+    }
+
+
+def build_recovery_header(
+    *,
+    request_id: str,
+    moment: datetime,
+    quarantine_file: str | None = None,
+    quarantine_sha256: str | None = None,
+    quarantine_size: int | None = None,
+    orphan_request_id: str | None = None,
+    orphan_payload_sha256: str | None = None,
+) -> dict:
+    failure_types = []
+    if quarantine_file is not None:
+        failure_types.append("torn_final_line")
+    if orphan_request_id is not None:
+        failure_types.append("orphan_payload")
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "kind": KIND_RECOVERY,
+        "request_id": request_id,
+        "timestamp_utc": utc_timestamp(moment),
+        "failure_types": failure_types,
+        "quarantine_file": quarantine_file,
+        "quarantine_sha256": quarantine_sha256,
+        "quarantine_size": quarantine_size,
+        "orphan_request_id": orphan_request_id,
+        "orphan_payload_sha256": orphan_payload_sha256,
     }

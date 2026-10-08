@@ -5,6 +5,10 @@ Failure kinds, split into tampering and crash signatures so a crash is never rep
   tampering
     log_missing            the audit directory, or the headers file, does not exist. A store that was initialised
                            has both a headers file and a checkpoint, so a directory with neither is not clean
+    schema_violation       a record of an unknown kind, or whose fields are not exactly its kind's allow-list
+                           (audit_schema.LOGGED_FIELDS_BY_KIND)
+    quarantine_mismatch    a recovery record names a quarantine file that is there but does not match the SHA-256
+                           and size the record holds
     edited_header          a record's hash does not match its content (or the line is not valid JSON)
     broken_link            a record's seq or prev_hash does not follow the record before it (a line was removed,
                            inserted, moved, or an edited record was rehashed)
@@ -26,14 +30,19 @@ its whole scan, so a verification that runs alongside writers sees only whole re
 The checkpoint is tamper-evident, not tamper-proof: whoever can rewrite the log can rewrite the checkpoint.
 """
 
+import hashlib
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from audit import GENESIS_PREV_HASH, AuditError, AuditLog, compute_record_hash
+from audit_schema import KIND_DECISION, KIND_RECOVERY, LOGGED_FIELDS_BY_KIND
 
 TAMPERING = frozenset(
     {
         "log_missing",
+        "schema_violation",
+        "quarantine_mismatch",
         "edited_header",
         "broken_link",
         "payload_digest_mismatch",
@@ -94,6 +103,51 @@ def verify_chain(log: AuditLog) -> VerifyResult:
         return _verify_locked(log)
 
 
+def check_schema(record: dict, seq: int) -> list[Failure]:
+    allowed = LOGGED_FIELDS_BY_KIND.get(record.get("kind"))
+    rid = record.get("request_id") if isinstance(record.get("request_id"), str) else None
+    if allowed is None:
+        return [Failure("schema_violation", f"record {seq} has an unknown kind {record.get('kind')!r}", seq, rid)]
+    if set(record) != set(allowed):
+        extra, missing = sorted(set(record) - set(allowed)), sorted(set(allowed) - set(record))
+        return [Failure("schema_violation", f"record {seq} fields differ: extra {extra}, missing {missing}", seq, rid)]
+    return []
+
+
+def check_recovery(record: dict, seq: int, directory: Path) -> list[Failure]:
+    """A recovery record must be consistent (the torn-line fields all present or all None, same for the orphan
+    fields, and failure_types matching), and its quarantine file, if still there, must be the bytes it describes. A
+    file that is gone is not a failure here: it is evidence, not part of the chain."""
+    rid = record.get("request_id") if isinstance(record.get("request_id"), str) else None
+    name = record.get("quarantine_file")
+    torn = [record.get(k) for k in ("quarantine_file", "quarantine_sha256", "quarantine_size")]
+    orphan = [record.get(k) for k in ("orphan_request_id", "orphan_payload_sha256")]
+    expected_types = (["torn_final_line"] if torn[0] is not None else []) + (
+        ["orphan_payload"] if orphan[0] is not None else []
+    )
+    problems = []
+    if any(v is None for v in torn) and any(v is not None for v in torn):
+        problems.append("the quarantine fields are only partly set")
+    if any(v is None for v in orphan) and any(v is not None for v in orphan):
+        problems.append("the orphan fields are only partly set")
+    if record.get("failure_types") != expected_types or not expected_types:
+        problems.append("failure_types does not match the fields that are set")
+    if name is not None and (not isinstance(name, str) or Path(name).name != name or not name):
+        problems.append("the quarantine file is not a plain file name")
+    if problems:
+        return [Failure("schema_violation", f"record {seq}: {'; '.join(problems)}", seq, rid)]
+    if name is None:
+        return []
+    path = directory / name
+    if not path.is_file():
+        return []
+    data = path.read_bytes()
+    same_hash = hashlib.sha256(data).hexdigest() == record.get("quarantine_sha256")
+    if not same_hash or len(data) != record.get("quarantine_size"):
+        return [Failure("quarantine_mismatch", f"{name} does not match the recovery record {seq}", seq, rid)]
+    return []
+
+
 def _verify_locked(log: AuditLog) -> VerifyResult:
     headers = log.headers
     failures: list[Failure] = []
@@ -135,6 +189,9 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
             failures.append(
                 Failure("broken_link", f"record {i} does not follow the record before it", i, record.get("request_id"))
             )
+        failures += check_schema(record, i)
+        if record.get("kind") == KIND_RECOVERY:
+            failures += check_recovery(record, i, headers.path.parent / "quarantine")
         expected_prev = record.get("record_hash")
 
     n = len(lines)
@@ -165,9 +222,10 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
                     Failure("checkpoint_mismatch", f"the log is {n - count} records ahead of its checkpoint")
                 )
 
-    request_ids = {r.get("request_id") for r in records}
+    decisions = [r for r in records if r.get("kind") == KIND_DECISION]  # only decisions have payloads
+    request_ids = {r.get("request_id") for r in decisions}
     checked = 0
-    for r in records:
+    for r in decisions:
         rid = r.get("request_id")
         if not isinstance(rid, str):
             continue

@@ -9,6 +9,7 @@ Run:
     python src/screen_cli.py screen "محمد علي" --json --limit 5 --customer-ref cust-123
     python src/screen_cli.py screen --batch names.jsonl --audit-dir /var/lib/screening/audit
     python src/screen_cli.py replay REQUEST_ID --audit-dir /var/lib/screening/audit
+    python src/screen_cli.py recover --audit-dir /var/lib/screening/audit                 (operator, after a crash)
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
 refuses to start (exit status 2) before it builds the list. Screening never creates the store: "init" does, once, and
@@ -27,6 +28,12 @@ cannot be written the run stops there: earlier names keep their records and deci
 result is identical. It refuses, with a field-level diff, if the engine's run context differs from the record's, and
 it writes nothing. It prints no names.
 
+`recover` is for one situation: a crash during a write left a partial last line and/or one payload with no header, and
+the log refuses to append. It moves the torn bytes to quarantine/, cuts the log back to its last complete line,
+deletes the orphan payload (no decision was made, so there is no basis to keep it), and appends one recovery record
+holding hashes and sizes only. It refuses, changing nothing, for a clean log, more than one orphan, or any sign of
+tampering.
+
 `screen --customer-ref` links the record to a customer (opaque to the matcher; stored in the payload only). Exit
 status is 0 whether or not there are matches. Building the list takes a few seconds on every run.
 """
@@ -37,6 +44,7 @@ import sys
 from pathlib import Path
 
 from audit import AuditConfigError, AuditError, AuditLog, LogMissingError
+from audit_recover import RecoveryRefused, recover
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
 from profile_data import DEFAULT_INPUT
 from replay import replay
@@ -123,7 +131,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
         return EXIT_USAGE
     print("Building the list...", file=sys.stderr)
     try:
-        engine = AuditedEngine.from_file(args.input, audit_dir, record_context=False)
+        engine = AuditedEngine.from_file(args.input, audit_dir, for_screening=False)
     except AuditError as exc:
         print(f"refusing to start: {exc}", file=sys.stderr)
         return EXIT_AUDIT_FAILURE
@@ -143,6 +151,36 @@ def cmd_replay(args: argparse.Namespace) -> int:
             f"(sha256 {r['snapshot_sha256'][:16]}...), rebuild, then replay"
         )
     return 0 if result.identical else 1
+
+
+def cmd_recover(args: argparse.Namespace) -> int:
+    """Recover from a crash during a write. Exit 0 if recovered, 1 if refused or failed."""
+    try:
+        directory = resolve_audit_dir(args.audit_dir)
+    except AuditConfigError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        outcome = recover(AuditLog.in_directory(directory))
+    except RecoveryRefused as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    except AuditError as exc:
+        print(f"recovery failed: {exc}", file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    parts = []
+    if outcome.quarantine_file:
+        parts.append(
+            f"{outcome.quarantine_size} torn bytes moved to quarantine/{outcome.quarantine_file} "
+            f"(sha256 {outcome.quarantine_sha256[:16]}...)"
+        )
+    if outcome.orphan_request_id:
+        parts.append(
+            f"orphan payload {outcome.orphan_request_id} deleted (file sha256 {outcome.orphan_payload_sha256[:16]}...)"
+        )
+    note = "" if outcome.record else " (the recovery record was already in the chain; only the deletion was finished)"
+    print("recovered: " + "; ".join(parts) + note)
+    return 0
 
 
 def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
@@ -197,7 +235,7 @@ def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
-    commands = parser.add_subparsers(dest="command", required=True, metavar="{screen,init,replay}")
+    commands = parser.add_subparsers(dest="command", required=True, metavar="{screen,init,replay,recover}")
     audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
 
     screen_cmd = commands.add_parser("screen", help="screen a name, or a batch of names")
@@ -220,6 +258,10 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     rep.add_argument("request_id", help="the request ID printed when the name was screened")
     rep.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="entities file the engine is built from")
     rep.add_argument("--audit-dir", help=audit_dir_help)
+    rec = commands.add_parser(
+        "recover", help="after a crash during a write: quarantine a torn final line and/or delete one orphan payload"
+    )
+    rec.add_argument("--audit-dir", help=audit_dir_help)
     return parser, screen_cmd
 
 
@@ -230,6 +272,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_init(args)
     if args.command == "replay":
         return cmd_replay(args)
+    if args.command == "recover":
+        return cmd_recover(args)
     return cmd_screen(args, screen_parser)
 
 

@@ -53,6 +53,24 @@ python src/screen_cli.py replay REQUEST_ID --audit-dir /path/to/audit
 
 Every mode is an explicit subcommand (`init`, `screen`, `replay`); a bare name is a usage error (exit 2), so a customer called `init` or `replay` is screened like anyone else with `screen init`. The command line is the production entry point, so it is audited: each name's record is written before its decision is printed, and if a record cannot be written the command prints no decision and exits non-zero. The audit directory comes from `--audit-dir` or `$SCREENING_AUDIT_DIR`; there is no default, and the command refuses to start without one. `init` creates the store once and refuses a directory that is not empty; screening never creates it, and a missing or wiped store stops screening with `log_missing` rather than starting a new one. `replay REQUEST_ID` rebuilds a recorded decision from its header, payload and run context and exits 0 only if the result is identical; it refuses, with a field-level diff, if the engine's run context differs from the record's. `screen()` itself is unchanged and is what the evaluation scripts use, so evaluation runs write no audit records.
 
+## The audit log
+
+Every screening decision is written to an audit store before it is shown. The question it answers is: why was this name flagged or cleared on this date, under which list, code, configuration and threshold. Replay answers it by running the decision again.
+
+A record has a header and, for decisions, a payload. The header holds the request ID, the UTC time, the hash of the run context (code, configuration, list snapshot and library versions the engine ran under), the candidates with their numeric scores, the threshold and the decision. It contains nothing taken from the customer's name, birth date or country, and it goes into an append-only log whose records are chained by hash. The payload holds the raw input, the normalised forms and a random salt, and lives in a separate store, one file per request, so it can be deleted on its own without breaking the chain. The header carries a digest over the salt and the payload, which also means a deleted payload cannot be guessed back from the header.
+
+Every record has a kind:
+
+- `decision`: a name was screened. This is the only kind with a payload and the only kind that can be replayed.
+- `engine_start`: an engine started under a run context different from the one in the last `engine_start` in the chain. It holds the old and new context hashes and the names of the context fields that changed (for example `config.global_threshold` or `snapshot_id`), never their values. A change of threshold, configuration, code, list snapshot or library version is therefore recorded automatically the first time an engine runs under it. A restart under an unchanged context adds nothing, and an engine built for replay adds nothing.
+- `recovery`: an operator ran `recover` after a crash during a write. A crash can leave a partial last line in the log, a payload whose header was never written, or both. `recover` moves the partial line to `quarantine/`, cuts the log back to its last complete line, and deletes the orphan payload (no decision was made, so there is no reason to keep the personal data in it). The record holds the SHA-256 and size of the torn bytes and the request ID and payload file hash of the orphan, never any content, so the event stays visible in the chain. The command refuses a clean log, more than one orphan (only one write can be in flight, so a crash leaves at most one), and any sign of tampering.
+
+Schema note: `request_id` is the record's ID for every kind. Only on a `decision` record is it a screening request; on `engine_start` and `recovery` records it is just the ID of the event.
+
+`verify_chain` checks the whole store: the hash chain, the checkpoint (which catches deleted tail lines), every payload against its digest, each record against its kind's allowed fields, and payload files that no header points to. It separates tampering from crash damage. The checkpoint is tamper-evident, not tamper-proof: anyone who can rewrite the log can rewrite the checkpoint, and deleting the whole audit directory leaves nothing to compare with. Production would anchor the head outside the machine.
+
+Not built yet: retention purge, batch monitoring and drift reports, and the list-update regression gate.
+
 ## Final results
 
 The configuration was frozen before the final run: one global alert threshold of 0.86, a blend of character ratio and rarity-weighted score of 0.5, skeleton lift 0.2 and floor 0.6. All of it was tuned on a dev sample. It was then scored once, with no changes, on a hold-out set of 2,000 positive and 2,000 negative queries that had been frozen earlier (SHA-256 `cb3cb8f4...`) and never used for tuning. The checksum was verified before scoring. Full numbers are in `reports/final_evaluation.json`. Intervals are 95%: Wilson for proportions, bootstrap for F1.
