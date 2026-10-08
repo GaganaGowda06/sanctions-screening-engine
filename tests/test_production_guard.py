@@ -26,7 +26,7 @@ SRC = Path(__file__).resolve().parent.parent / "src"
 
 PRODUCTION = {"screen_cli.py", "audited_screening.py"}
 INFRASTRUCTURE = {
-    "audit.py", "audit_purge.py", "audit_recover.py", "audit_schema.py", "audit_verify.py",
+    "audit.py", "audit_metrics.py", "audit_purge.py", "audit_recover.py", "audit_schema.py", "audit_verify.py",
     "replay.py", "run_context.py",
 }  # fmt: skip
 LIBRARY = {
@@ -42,7 +42,16 @@ RESEARCH = {
     "evaluate_skeleton_particles.py", "measure_alert_disparity.py", "profile_normaliser.py", "profile_pairs.py",
     "train_constrained.py", "train_matcher.py",
 }  # fmt: skip
-AUDIT_MODULES = {"audit", "audit_purge", "audit_recover", "audit_schema", "audit_verify", "audited_screening", "replay"}
+AUDIT_MODULES = {
+    "audit",
+    "audit_metrics",
+    "audit_purge",
+    "audit_recover",
+    "audit_schema",
+    "audit_verify",
+    "audited_screening",
+    "replay",
+}
 BANNED_NAMES = {"screen", "get_engine"}
 
 

@@ -11,6 +11,7 @@ Run:
     python src/screen_cli.py replay REQUEST_ID --audit-dir /var/lib/screening/audit
     python src/screen_cli.py recover --audit-dir /var/lib/screening/audit                 (operator, after a crash)
     python src/screen_cli.py purge --mapping ended.jsonl --dry-run --audit-dir /var/lib/screening/audit
+    python src/screen_cli.py metrics --from 0 --to 999 --audit-dir /var/lib/screening/audit
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
 refuses to start (exit status 2) before it builds the list. Screening never creates the store: "init" does, once, and
@@ -44,6 +45,10 @@ purged, whatever their end date, checked first and shown by a dry run. Deleting 
 an offence (MLR 2017 regulation 87) and the hold list is the caller's responsibility. This deletes files only;
 backups and snapshots are outside its reach.
 
+`metrics --from SEQ --to SEQ` writes an aggregate report for a window of records to <audit_dir>/monitoring/: per run
+context, the alert rate, a fixed 20-bin score histogram, near-threshold counts, per-script rates (small cells
+suppressed) and duration percentiles. It holds no request ID, name or customer reference.
+
 `screen --customer-ref` links the record to a customer (opaque to the matcher; stored in the payload only). Exit
 status is 0 whether or not there are matches. Building the list takes a few seconds on every run.
 """
@@ -55,6 +60,7 @@ from datetime import date
 from pathlib import Path
 
 from audit import AuditConfigError, AuditError, AuditLog, LogMissingError
+from audit_metrics import compute_metrics
 from audit_purge import PurgeRefused, purge
 from audit_recover import RecoveryRefused, recover
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
@@ -219,6 +225,30 @@ def read_holds(source: str) -> tuple[set[str], set[str]]:
     return refs, ids
 
 
+def cmd_metrics(args: argparse.Namespace) -> int:
+    """Write the aggregate monitoring report for a window of records (by seq). Prints the path and counts only."""
+    try:
+        directory = resolve_audit_dir(args.audit_dir)
+    except AuditConfigError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        report, path = compute_metrics(directory, args.from_seq, args.to_seq)
+    except ValueError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    except AuditError as exc:
+        print(f"metrics failed: {exc}", file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    w = report["window"]
+    print(f"wrote {path}")
+    print(
+        f"window {w['from_seq']}-{w['to_seq']}: {w['decisions']} decision(s) of {w['records']} record(s), "
+        f"{len(report['groups'])} run context group(s)"
+    )
+    return 0
+
+
 def cmd_purge(args: argparse.Namespace) -> int:
     """Delete payloads whose retention period (relationship end plus N years) is over. Exit 0 on success."""
     try:
@@ -358,7 +388,9 @@ def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
-    commands = parser.add_subparsers(dest="command", required=True, metavar="{screen,init,replay,recover,purge}")
+    commands = parser.add_subparsers(
+        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics}"
+    )
     audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
 
     screen_cmd = commands.add_parser("screen", help="screen a name, or a batch of names")
@@ -398,6 +430,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     )
     pur.add_argument("--retention-years", type=int, default=5, help="retention period in years (at least 5)")
     pur.add_argument("--audit-dir", help=audit_dir_help)
+
+    met = commands.add_parser("metrics", help="write an aggregate monitoring report for a window of records")
+    met.add_argument("--from", dest="from_seq", type=int, required=True, metavar="SEQ", help="first record (its seq)")
+    met.add_argument("--to", dest="to_seq", type=int, required=True, metavar="SEQ", help="last record, inclusive")
+    met.add_argument("--audit-dir", help=audit_dir_help)
     return parser, screen_cmd
 
 
@@ -412,6 +449,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_recover(args)
     if args.command == "purge":
         return cmd_purge(args)
+    if args.command == "metrics":
+        return cmd_metrics(args)
     return cmd_screen(args, screen_parser)
 
 

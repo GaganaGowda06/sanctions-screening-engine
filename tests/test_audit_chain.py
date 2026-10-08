@@ -28,7 +28,7 @@ def add(log: AuditLog, i: int) -> str:
     entries = [audit_schema.candidate_entry(f"e{i}", 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]
     header = audit_schema.build_header(
         request_id=request_id, moment=MOMENT, run_context_hash="c" * 64, entries=entries, threshold=0.86,
-        digest=payload.digest(),
+        digest=payload.digest(), duration_ms=3,
     )  # fmt: skip
     log.write(header, payload)
     return request_id
@@ -471,7 +471,7 @@ def test_parallel_processes_write_one_valid_chain(tmp_path):
         "    p = PayloadRecord(rid, bytes([w]) * 32, {'raw_input': {'name': f'w{w} {i}'}})\n"
         "    e = [audit_schema.candidate_entry('e', 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]\n"
         "    h = audit_schema.build_header(request_id=rid, moment=datetime(2026, 1, 1, tzinfo=timezone.utc),\n"
-        "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest())\n"
+        "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest(), duration_ms=3)\n"
         "    log.write(h, p)\n"
     )
     workers, each = 6, 25
@@ -568,7 +568,7 @@ def test_verify_running_alongside_writer_processes_reports_no_orphans(tmp_path):
         "    p = PayloadRecord(rid, bytes([w]) * 32, {'raw_input': {'name': f'w{w} {i}'}})\n"
         "    e = [audit_schema.candidate_entry('e', 0.5, 0.5, 0.0, 0.0, 0.0, False, False, 0.86)]\n"
         "    h = audit_schema.build_header(request_id=rid, moment=datetime(2026, 1, 1, tzinfo=timezone.utc),\n"
-        "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest())\n"
+        "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest(), duration_ms=3)\n"
         "    log.write(h, p)\n"
     )
     log = AuditLog.create_new(

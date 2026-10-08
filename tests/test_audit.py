@@ -138,7 +138,7 @@ def test_ties_are_ordered_by_entity_id():
 def header_for(entries, threshold=0.86, **kwargs):
     return audit_schema.build_header(
         request_id="a" * 32, moment=MOMENT, run_context_hash="c" * 64, entries=entries, threshold=threshold,
-        digest="d" * 64, **kwargs,
+        digest="d" * 64, duration_ms=7, **kwargs,
     )  # fmt: skip
 
 

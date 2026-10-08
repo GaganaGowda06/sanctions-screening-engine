@@ -23,6 +23,7 @@ Metaphone belongs to the deduplication model, which is outside the decision path
 """
 
 import os
+import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -192,7 +193,9 @@ class AuditedEngine:
     ) -> AuditedResult:
         if customer_ref is not None and not isinstance(customer_ref, str):
             raise ValueError("customer_ref must be a string or None")
+        started = time.perf_counter_ns()
         result = self.evaluate(name, birth_date, country)
+        duration_ms = (time.perf_counter_ns() - started) // 1_000_000  # wall time of evaluate, whole milliseconds
         data = {
             "customer_ref": customer_ref,
             "raw_input": {"name": name, "birth_date": birth_date, "country": country},
@@ -207,6 +210,7 @@ class AuditedEngine:
                 entries=result.entries,
                 threshold=result.threshold,
                 digest=payload_digest(salt, data),
+                duration_ms=duration_ms,
                 top=self.top_candidates,
             )
             self.log.write(header, PayloadRecord(request_id, salt, data))

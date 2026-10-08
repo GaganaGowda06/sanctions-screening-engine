@@ -14,7 +14,7 @@ Standard library only.
 
 from datetime import datetime, timezone
 
-SCHEMA_VERSION = 3  # written into every header; bump it when a header's fields or meaning change
+SCHEMA_VERSION = 4  # written into every header; bump it when a header's fields or meaning change
 TOP_CANDIDATES = 10
 
 # Every record has a kind. Only decision records have a payload; the others are events about the system itself.
@@ -41,6 +41,7 @@ HEADER_FIELDS = (
     "decision",
     "matched_entity_id",
     "matched_entity_ids",
+    "duration_ms",
     "payload_digest",
 )
 # Added by the log when a header is appended: its position, the hash of the record before it, and its own hash.
@@ -182,8 +183,11 @@ def build_header(
     entries: list[dict],
     threshold: float,
     digest: str,
+    duration_ms: int,
     top: int = TOP_CANDIDATES,
 ) -> dict:
+    """`duration_ms` is the wall time of the engine's evaluate() call for this input, an integer number of
+    milliseconds: a number about the system, not about the customer."""
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": KIND_DECISION,
@@ -191,6 +195,7 @@ def build_header(
         "timestamp_utc": utc_timestamp(moment),
         "run_context_hash": run_context_hash,
         **decision_summary(entries, threshold, top),
+        "duration_ms": duration_ms,
         "payload_digest": digest,
     }
 

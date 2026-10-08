@@ -118,6 +118,12 @@ def check_schema(record: dict, seq: int) -> list[Failure]:
     rid = record.get("request_id") if isinstance(record.get("request_id"), str) else None
     if allowed is None:
         return [Failure("schema_violation", f"record {seq} has an unknown kind {record.get('kind')!r}", seq, rid)]
+    if record.get("kind") == KIND_DECISION:
+        ms = record.get("duration_ms")
+        if not isinstance(ms, int) or isinstance(ms, bool) or ms < 0:
+            return [
+                Failure("schema_violation", f"record {seq} has duration_ms {ms!r}, not a whole number >= 0", seq, rid)
+            ]
     if set(record) != set(allowed):
         extra, missing = sorted(set(record) - set(allowed)), sorted(set(allowed) - set(record))
         return [Failure("schema_violation", f"record {seq} fields differ: extra {extra}, missing {missing}", seq, rid)]

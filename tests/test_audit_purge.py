@@ -38,7 +38,7 @@ def add_ref(log: AuditLog, i: int, ref: str | None, when: str) -> str:
     moment = datetime.fromisoformat(when).replace(tzinfo=timezone.utc)
     header = audit_schema.build_header(
         request_id=request_id, moment=moment, run_context_hash="c" * 64, entries=entries, threshold=0.86,
-        digest=payload.digest(),
+        digest=payload.digest(), duration_ms=3,
     )  # fmt: skip
     log.write(header, payload)
     return request_id
