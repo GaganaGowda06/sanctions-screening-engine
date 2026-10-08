@@ -3,6 +3,8 @@
 Failure kinds, split into tampering and crash signatures so a crash is never reported as an attack:
 
   tampering
+    log_missing            the audit directory, or the headers file, does not exist. A store that was initialised
+                           has both a headers file and a checkpoint, so a directory with neither is not clean
     edited_header          a record's hash does not match its content (or the line is not valid JSON)
     broken_link            a record's seq or prev_hash does not follow the record before it (a line was removed,
                            inserted, moved, or an edited record was rehashed)
@@ -31,6 +33,7 @@ from audit import GENESIS_PREV_HASH, AuditError, AuditLog, compute_record_hash
 
 TAMPERING = frozenset(
     {
+        "log_missing",
         "edited_header",
         "broken_link",
         "payload_digest_mismatch",
@@ -78,19 +81,30 @@ class VerifyResult:
 
 
 def verify_chain(log: AuditLog) -> VerifyResult:
-    """Walk the whole header log, then the checkpoint, then every payload. Never raises for a bad log; it reports."""
-    with log.headers.locked():  # one consistent view of the log, its checkpoint and the payload store
+    """Walk the whole header log, then the checkpoint, then every payload. Never raises for a bad log; it reports.
+
+    Verification creates nothing: with no audit directory it returns log_missing at once. In an existing directory
+    it may create the lock file, and nothing else. Deleting the whole audit directory leaves nothing to compare
+    with, so it is undetectable locally; external anchoring covers it in production (see the project notes)."""
+    if not log.headers.path.parent.is_dir():
+        return VerifyResult(0, 0, (Failure("log_missing", "the audit directory does not exist"),))
+    with log.headers.locked(
+        create_directory=False
+    ):  # one consistent view of the log, its checkpoint and the payload store
         return _verify_locked(log)
 
 
 def _verify_locked(log: AuditLog) -> VerifyResult:
     headers = log.headers
     failures: list[Failure] = []
-    raw = headers.path.read_bytes() if headers.path.exists() else b""
+    headers_exist = headers.path.exists()
+    raw = headers.path.read_bytes() if headers_exist else b""
     try:
         checkpoint = headers.read_checkpoint()
     except ValueError:
         checkpoint = {"count": None, "record_hash": None}
+    if not headers_exist:
+        failures.append(Failure("log_missing", "the headers file does not exist"))
 
     lines = raw.split(b"\n")
     torn = lines.pop()  # empty after a final newline, or the torn fragment
@@ -125,7 +139,7 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
 
     n = len(lines)
     if checkpoint is None:
-        if n:
+        if headers_exist:  # an initialised store always has a checkpoint, even for an empty log
             failures.append(Failure("checkpoint_missing", f"the log has {n} records and no checkpoint"))
     elif checkpoint.get("count") is None:
         failures.append(Failure("checkpoint_mismatch", "the checkpoint file cannot be read"))

@@ -218,14 +218,35 @@ class HeaderLog:
         self.checkpoint_path = self.path.with_name(self.path.name + ".head")
 
     @contextmanager
-    def locked(self) -> Iterator[None]:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+    def locked(self, create_directory: bool = True) -> Iterator[None]:
+        """Hold the exclusive lock. With create_directory False (verification) nothing is made except the lock
+        file, and only inside a directory that already exists."""
+        if create_directory:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         fd = os.open(self.lock_path, os.O_WRONLY | os.O_CREAT, 0o600)
         try:
             fcntl.flock(fd, fcntl.LOCK_EX)
             yield
         finally:
             os.close(fd)  # closing releases the lock
+
+    def initialise(self) -> None:
+        """Make an empty store: the directory, an empty headers file and the genesis checkpoint (count 0, the
+        genesis hash). Does nothing to a store that already exists. Refuses a headers file that has records but no
+        checkpoint, because writing a genesis checkpoint over it would hide that the checkpoint was deleted."""
+        try:
+            with self.locked():
+                if self.read_checkpoint() is not None:
+                    return
+                if self.path.exists() and self.path.stat().st_size > 0:
+                    raise AuditError(f"{self.path} has records but no checkpoint; not initialising")
+                if not self.path.exists():
+                    os.close(os.open(self.path, os.O_WRONLY | os.O_CREAT, 0o600))
+                self._write_checkpoint(0, GENESIS_PREV_HASH)
+        except AuditError:
+            raise
+        except (OSError, ValueError) as exc:
+            raise AuditError(f"could not initialise the header log {self.path}: {exc}") from exc
 
     def read_checkpoint(self) -> dict | None:
         """The stored head {"count", "record_hash"}, or None if there is no checkpoint file."""
@@ -278,6 +299,8 @@ class HeaderLog:
         if last is None:
             if checkpoint is not None and checkpoint["count"] > 0:
                 raise AuditError(f"{self.path} is empty but its checkpoint records {checkpoint['count']} records")
+            if checkpoint is None:  # a first append to a store that was never initialised: initialise it now
+                self._write_checkpoint(0, GENESIS_PREV_HASH)
             return 0, GENESIS_PREV_HASH
         try:
             head = json.loads(last)
@@ -399,6 +422,14 @@ class AuditLog:
     def in_directory(cls, directory: Path, fsync: bool = True) -> "AuditLog":
         directory = Path(directory)
         return cls(HeaderLog(directory / "headers.jsonl", fsync), PayloadStore(directory / "payloads", fsync))
+
+    def initialise(self) -> None:
+        """Create an empty store (see HeaderLog.initialise) and its payload directory."""
+        self.headers.initialise()
+        try:
+            self.payloads.directory.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise AuditError(f"could not create {self.payloads.directory}: {exc}") from exc
 
     def write(self, header: Mapping[str, object], payload: PayloadRecord) -> None:
         """Payload first, then header, both under the header log's exclusive lock, so a verifier that takes the same

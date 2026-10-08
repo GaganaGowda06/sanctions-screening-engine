@@ -71,9 +71,81 @@ def test_a_clean_chain_passes(log):
     assert (result.records, result.payloads_checked) == (5, 5)
 
 
-def test_an_empty_log_passes(log):
+def test_an_initialised_empty_log_is_clean(log):
+    log.initialise()
     result = verify_chain(log)
     assert result.ok and result.records == 0
+    assert log.headers.read_checkpoint() == {"count": 0, "record_hash": audit.GENESIS_PREV_HASH}
+    assert log.headers.path.read_bytes() == b""
+
+
+def test_initialising_twice_changes_nothing_and_a_used_store_is_left_alone(log):
+    log.initialise()
+    filled(log, 2)
+    before = (log.headers.path.read_bytes(), log.headers.checkpoint_path.read_text())
+    log.initialise()
+    assert (log.headers.path.read_bytes(), log.headers.checkpoint_path.read_text()) == before
+    assert verify_chain(log).ok
+
+
+def test_initialising_refuses_a_log_with_records_and_no_checkpoint(log):
+    filled(log, 2)
+    log.headers.checkpoint_path.unlink()
+    with pytest.raises(AuditError, match="no checkpoint"):
+        log.initialise()
+    assert not log.headers.checkpoint_path.exists()  # nothing was written over the evidence
+
+
+def test_the_first_append_to_a_store_that_was_never_initialised_writes_the_genesis_checkpoint_first(log):
+    add(log, 0)
+    assert verify_chain(log).ok and log.headers.read_checkpoint()["count"] == 1
+    assert log.headers.read_all()[0]["prev_hash"] == audit.GENESIS_PREV_HASH
+
+
+def snapshot(root: Path) -> set[str]:
+    return {str(p.relative_to(root)) for p in root.rglob("*")} if root.exists() else set()
+
+
+def test_verifying_a_nonexistent_path_returns_log_missing_and_creates_nothing(tmp_path):
+    log = AuditLog.in_directory(tmp_path / "nowhere" / "audit", fsync=False)
+    result = verify_chain(log)
+    assert result.kinds() == {"log_missing"} and not result.ok and not result.failures[0].is_crash
+    assert snapshot(tmp_path) == set()  # not even the parent directory
+
+
+def test_verifying_an_existing_empty_directory_returns_log_missing_and_creates_at_most_the_lock_file(tmp_path):
+    (tmp_path / "audit").mkdir()
+    result = verify_chain(AuditLog.in_directory(tmp_path / "audit", fsync=False))
+    assert result.kinds() == {"log_missing"}
+    assert snapshot(tmp_path) <= {"audit", "audit/headers.jsonl.lock"}
+
+
+def test_deleting_the_headers_and_the_checkpoint_returns_log_missing(log):
+    filled(log, 3)
+    log.headers.path.unlink()
+    log.headers.checkpoint_path.unlink()
+    result = verify_chain(log)
+    assert "log_missing" in result.kinds() and not result.ok
+    assert "checkpoint_missing" not in result.kinds()  # one clear finding, not a pile
+
+
+def test_deleting_only_the_headers_is_log_missing_and_truncation(log):
+    filled(log, 3)
+    log.headers.path.unlink()
+    assert verify_chain(log).kinds() >= {"log_missing", "tail_truncated"}
+
+
+def test_an_empty_headers_file_with_no_checkpoint_is_checkpoint_missing(log):
+    log.initialise()
+    log.headers.checkpoint_path.unlink()
+    assert verify_chain(log).kinds() == {"checkpoint_missing"}
+
+
+def test_verifying_does_not_change_an_existing_store(log):
+    filled(log, 3)
+    before = snapshot(log.headers.path.parent)
+    verify_chain(log)
+    assert snapshot(log.headers.path.parent) == before
 
 
 def test_the_first_record_uses_the_genesis_hash_and_each_record_links_to_the_one_before(log):
@@ -418,6 +490,7 @@ def test_parallel_threads_write_one_valid_chain(log):
 
 
 def test_verify_running_alongside_threaded_writers_reports_nothing(log):
+    log.initialise()  # a verifier started before the store exists would rightly report log_missing
     stop = threading.Event()
     results, errors = [], []
 
@@ -465,6 +538,8 @@ def test_verify_running_alongside_writer_processes_reports_no_orphans(tmp_path):
         "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest())\n"
         "    log.write(h, p)\n"
     )
+    log = AuditLog.in_directory(directory, fsync=False)
+    log.initialise()  # a verifier started before the store exists would rightly report log_missing
     procs = [
         subprocess.Popen(
             [sys.executable, "-c", worker, str(w), "40", str(directory)],
@@ -474,7 +549,6 @@ def test_verify_running_alongside_writer_processes_reports_no_orphans(tmp_path):
         )  # fmt: skip
         for w in range(4)
     ]
-    log = AuditLog.in_directory(directory, fsync=False)
     results = []
     while any(p.poll() is None for p in procs):
         results.append(verify_chain(log))
