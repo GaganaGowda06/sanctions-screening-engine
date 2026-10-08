@@ -46,7 +46,9 @@ RESEARCH = {
 }  # fmt: skip
 AUDIT_MODULES = {
     "audit",
+    "audit_drift",
     "audit_metrics",
+    "audit_report",
     "audit_purge",
     "audit_recover",
     "audit_schema",
@@ -155,3 +157,80 @@ def test_research_and_library_modules_write_no_audit_records(name):
 def test_the_production_cli_screens_through_the_audited_engine():
     source = (SRC / "screen_cli.py").read_text()
     assert "audited_screen(" in source and "AuditedEngine" in source
+
+
+# ---------- the deduplication model is outside the decision path ----------
+
+# The trained pair matcher (the "deduplication model"): its model code, its features, its rarity table and the scripts
+# that build or train it. The decision path and the Stage 4 monitoring must not reach any of it.
+DEDUP_MODULES = {
+    "matcher_model", "idf_table", "pair_features", "pairs", "build_idf", "build_pair_features",
+    "build_pair_splits", "clean_pairs", "train_matcher", "train_constrained", "compare_matchers",
+    "evaluate_pairs_final", "diagnose_screening",
+}  # fmt: skip
+DEDUP_DATA_MARKERS = ("deployment_idf", "idf_manifest", "pairs_lr", "data/idf", "data/pairs", "models/")
+MONITORING_RESEARCH = {"list_gate.py", "download_snapshot.py", "f1_provenance.py"}  # Stage 4 gate modules
+
+
+def local_imports(source: str) -> set[str]:
+    """Names of src/ modules a source imports (a top-level or a local import), by AST."""
+    local = {p.stem for p in SRC.glob("*.py")}
+    found = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            found |= {a.name.split(".")[0] for a in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            found.add(node.module.split(".")[0])
+    return found & local
+
+
+def import_closure(start: set[str]) -> dict[str, str]:
+    """Every src module reachable from `start` through local imports, with the module that first reached it."""
+    reached: dict[str, str] = {name: "(start)" for name in start}
+    todo = list(start)
+    while todo:
+        name = todo.pop()
+        for dep in local_imports((SRC / f"{name}.py").read_text(encoding="utf-8")):
+            if dep not in reached:
+                reached[dep] = name
+                todo.append(dep)
+    return reached
+
+
+def decision_path_modules() -> set[str]:
+    return {m[:-3] for m in PRODUCTION | INFRASTRUCTURE | MONITORING_RESEARCH}
+
+
+def test_the_import_checker_follows_chains_and_sees_local_imports():
+    assert "scoring" in import_closure({"screening"})  # screening imports scoring, a direct import
+    assert "candidates" in import_closure({"screening"})  # and scoring imports candidates: two steps
+    assert local_imports("def f():\n    import idf_table") == {"idf_table"}  # an import inside a function counts
+    assert local_imports("import json, os") == set()
+
+
+def test_production_and_monitoring_modules_never_reach_the_deduplication_model():
+    reached = import_closure(decision_path_modules())
+    bad = {m: reached[m] for m in DEDUP_MODULES if m in reached}
+    assert not bad, (
+        f"the decision path or the monitoring imports the deduplication model: {bad} (module: first importer)"
+    )
+
+
+def test_production_and_monitoring_modules_never_name_the_deduplication_models_data():
+    for name in sorted(set(import_closure(decision_path_modules())) - DEDUP_MODULES):
+        text = (SRC / f"{name}.py").read_text(encoding="utf-8")
+        for marker in DEDUP_DATA_MARKERS:
+            assert marker not in text, f"{name}.py names {marker!r}"
+
+
+def test_the_deduplication_check_bites_on_a_planted_import(tmp_path, monkeypatch):
+    import sys
+
+    sys.modules.pop("x", None)
+    planted = tmp_path / "src"
+    planted.mkdir()
+    (planted / "screening.py").write_text("import scoring\n")
+    (planted / "scoring.py").write_text("import idf_table\n")
+    (planted / "idf_table.py").write_text("")
+    monkeypatch.setattr(sys.modules[__name__], "SRC", planted)
+    assert "idf_table" in import_closure({"screening"})

@@ -1,9 +1,11 @@
 """Retention purge: delete payloads whose retention period has ended, and say so in the chain first.
 
-Regulation 40 of the Money Laundering Regulations 2017 requires records to be kept for at least five years, counted
-from the end of the business relationship, and personal data deleted after that. The matcher does not know when a
-relationship ends, so the caller supplies it: a mapping of customer_ref to relationship end date. A timestamp-based
-expiry would delete records of customers who are still customers.
+Regulation 40 of the Money Laundering Regulations 2017 requires records to be kept for five years from the end of the
+business relationship or the completion of an occasional transaction, and personal data deleted after that unless an
+exception applies. The matcher does not know when a relationship ends, so the caller supplies it: a mapping of
+customer_ref to end date (for an occasional transaction, the date it was completed). This code enforces the five-year
+minimum only; it does not apply regulation 40's ten-year cap, and it models the exceptions only through legal holds. A
+timestamp-based expiry would delete records of customers who are still customers.
 
 A decision's payload is eligible when all of these hold:
   - the payload has a customer_ref, and it is in the mapping;
@@ -14,9 +16,11 @@ Never eligible: no customer_ref; a customer_ref not in the mapping (a live custo
 record dated after its customer's end date; a retention period not yet over.
 
 Legal hold. The caller can also pass holds: customer_refs and/or request_ids whose records are never purged, whatever
-their end date. Deleting records that are relevant to an investigation is an offence (regulation 87 of the Money
-Laundering Regulations 2017), so a hold is checked first, before any eligibility rule, and a dry run shows it. The
-hold list is the caller's responsibility: this store cannot know what is relevant to an investigation. A hold also
+their end date. Regulation 87 of the Money Laundering Regulations 2017 makes it an offence to destroy documents
+relevant to an investigation by an appropriate officer (the FCA, HMRC and the like) once the person knows or suspects
+that investigation is under way or proposed, with defences where they do not know or suspect the documents are
+relevant. So a hold is checked first, before any eligibility rule, and a dry run shows it. The hold list is the
+caller's responsibility: this store cannot know that an investigation exists or what is relevant to it. A hold also
 stops the finishing of an interrupted purge for a held record (its file stays and verify_chain keeps reporting
 purge_incomplete until the hold is lifted). A hold on a request that was already purged cannot be honoured; it is
 counted so the caller knows. Holds are not written to the purge record or anywhere else in the chain.

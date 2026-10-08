@@ -355,3 +355,74 @@ def test_cli_report_refuses_without_an_audit_dir_and_for_a_bad_window(world, mon
 def test_the_report_command_is_listed_and_the_module_is_classified():
     parser, _ = screen_cli.build_parser()
     assert "report" in parser.format_help()
+
+
+# ---------- the README summary and the doc say the same things ----------
+
+ROOT = Path(__file__).resolve().parent.parent
+README = ROOT / "README.md"
+DOC = ROOT / "docs" / "stage4_audit_and_monitoring.md"
+
+
+def readme_summary() -> str:
+    text = README.read_text(encoding="utf-8")
+    return text.split("## Stage 4: audit log and monitoring")[1].split("\n## ")[0]
+
+
+def doc_text() -> str:
+    return DOC.read_text(encoding="utf-8")
+
+
+def test_the_readme_summary_links_the_doc_and_is_short():
+    summary = readme_summary()
+    assert "(docs/stage4_audit_and_monitoring.md)" in summary and DOC.is_file()
+    assert 300 <= len(summary.split()) <= 520  # about 400 words
+
+
+def test_the_readme_states_the_gaps_in_the_words_the_report_uses():
+    for text in (readme_summary(), doc_text()):
+        for paragraph in audit_report.LIMITS_PARAGRAPHS[:3]:
+            assert paragraph in text
+
+
+def test_the_readme_what_this_does_not_show_list_is_the_docs_list_unchanged():
+    def listing(text: str) -> str:
+        return text.split("### What this does not show")[1].strip()
+
+    assert listing(readme_summary()) == listing(doc_text())
+
+
+def test_every_number_in_the_readme_summary_appears_in_the_doc():
+    numbers = re.findall(r"\d[\d,]*(?:\.\d+)?", readme_summary())
+    numbers = [n.rstrip(",.") for n in numbers]
+    assert len(numbers) > 15
+    doc = doc_text()
+    missing = [n for n in numbers if n not in doc]
+    assert not missing, missing
+
+
+def test_the_readme_summary_and_the_doc_are_plain_writing():
+    for text in (readme_summary(), doc_text()):
+        assert "\u2014" not in text and "\u2013" not in text
+        for line in text.splitlines():
+            assert not re.fullmatch(r"\s*([-*_=~])(\s*\1){2,}\s*", line), line
+
+
+def test_the_doc_covers_the_required_topics_and_defines_positives_first():
+    doc = doc_text().lower()
+    for topic in ("regulation 40", "regulation 87", "tamper-evident, not tamper-proof", "bonferroni", "two-sample null",
+                  "reverse-time churn test", "deduplication model is outside the decision path", "legal hold",
+                  "`init`", "checkpoint", "replay", "recovery"):  # fmt: skip
+        assert topic in doc, topic
+    first_count = doc.index("2,400")
+    assert (
+        "headline positives" in doc[: first_count + 400] and "all of its positive queries" in doc[: first_count + 400]
+    )
+    assert doc.index("headline positives") < doc.index("1,999")
+
+
+def test_the_regulation_wording_names_the_knowledge_condition_and_both_start_events():
+    doc = doc_text()
+    assert "knows or suspects" in doc and "knows, or has reasonable grounds to believe" in doc
+    assert "occasional transaction" in doc and "business relationship has ended" in doc
+    assert "ten years" in doc and "does not enforce the ten-year cap" in doc

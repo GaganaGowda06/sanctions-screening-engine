@@ -44,8 +44,9 @@ tampering.
 relationship ended. A purge record (request IDs only, no customer_ref, no dates) is chained before any file is deleted.
 Records with no customer_ref, a customer_ref not in the mapping, or a date after their customer's end date are never
 deleted. `--hold FILE` (JSON lines, each a "customer_ref" or a "request_id") puts records under legal hold: never
-purged, whatever their end date, checked first and shown by a dry run. Deleting records relevant to an investigation is
-an offence (MLR 2017 regulation 87) and the hold list is the caller's responsibility. This deletes files only;
+purged, whatever their end date, checked first and shown by a dry run. Destroying documents relevant to an
+investigation that the caller knows or suspects of is an offence (MLR 2017 regulation 87), so the hold list is the
+caller's responsibility. This deletes files only;
 backups and snapshots are outside its reach.
 
 `metrics --from SEQ --to SEQ` writes an aggregate report for a window of records to <audit_dir>/monitoring/: per run

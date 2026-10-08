@@ -1,8 +1,9 @@
 """Audit records: a header that can be kept, and a payload that can be deleted.
 
 Why two parts. An audit record has to answer "why was this name flagged or cleared, under what" by replay, and
-the Money Laundering Regulations 2017 (regulation 40) require records to be kept for at least five years from the
-end of the business relationship and the personal data in them deleted after that. So a record is split:
+the Money Laundering Regulations 2017 (regulation 40) require records to be kept for five years from the end of
+the business relationship or the completion of an occasional transaction, and the personal data in them deleted after
+that unless an exception applies. So a record is split:
 
   header   request ID, UTC time, run context hash, the candidates with numeric scores, the decision and a digest
            of the payload. Nothing in it comes from the customer's name, birth date or country, so it can stay in
