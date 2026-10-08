@@ -67,9 +67,19 @@ Every record has a kind:
 
 Schema note: `request_id` is the record's ID for every kind. Only on a `decision` record is it a screening request; on `engine_start` and `recovery` records it is just the ID of the event.
 
+- `purge`: payloads were deleted at the end of their retention period. It lists the request IDs, the retention period and the basis (`relationship_end_plus_retention`), and nothing else: no customer reference and no dates, because those would link records back to a person.
+
+Retention. Regulation 40 counts the five years from the end of the business relationship, which the matcher does not know, so a timestamp-based expiry would delete records of customers who are still customers. `purge --mapping FILE` takes the caller's mapping of `customer_ref` to relationship end date (JSON lines). A payload is deleted only if it has a `customer_ref` in the mapping, its record is dated on or before that end date, and the end date plus five years is in the past. Records with no `customer_ref`, with a reference not in the mapping, or dated after their customer's end date (a later relationship) are never deleted. The purge record is chained first and the files are deleted after, so a crash in between shows up as `purge_incomplete` and running purge again finishes the job. `verify_chain` treats a missing payload that a purge record covers as purged and any other missing payload as a failure, and `replay` of a purged record says it was purged. `--dry-run` reports the counts and changes nothing.
+
+Legal hold. `purge --hold FILE` takes JSON lines, each with a `customer_ref` or a `request_id`. A held record is never purged, whatever its end date. Holds are checked before every eligibility rule, a dry run shows the held count, and the purge record names no holds and no customer references. They exist because deleting records that are relevant to an investigation is an offence (regulation 87 of the Money Laundering Regulations 2017). The hold list is the caller's responsibility: the store cannot know what is relevant to an investigation. A hold on a request that was already purged cannot bring it back, and is reported.
+
+Dates are UTC. A record's date for the end-date comparison is the UTC date of its timestamp, so a record made late in the evening in another time zone can fall on the other side of an end date.
+
+Purge deletes files only. It is not a secure erase: copies in backups, filesystem snapshots, journals or swap are outside its reach, and production retention has to cover them, for example by encrypting payloads at rest and destroying the keys, or by expiring backups on the same schedule.
+
 `verify_chain` checks the whole store: the hash chain, the checkpoint (which catches deleted tail lines), every payload against its digest, each record against its kind's allowed fields, and payload files that no header points to. It separates tampering from crash damage. The checkpoint is tamper-evident, not tamper-proof: anyone who can rewrite the log can rewrite the checkpoint, and deleting the whole audit directory leaves nothing to compare with. Production would anchor the head outside the machine.
 
-Not built yet: retention purge, batch monitoring and drift reports, and the list-update regression gate.
+Not built yet: batch monitoring and drift reports, and the list-update regression gate.
 
 ## Final results
 

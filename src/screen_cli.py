@@ -10,6 +10,7 @@ Run:
     python src/screen_cli.py screen --batch names.jsonl --audit-dir /var/lib/screening/audit
     python src/screen_cli.py replay REQUEST_ID --audit-dir /var/lib/screening/audit
     python src/screen_cli.py recover --audit-dir /var/lib/screening/audit                 (operator, after a crash)
+    python src/screen_cli.py purge --mapping ended.jsonl --dry-run --audit-dir /var/lib/screening/audit
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
 refuses to start (exit status 2) before it builds the list. Screening never creates the store: "init" does, once, and
@@ -34,6 +35,15 @@ deletes the orphan payload (no decision was made, so there is no basis to keep i
 holding hashes and sizes only. It refuses, changing nothing, for a clean log, more than one orphan, or any sign of
 tampering.
 
+`purge --mapping FILE [--dry-run]` deletes the payloads whose retention period is over. The mapping is JSON lines of
+{"customer_ref": ..., "relationship_end": "YYYY-MM-DD"} from the caller, because only the caller knows when a
+relationship ended. A purge record (request IDs only, no customer_ref, no dates) is chained before any file is deleted.
+Records with no customer_ref, a customer_ref not in the mapping, or a date after their customer's end date are never
+deleted. `--hold FILE` (JSON lines, each a "customer_ref" or a "request_id") puts records under legal hold: never
+purged, whatever their end date, checked first and shown by a dry run. Deleting records relevant to an investigation is
+an offence (MLR 2017 regulation 87) and the hold list is the caller's responsibility. This deletes files only;
+backups and snapshots are outside its reach.
+
 `screen --customer-ref` links the record to a customer (opaque to the matcher; stored in the payload only). Exit
 status is 0 whether or not there are matches. Building the list takes a few seconds on every run.
 """
@@ -41,9 +51,11 @@ status is 0 whether or not there are matches. Building the list takes a few seco
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 from audit import AuditConfigError, AuditError, AuditLog, LogMissingError
+from audit_purge import PurgeRefused, purge
 from audit_recover import RecoveryRefused, recover
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
 from profile_data import DEFAULT_INPUT
@@ -153,6 +165,117 @@ def cmd_replay(args: argparse.Namespace) -> int:
     return 0 if result.identical else 1
 
 
+def read_mapping(source: str) -> dict[str, str]:
+    """A JSON-lines file of {"customer_ref": ..., "relationship_end": "YYYY-MM-DD"}, checked line by line."""
+    mapping: dict[str, str] = {}
+    for number, line in enumerate(Path(source).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            item = json.loads(line)
+        except ValueError as exc:
+            raise ValueError(f"line {number}: not valid JSON ({exc})") from exc
+        if not isinstance(item, dict) or set(item) != {"customer_ref", "relationship_end"}:
+            raise ValueError(f'line {number}: needs exactly "customer_ref" and "relationship_end"')
+        ref, end = item["customer_ref"], item["relationship_end"]
+        if not isinstance(ref, str) or not ref or not isinstance(end, str):
+            raise ValueError(f"line {number}: customer_ref and relationship_end must be strings")
+        if ref in mapping:
+            raise ValueError(f"line {number}: customer_ref appears twice")
+        try:
+            date.fromisoformat(end)
+        except ValueError as exc:
+            raise ValueError(f"line {number}: relationship_end must be YYYY-MM-DD") from exc
+        mapping[ref] = end
+    if not mapping:
+        raise ValueError("the mapping file has no customers")
+    return mapping
+
+
+def read_holds(source: str) -> tuple[set[str], set[str]]:
+    """A JSON-lines file of legal holds: each line has either a "customer_ref" or a "request_id"."""
+    refs: set[str] = set()
+    ids: set[str] = set()
+    for number, line in enumerate(Path(source).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            item = json.loads(line)
+        except ValueError as exc:
+            raise ValueError(f"hold file line {number}: not valid JSON ({exc})") from exc
+        if not isinstance(item, dict) or len(item) != 1 or next(iter(item)) not in ("customer_ref", "request_id"):
+            raise ValueError(f'hold file line {number}: needs exactly one of "customer_ref" or "request_id"')
+        key, value = next(iter(item.items()))
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"hold file line {number}: {key} must be a non-empty string")
+        if key == "request_id":
+            if len(value) != 32 or set(value) - set("0123456789abcdef"):
+                raise ValueError(f"hold file line {number}: request_id must be 32 lowercase hex characters")
+            ids.add(value)
+        else:
+            refs.add(value)
+    if not refs and not ids:
+        raise ValueError("the hold file has no holds")
+    return refs, ids
+
+
+def cmd_purge(args: argparse.Namespace) -> int:
+    """Delete payloads whose retention period (relationship end plus N years) is over. Exit 0 on success."""
+    try:
+        directory = resolve_audit_dir(args.audit_dir)
+        mapping = read_mapping(args.mapping)
+        hold_refs, hold_ids = read_holds(args.hold) if args.hold else (set(), set())
+    except AuditConfigError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    except (ValueError, OSError) as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        result = purge(
+            AuditLog.in_directory(directory),
+            mapping,
+            retention_years=args.retention_years,
+            dry_run=args.dry_run,
+            hold_customer_refs=hold_refs,
+            hold_request_ids=hold_ids,
+        )
+    except ValueError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    except PurgeRefused as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    except AuditError as exc:
+        print(f"purge failed: {exc}", file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    verb = "would purge" if result.dry_run else "purged"
+    print(
+        f"{verb} {result.eligible} payload(s)"
+        + ("" if result.dry_run else f" (purge record {result.record['request_id']})" if result.record else "")
+    )
+    if result.completed:
+        print(
+            f"{'would finish' if result.dry_run else 'finished'} {result.completed} deletion(s) "
+            "left over from an earlier purge"
+        )
+    print(
+        f"skipped: {result.skipped_no_customer_ref} with no customer_ref, "
+        f"{result.skipped_not_in_mapping} not in the mapping (live customers), "
+        f"{result.skipped_later_relationship} dated after their customer's end date (a later relationship), "
+        f"{result.skipped_retention_not_elapsed} whose retention period is not over"
+    )
+    print(f"held (under legal hold, never purged): {result.held}")
+    if result.hold_already_purged:
+        print(
+            f"warning: {result.hold_already_purged} held request(s) had already been purged; "
+            "a hold cannot bring a deleted payload back"
+        )
+    if not result.dry_run:
+        print("note: this deleted files only; copies in backups and snapshots are not touched")
+    return 0
+
+
 def cmd_recover(args: argparse.Namespace) -> int:
     """Recover from a crash during a write. Exit 0 if recovered, 1 if refused or failed."""
     try:
@@ -235,7 +358,7 @@ def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int
 
 def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
-    commands = parser.add_subparsers(dest="command", required=True, metavar="{screen,init,replay,recover}")
+    commands = parser.add_subparsers(dest="command", required=True, metavar="{screen,init,replay,recover,purge}")
     audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
 
     screen_cmd = commands.add_parser("screen", help="screen a name, or a batch of names")
@@ -262,6 +385,19 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         "recover", help="after a crash during a write: quarantine a torn final line and/or delete one orphan payload"
     )
     rec.add_argument("--audit-dir", help=audit_dir_help)
+
+    pur = commands.add_parser(
+        "purge", help="delete payloads whose retention period (relationship end + 5 years) is over"
+    )
+    pur.add_argument("--mapping", required=True, metavar="FILE", help="JSON lines: customer_ref and relationship_end")
+    pur.add_argument("--dry-run", action="store_true", help="report what would be purged; change nothing")
+    pur.add_argument(
+        "--hold",
+        metavar="FILE",
+        help='JSON lines of legal holds, each a "customer_ref" or a "request_id"; held records are never purged',
+    )
+    pur.add_argument("--retention-years", type=int, default=5, help="retention period in years (at least 5)")
+    pur.add_argument("--audit-dir", help=audit_dir_help)
     return parser, screen_cmd
 
 
@@ -274,6 +410,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_replay(args)
     if args.command == "recover":
         return cmd_recover(args)
+    if args.command == "purge":
+        return cmd_purge(args)
     return cmd_screen(args, screen_parser)
 
 

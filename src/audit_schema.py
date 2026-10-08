@@ -14,14 +14,17 @@ Standard library only.
 
 from datetime import datetime, timezone
 
-SCHEMA_VERSION = 2  # written into every header; bump it when a header's fields or meaning change
+SCHEMA_VERSION = 3  # written into every header; bump it when a header's fields or meaning change
 TOP_CANDIDATES = 10
 
 # Every record has a kind. Only decision records have a payload; the others are events about the system itself.
 KIND_DECISION = "decision"  # a name was screened
 KIND_ENGINE_START = "engine_start"  # an engine started under a run context the chain had not seen last
-KIND_RECOVERY = "recovery"  # an operator moved a torn final line out of the log
-KINDS = (KIND_DECISION, KIND_ENGINE_START, KIND_RECOVERY)
+KIND_RECOVERY = "recovery"  # an operator recovered from a crash during a write
+KIND_PURGE = "purge"  # payloads were deleted at the end of their retention period
+KINDS = (KIND_DECISION, KIND_ENGINE_START, KIND_RECOVERY, KIND_PURGE)
+PURGE_BASIS = "relationship_end_plus_retention"
+MIN_RETENTION_YEARS = 5  # regulation 40 of the Money Laundering Regulations 2017
 
 # The only keys a decision header may have. A test checks a built header against this list, so a new field cannot
 # slip in. Each kind has its own list (FIELDS_BY_KIND below); `request_id` is the record's ID for every kind.
@@ -71,10 +74,23 @@ RECOVERY_FIELDS = (
     "orphan_request_id",
     "orphan_payload_sha256",
 )
+# purge: the request IDs whose payloads are deleted, the retention period, and the basis. No customer_ref and no end
+# dates: they would link records back to a person. The record is appended before any file is deleted, so a payload that
+# a purge record covers is gone or about to be.
+PURGE_FIELDS = (
+    "schema_version",
+    "kind",
+    "request_id",
+    "timestamp_utc",
+    "basis",
+    "retention_years",
+    "purged_request_ids",
+)
 FIELDS_BY_KIND = {
     KIND_DECISION: HEADER_FIELDS,
     KIND_ENGINE_START: ENGINE_START_FIELDS,
     KIND_RECOVERY: RECOVERY_FIELDS,
+    KIND_PURGE: PURGE_FIELDS,
 }
 LOGGED_FIELDS_BY_KIND = {kind: fields + CHAIN_FIELDS for kind, fields in FIELDS_BY_KIND.items()}
 CANDIDATE_FIELDS = (
@@ -226,4 +242,19 @@ def build_recovery_header(
         "quarantine_size": quarantine_size,
         "orphan_request_id": orphan_request_id,
         "orphan_payload_sha256": orphan_payload_sha256,
+    }
+
+
+def build_purge_header(
+    *, request_id: str, moment: datetime, retention_years: int, purged_request_ids: list[str]
+) -> dict:
+    """The tombstone for a purge: which payloads are deleted, under what rule. Request IDs only."""
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "kind": KIND_PURGE,
+        "request_id": request_id,
+        "timestamp_utc": utc_timestamp(moment),
+        "basis": PURGE_BASIS,
+        "retention_years": retention_years,
+        "purged_request_ids": sorted(purged_request_ids),
     }

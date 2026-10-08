@@ -3,7 +3,7 @@
     result = replay(engine, request_id)
     result.identical            True only if the recomputed decision matches the record exactly
     result.status               identical | different | refused_context | refused_tampered | not_replayable |
-                                not_a_decision | unknown_request
+                                not_a_decision | purged | unknown_request
     result.differences          field-level differences, one line each (no names, no payload content)
     result.reproduce            for refused_context: the git SHA and snapshot the record was made under
 
@@ -21,7 +21,8 @@ What it does, in order:
 Replay writes nothing: it reads the header log and the payload store, never calls the logging path, and the engine it
 runs on should be built with record_context=False so it does not even write a context file.
 
-Replay of a purged record is impossible by design: the raw input is gone.
+Replay of a purged record is impossible by design: the raw input is gone. It says so (status purged), which is
+different from a payload that is missing without a purge record (not_replayable, a verify_chain failure).
 
 Reproducing a record made under an older context is a manual procedure (the project notes): check out the recorded SHA,
 restore the recorded snapshot, rebuild, then replay.
@@ -42,6 +43,7 @@ REFUSED_TAMPERED = "refused_tampered"
 NOT_REPLAYABLE = "not_replayable"
 UNKNOWN_REQUEST = "unknown_request"
 NOT_A_DECISION = "not_a_decision"
+PURGED = "purged"
 
 
 @dataclass(frozen=True)
@@ -90,12 +92,16 @@ def replay(engine: AuditedEngine, request_id: str) -> ReplayResult:
     except (AuditError, ValueError, KeyError, OSError) as exc:
         return result(REFUSED_TAMPERED, f"the payload cannot be read ({type(exc).__name__})")
     if payload is None:
-        kind = classify_missing_payload(engine.log, request_id)
-        why = "covered by a purge tombstone" if kind == "purged" else "no purge tombstone covers it"
+        if classify_missing_payload(engine.log, request_id) == "purged":
+            return result(
+                PURGED,
+                "the payload was deleted under a purge record at the end of its retention period; the raw input is "
+                "gone by design, so this decision cannot be replayed",
+            )
         return result(
             NOT_REPLAYABLE,
-            f"the payload is gone ({kind}: {why}); the raw input cannot be recovered, so the decision cannot "
-            "be replayed",
+            "the payload is gone (payload_missing: no purge record covers it); the raw input cannot be recovered, "
+            "so the decision cannot be replayed",
         )
     if payload.request_id != request_id or payload.digest() != header.get("payload_digest"):
         return result(REFUSED_TAMPERED, "the payload does not match the digest in its header: it has been changed")

@@ -13,14 +13,16 @@ Failure kinds, split into tampering and crash signatures so a crash is never rep
     broken_link            a record's seq or prev_hash does not follow the record before it (a line was removed,
                            inserted, moved, or an edited record was rehashed)
     payload_digest_mismatch  a stored payload does not match the digest in its header (or cannot be read)
-    payload_missing        a header whose payload file is gone. No purge exists yet; once one does, only payloads
-                           covered by a chained purge tombstone are exempt (step 7)
+    payload_missing        a header whose payload file is gone and that no chained purge record covers. A payload
+                           covered by a purge record is purged, which is normal, not a failure
     tail_truncated         the checkpoint records more records than the log has: the last lines were removed
     checkpoint_mismatch    the checkpoint's hash does not match the record it points at
     checkpoint_missing     the log has records and no checkpoint file
   crash
     torn_final_line        the file ends without a newline: a write was cut short. The line is not counted
     checkpoint_behind      the log is exactly one record ahead of the checkpoint: a crash between the two writes
+    purge_incomplete       a payload file that a chained purge record covers but that is still there: the purge
+                           died between its record and the deletes. Running purge again finishes it
     orphan_payload         a payload file with no header: a crash between the payload write and the header write.
                            It holds personal data that nothing points to.
 
@@ -36,7 +38,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from audit import GENESIS_PREV_HASH, AuditError, AuditLog, compute_record_hash
-from audit_schema import KIND_DECISION, KIND_RECOVERY, LOGGED_FIELDS_BY_KIND
+from audit_schema import (
+    KIND_DECISION,
+    KIND_PURGE,
+    KIND_RECOVERY,
+    LOGGED_FIELDS_BY_KIND,
+    MIN_RETENTION_YEARS,
+    PURGE_BASIS,
+)
 
 TAMPERING = frozenset(
     {
@@ -52,7 +61,7 @@ TAMPERING = frozenset(
         "checkpoint_missing",
     }
 )
-CRASH = frozenset({"torn_final_line", "checkpoint_behind", "orphan_payload"})
+CRASH = frozenset({"torn_final_line", "checkpoint_behind", "orphan_payload", "purge_incomplete"})
 
 
 @dataclass(frozen=True)
@@ -72,6 +81,7 @@ class VerifyResult:
     records: int
     payloads_checked: int
     failures: tuple[Failure, ...] = field(default_factory=tuple)
+    payloads_purged: int = 0  # payloads that are gone and are covered by a purge record
 
     @property
     def tampering(self) -> tuple[Failure, ...]:
@@ -112,6 +122,28 @@ def check_schema(record: dict, seq: int) -> list[Failure]:
         extra, missing = sorted(set(record) - set(allowed)), sorted(set(allowed) - set(record))
         return [Failure("schema_violation", f"record {seq} fields differ: extra {extra}, missing {missing}", seq, rid)]
     return []
+
+
+def check_purge(record: dict, seq: int, decision_seqs: dict[str, int]) -> list[Failure]:
+    """A purge record may only name decision records that come before it in the chain, must say it keeps records at
+    least as long as regulation 40 requires, and must give its basis."""
+    rid = record.get("request_id") if isinstance(record.get("request_id"), str) else None
+    ids = record.get("purged_request_ids")
+    problems = []
+    if record.get("basis") != PURGE_BASIS:
+        problems.append(f"basis is {record.get('basis')!r}")
+    years = record.get("retention_years")
+    if not isinstance(years, int) or isinstance(years, bool) or years < MIN_RETENTION_YEARS:
+        problems.append(f"retention_years {years!r} is below the minimum of {MIN_RETENTION_YEARS}")
+    if not isinstance(ids, list) or not all(isinstance(i, str) for i in ids):
+        problems.append("purged_request_ids is not a list of request IDs")
+    else:
+        unknown = [i for i in ids if decision_seqs.get(i, seq) >= seq]
+        if unknown:
+            problems.append(f"{len(unknown)} purged ID(s) are not decision records earlier in the chain")
+        if len(set(ids)) != len(ids):
+            problems.append("purged_request_ids repeats an ID")
+    return [Failure("schema_violation", f"record {seq}: {'; '.join(problems)}", seq, rid)] if problems else []
 
 
 def check_recovery(record: dict, seq: int, directory: Path) -> list[Failure]:
@@ -166,6 +198,8 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
         failures.append(Failure("torn_final_line", f"{len(torn)} bytes after the last newline, not counted"))
 
     records: list[dict] = []
+    decision_seqs: dict[str, int] = {}
+    purged_ids: set[str] = set()
     expected_prev: str | None = GENESIS_PREV_HASH
     for i, line in enumerate(lines):
         try:
@@ -190,6 +224,12 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
                 Failure("broken_link", f"record {i} does not follow the record before it", i, record.get("request_id"))
             )
         failures += check_schema(record, i)
+        if record.get("kind") == KIND_DECISION and isinstance(record.get("request_id"), str):
+            decision_seqs.setdefault(record["request_id"], i)
+        if record.get("kind") == KIND_PURGE:
+            failures += check_purge(record, i, decision_seqs)
+            if isinstance(record.get("purged_request_ids"), list):
+                purged_ids.update(i for i in record["purged_request_ids"] if isinstance(i, str))
         if record.get("kind") == KIND_RECOVERY:
             failures += check_recovery(record, i, headers.path.parent / "quarantine")
         expected_prev = record.get("record_hash")
@@ -224,7 +264,7 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
 
     decisions = [r for r in records if r.get("kind") == KIND_DECISION]  # only decisions have payloads
     request_ids = {r.get("request_id") for r in decisions}
-    checked = 0
+    checked = purged = 0
     for r in decisions:
         rid = r.get("request_id")
         if not isinstance(rid, str):
@@ -237,6 +277,19 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
                     "payload_digest_mismatch", f"the payload cannot be read ({type(exc).__name__})", r.get("seq"), rid
                 )
             )
+            continue
+        if rid in purged_ids:
+            if payload is None:
+                purged += 1
+            else:
+                failures.append(
+                    Failure(
+                        "purge_incomplete",
+                        "a purge record covers this payload but the file is still there",
+                        r.get("seq"),
+                        rid,
+                    )
+                )
             continue
         if payload is None:
             failures.append(Failure("payload_missing", "the header's payload file is gone", r.get("seq"), rid))
@@ -256,11 +309,13 @@ def _verify_locked(log: AuditLog) -> VerifyResult:
                 continue
             failures.append(Failure("orphan_payload", f"{path.name}: no header points to it", request_id=path.stem))
 
-    return VerifyResult(len(records), checked, tuple(failures))
+    return VerifyResult(len(records), checked, tuple(failures), purged)
 
 
 def classify_missing_payload(log: AuditLog, request_id: str) -> str:
-    """Why a record's payload is not there, using verify_chain's classification: "purged" for a payload covered by a
-    chained purge tombstone, otherwise "payload_missing", the tampering-class failure verify_chain reports. No purge
-    exists yet, so no tombstone can, and the answer is always "payload_missing" (step 7 adds the tombstone check)."""
+    """Why a record's payload is not there, by verify_chain's own rule: "purged" if a chained purge record covers the
+    request, otherwise "payload_missing", the tampering-class failure verify_chain reports."""
+    for record in log.headers.read_all():
+        if record.get("kind") == KIND_PURGE and request_id in (record.get("purged_request_ids") or []):
+            return "purged"
     return "payload_missing"
