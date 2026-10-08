@@ -79,6 +79,17 @@ class AuditError(RuntimeError):
     """A record could not be written. The screening call that needed it must fail."""
 
 
+class LogMissingError(AuditError):
+    """The audit store does not exist or is incomplete. Nothing is screened and nothing is created."""
+
+
+INIT_COMMAND = "python src/screen_cli.py init --audit-dir"
+
+
+class AuditConfigError(AuditError):
+    """The audit store is not configured. A production entry point refuses to start."""
+
+
 def canonical_json(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
 
@@ -230,23 +241,35 @@ class HeaderLog:
         finally:
             os.close(fd)  # closing releases the lock
 
-    def initialise(self) -> None:
-        """Make an empty store: the directory, an empty headers file and the genesis checkpoint (count 0, the
-        genesis hash). Does nothing to a store that already exists. Refuses a headers file that has records but no
-        checkpoint, because writing a genesis checkpoint over it would hide that the checkpoint was deleted."""
+    def require_initialised(self) -> None:
+        """Raise LogMissingError unless the directory, the headers file and the checkpoint all exist. Creates
+        nothing. A screening run that finds the store missing refuses rather than starting a fresh one, because a
+        wiped trail and a new deployment look the same from here."""
+        directory = self.path.parent
+        missing = (
+            "the directory does not exist"
+            if not directory.is_dir()
+            else "the headers file does not exist"
+            if not self.path.exists()
+            else "the checkpoint does not exist"
+            if not self.checkpoint_path.exists()
+            else None
+        )
+        if missing:
+            raise LogMissingError(
+                f"log_missing: the audit store at {directory} is not there ({missing}). Screening will not start a "
+                f"new one. If this is a new deployment, create it with: {INIT_COMMAND} {directory}. If it is not, "
+                "the audit trail has been lost: investigate before anything else."
+            )
+
+    def create_genesis(self) -> None:
+        """Make an empty store: an empty headers file (exclusive create) and the genesis checkpoint (count 0, the
+        genesis hash). Called only by AuditLog.create_new()."""
         try:
-            with self.locked():
-                if self.read_checkpoint() is not None:
-                    return
-                if self.path.exists() and self.path.stat().st_size > 0:
-                    raise AuditError(f"{self.path} has records but no checkpoint; not initialising")
-                if not self.path.exists():
-                    os.close(os.open(self.path, os.O_WRONLY | os.O_CREAT, 0o600))
-                self._write_checkpoint(0, GENESIS_PREV_HASH)
-        except AuditError:
-            raise
-        except (OSError, ValueError) as exc:
-            raise AuditError(f"could not initialise the header log {self.path}: {exc}") from exc
+            os.close(os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600))
+            self._write_checkpoint(0, GENESIS_PREV_HASH)
+        except OSError as exc:
+            raise AuditError(f"could not create the header log {self.path}: {exc}") from exc
 
     def read_checkpoint(self) -> dict | None:
         """The stored head {"count", "record_hash"}, or None if there is no checkpoint file."""
@@ -299,8 +322,8 @@ class HeaderLog:
         if last is None:
             if checkpoint is not None and checkpoint["count"] > 0:
                 raise AuditError(f"{self.path} is empty but its checkpoint records {checkpoint['count']} records")
-            if checkpoint is None:  # a first append to a store that was never initialised: initialise it now
-                self._write_checkpoint(0, GENESIS_PREV_HASH)
+            if checkpoint is None:
+                raise LogMissingError(f"log_missing: {self.checkpoint_path} does not exist; not appending")
             return 0, GENESIS_PREV_HASH
         try:
             head = json.loads(last)
@@ -328,7 +351,8 @@ class HeaderLog:
     def append(self, header: Mapping[str, object]) -> dict:
         """Chain and append a header, taking the lock. Returns the record as written. Raises AuditError."""
         try:
-            with self.locked():
+            self.require_initialised()
+            with self.locked(create_directory=False):
                 return self.append_locked(header)
         except AuditError:
             raise
@@ -341,6 +365,7 @@ class HeaderLog:
         clash = set(CHAIN_FIELDS) & set(header)
         if clash:
             raise AuditError(f"a header to append must not carry {sorted(clash)}")
+        self.require_initialised()  # again, under the lock: the store may have been wiped since the first check
         try:
             seq, prev_hash = self._next_link()
             record = {**header, "seq": seq, "prev_hash": prev_hash}
@@ -423,20 +448,33 @@ class AuditLog:
         directory = Path(directory)
         return cls(HeaderLog(directory / "headers.jsonl", fsync), PayloadStore(directory / "payloads", fsync))
 
-    def initialise(self) -> None:
-        """Create an empty store (see HeaderLog.initialise) and its payload directory."""
-        self.headers.initialise()
+    @classmethod
+    def create_new(cls, directory: Path, fsync: bool = True) -> "AuditLog":
+        """Create a new, empty store: the directory, an empty headers file, the genesis checkpoint and the payload
+        directory. Refuses if the directory already exists and is not empty. This is the only way a store is made;
+        screening never makes one."""
+        directory = Path(directory)
         try:
-            self.payloads.directory.mkdir(parents=True, exist_ok=True)
+            if directory.exists() and (not directory.is_dir() or any(directory.iterdir())):
+                raise AuditError(f"{directory} already exists and is not empty; refusing to initialise it")
+            directory.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            raise AuditError(f"could not create {self.payloads.directory}: {exc}") from exc
+            raise AuditError(f"could not create {directory}: {exc}") from exc
+        log = cls.in_directory(directory, fsync)
+        log.headers.create_genesis()
+        try:
+            log.payloads.directory.mkdir()
+        except OSError as exc:
+            raise AuditError(f"could not create {log.payloads.directory}: {exc}") from exc
+        return log
 
     def write(self, header: Mapping[str, object], payload: PayloadRecord) -> None:
         """Payload first, then header, both under the header log's exclusive lock, so a verifier that takes the same
         lock never sees a payload whose header is still to come. If the header cannot be written the payload is
         removed again. After a crash between the two writes an orphan payload can remain; verify_chain reports it."""
+        self.headers.require_initialised()
         try:
-            with self.headers.locked():
+            with self.headers.locked(create_directory=False):
                 self.payloads.write(payload)
                 try:
                     self.headers.append_locked(header)

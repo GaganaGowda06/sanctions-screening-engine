@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 import audit
-from audit import AuditError, AuditLog, HeaderLog, PayloadRecord, PayloadStore
+from audit import AuditError, AuditLog, PayloadRecord, PayloadStore
 
 SRC = Path(audit.__file__).resolve().parent
 MOMENT = datetime(2026, 10, 7, 12, 30, 15, 123456, tzinfo=timezone.utc)
@@ -173,7 +173,8 @@ def test_header_has_the_timestamp_and_no_retention_date():
 
 
 def test_header_log_appends_one_line_per_header_and_never_rewrites(tmp_path):
-    log = HeaderLog(tmp_path / "headers.jsonl")
+    log = AuditLog.create_new(tmp_path / "store").headers
+    tmp_path = tmp_path / "store"
     first, second = header_for([entry("e1", 0.9)]), header_for([entry("e2", 0.5)])
     log.append(first)
     before = (tmp_path / "headers.jsonl").read_bytes()
@@ -189,9 +190,9 @@ def test_header_log_appends_one_line_per_header_and_never_rewrites(tmp_path):
 def test_header_log_failure_raises_audit_error(tmp_path):
     (tmp_path / "blocker").write_text("a file, not a directory")
     with pytest.raises(AuditError):
-        HeaderLog(tmp_path / "blocker" / "headers.jsonl").append({"a": 1})
+        audit.HeaderLog(tmp_path / "blocker" / "headers.jsonl").append({"a": 1})
     with pytest.raises(AuditError):
-        HeaderLog(tmp_path / "h.jsonl").append({"a": float("nan")})
+        AuditLog.create_new(tmp_path / "store").headers.append({"a": float("nan")})
 
 
 # ---------- the payload store ----------
@@ -227,8 +228,9 @@ def test_payload_write_failure_raises_audit_error(tmp_path):
 
 
 def test_audit_log_removes_the_payload_if_the_header_cannot_be_written(tmp_path):
-    log = AuditLog.in_directory(tmp_path)
-    (tmp_path / "headers.jsonl").mkdir()  # a directory where the log file should be
+    log = AuditLog.create_new(tmp_path / "store")
+    (tmp_path / "store" / "headers.jsonl").unlink()
+    (tmp_path / "store" / "headers.jsonl").mkdir()  # a directory where the log file should be
     record = PayloadRecord("b" * 32, b"s" * 32, {"x": 1})
     with pytest.raises(AuditError):
         log.write({"request_id": "b" * 32}, record)
@@ -236,7 +238,8 @@ def test_audit_log_removes_the_payload_if_the_header_cannot_be_written(tmp_path)
 
 
 def test_audit_log_writes_both_when_it_can(tmp_path):
-    log = AuditLog.in_directory(tmp_path)
+    log = AuditLog.create_new(tmp_path / "store")
+    tmp_path = tmp_path / "store"
     record = PayloadRecord("b" * 32, b"s" * 32, {"x": 1})
     header = header_for([entry("e1", 0.9)])
     log.write(header, record)

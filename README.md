@@ -44,9 +44,13 @@ The alert threshold is one global value, 0.86, set in `src/screening_config.json
 The same function is available from the command line:
 
 ```
-python src/screen_cli.py "Vladimir Putin" --birth-date 1952-10-07 --country ru
-python src/screen_cli.py "محمد علي" --json --limit 5
+python src/screen_cli.py init --audit-dir /path/to/audit
+python src/screen_cli.py "Vladimir Putin" --birth-date 1952-10-07 --country ru --audit-dir /path/to/audit
+python src/screen_cli.py "محمد علي" --json --limit 5 --customer-ref cust-123 --audit-dir /path/to/audit
+python src/screen_cli.py --batch names.jsonl --audit-dir /path/to/audit
 ```
+
+The command line is the production entry point, so it is audited: each name's record is written before its decision is printed, and if a record cannot be written the command prints no decision and exits non-zero. The audit directory comes from `--audit-dir` or `$SCREENING_AUDIT_DIR`; there is no default, and the command refuses to start without one. `init` creates the store once and refuses a directory that is not empty; screening never creates it, and a missing or wiped store stops screening with `log_missing` rather than starting a new one. `screen()` itself is unchanged and is what the evaluation scripts use, so evaluation runs write no audit records.
 
 ## Final results
 

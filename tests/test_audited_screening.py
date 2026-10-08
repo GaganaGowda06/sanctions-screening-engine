@@ -59,7 +59,7 @@ def make_engine(tmp_path, entities=ENTITIES, config=None, **kwargs) -> AuditedEn
         engine, write_list(tmp_path / "list"), git=lambda: ("a" * 40, False), versions=lambda: {"rapidfuzz": "3.14.6"}
     )
     kwargs.setdefault("clock", CLOCK)
-    return AuditedEngine(engine, context, AuditLog.in_directory(tmp_path / "audit", fsync=False), **kwargs)
+    return AuditedEngine(engine, context, AuditLog.create_new(tmp_path / "audit", fsync=False), **kwargs)
 
 
 def string_leaves(value):
@@ -80,7 +80,7 @@ def string_leaves(value):
 def test_audited_screen_gives_the_same_matches_as_screen(tmp_path, name, birth_date, country):
     audited = make_engine(tmp_path)
     plain = audited.engine.screen(name, birth_date, country)
-    result = audited.screen(name, birth_date, country)
+    result = audited.audited_screen(name, birth_date, country)
     assert result.matches == plain
     assert [m.score for m in result.matches] == [m.score for m in plain]
 
@@ -89,7 +89,7 @@ def test_decisions_agree_and_some_queries_alert_and_some_clear(tmp_path):
     audited = make_engine(tmp_path)
     decisions = []
     for name, birth_date, country in QUERIES:
-        result = audited.screen(name, birth_date, country)
+        result = audited.audited_screen(name, birth_date, country)
         header = audited.log.headers.read_all()[-1]
         assert header["request_id"] == result.request_id
         assert header["decision"] == ("alert" if result.matches else "clear")
@@ -103,7 +103,7 @@ def test_components_is_called_exactly_once_per_screen(tmp_path):
     screener, calls = audited.engine.screener, []
     original = screener.components
     screener.components = lambda *a, **k: calls.append(1) or original(*a, **k)
-    audited.screen("Mohammed Ali Hassan", "1970-01-01", "iq")
+    audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq")
     assert len(calls) == 1
 
 
@@ -112,8 +112,8 @@ def test_the_threshold_is_the_one_for_the_query_script(tmp_path):
         thresholds={"Latin": 0.80, "Cyrillic": 0.88, "Arabic": 0.91, "other": 0.86}, per_script=True
     )
     audited = make_engine(tmp_path, config=config)
-    audited.screen("Mohammed Ali Hassan")
-    audited.screen("محمد علي حسن")
+    audited.audited_screen("Mohammed Ali Hassan")
+    audited.audited_screen("محمد علي حسن")
     latin, arabic = audited.log.headers.read_all()
     assert latin["threshold"] == 0.80 and arabic["threshold"] == 0.91
 
@@ -131,13 +131,16 @@ def forbidden_strings(name, birth_date, country, normalised, payload):
 @pytest.mark.parametrize(("name", "birth_date", "country"), [q for q in QUERIES if q[0]])
 def test_the_header_contains_nothing_derived_from_the_name_birth_date_or_country(tmp_path, name, birth_date, country):
     audited = make_engine(tmp_path)
-    result = audited.screen(name, birth_date, country)
+    result = audited.audited_screen(name, birth_date, country)
     header = audited.log.headers.read_all()[-1]
     payload = audited.log.payloads.read(result.request_id).data
     forbidden = forbidden_strings(name, birth_date, country, payload["normalised"], payload)
     assert forbidden, "the payload should hold the name-derived strings"
     assert set(header) == set(audit.LOGGED_HEADER_FIELDS)  # the log writes keys sorted, and adds the chain fields
-    text = json.dumps(header, ensure_ascii=False).lower()
+    random_hex = {"request_id", "run_context_hash", "payload_digest", "prev_hash", "record_hash"}
+    # the substring scan skips the hex fields: a short digit string such as a year can occur inside a random hash by
+    # chance. Those fields are still checked leaf by leaf below.
+    text = json.dumps({k: v for k, v in header.items() if k not in random_hex}, ensure_ascii=False).lower()
     for leaf in string_leaves(header):
         assert leaf not in forbidden, leaf
         assert leaf.lower() not in {f.lower() for f in forbidden}, leaf
@@ -149,7 +152,7 @@ def test_the_header_contains_nothing_derived_from_the_name_birth_date_or_country
 
 def test_the_payload_holds_the_name_derived_fields(tmp_path):
     audited = make_engine(tmp_path)
-    result = audited.screen("Muhammad Ali Hasan", "1970-01-01", "iq")
+    result = audited.audited_screen("Muhammad Ali Hasan", "1970-01-01", "iq")
     data = audited.log.payloads.read(result.request_id).data
     assert data["raw_input"] == {"name": "Muhammad Ali Hasan", "birth_date": "1970-01-01", "country": "iq"}
     assert data["query_script"] == "Latin"
@@ -161,7 +164,7 @@ def test_the_payload_holds_the_name_derived_fields(tmp_path):
 
 def test_header_digest_matches_the_stored_payload(tmp_path):
     audited = make_engine(tmp_path)
-    result = audited.screen("Mohammed Ali Hassan", "1970-01-01", "iq")
+    result = audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq")
     header = audited.log.headers.read_all()[-1]
     record = audited.log.payloads.read(result.request_id)
     assert record.digest() == header["payload_digest"]
@@ -170,8 +173,8 @@ def test_header_digest_matches_the_stored_payload(tmp_path):
 
 def test_the_same_query_twice_gives_different_salts_and_digests_but_the_same_scores(tmp_path):
     audited = make_engine(tmp_path)
-    a = audited.screen("Mohammed Ali Hassan")
-    b = audited.screen("Mohammed Ali Hassan")
+    a = audited.audited_screen("Mohammed Ali Hassan")
+    b = audited.audited_screen("Mohammed Ali Hassan")
     ha, hb = audited.log.headers.read_all()
     assert a.request_id != b.request_id
     assert audited.log.payloads.read(a.request_id).salt != audited.log.payloads.read(b.request_id).salt
@@ -181,7 +184,7 @@ def test_the_same_query_twice_gives_different_salts_and_digests_but_the_same_sco
 
 def test_the_clear_header_still_logs_candidates(tmp_path):
     audited = make_engine(tmp_path)
-    audited.screen("Ivan Hassan")
+    audited.audited_screen("Ivan Hassan")
     header = audited.log.headers.read_all()[-1]
     assert header["candidates_scored"] >= 1 and len(header["candidates"]) >= 1
     assert all(c["at_or_above_threshold"] is False for c in header["candidates"]) or header["decision"] == "alert"
@@ -189,7 +192,7 @@ def test_the_clear_header_still_logs_candidates(tmp_path):
 
 def test_the_header_candidates_carry_numeric_scores_and_the_matched_entity(tmp_path):
     audited = make_engine(tmp_path)
-    audited.screen("Mohammed Ali Hassan", "1970-01-01", "iq")
+    audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq")
     header = audited.log.headers.read_all()[-1]
     top = header["candidates"][0]
     assert top["entity_id"] == "e1" == header["matched_entity_id"]
@@ -202,7 +205,7 @@ def test_all_hits_are_logged_even_past_the_top_ten(tmp_path):
     many = [{"id": f"h{i:02d}", "names": ["Mohammed Ali Hassan"]} for i in range(15)]
     many += [{"id": f"l{i:02d}", "names": [f"Mohammed Ali Zzz{i}qq"]} for i in range(25)]
     audited = make_engine(tmp_path, entities=many)
-    result = audited.screen("Mohammed Ali Hassan")
+    result = audited.audited_screen("Mohammed Ali Hassan")
     header = audited.log.headers.read_all()[-1]
     assert len(result.matches) == 15
     assert header["matched_entity_ids"] == sorted(header["matched_entity_ids"])
@@ -214,7 +217,7 @@ def test_all_hits_are_logged_even_past_the_top_ten(tmp_path):
 def test_only_ten_are_logged_when_nothing_reaches_the_threshold(tmp_path):
     many = [{"id": f"l{i:02d}", "names": [f"Mohammed Ali Zzz{i}qq"]} for i in range(30)]
     audited = make_engine(tmp_path, entities=many)
-    result = audited.screen("Mohammed Ali Hassan")
+    result = audited.audited_screen("Mohammed Ali Hassan")
     header = audited.log.headers.read_all()[-1]
     assert result.matches == [] and header["decision"] == "clear"
     assert header["candidates_scored"] >= 11
@@ -223,7 +226,7 @@ def test_only_ten_are_logged_when_nothing_reaches_the_threshold(tmp_path):
 
 def test_the_timestamp_uses_the_injected_clock_and_there_is_no_retention_date(tmp_path):
     audited = make_engine(tmp_path)
-    audited.screen("Ivan Petrov")
+    audited.audited_screen("Ivan Petrov")
     header = audited.log.headers.read_all()[-1]
     assert header["timestamp_utc"] == "2026-10-07T12:00:00.000000+00:00"
     assert "retention_until" not in header
@@ -231,7 +234,7 @@ def test_the_timestamp_uses_the_injected_clock_and_there_is_no_retention_date(tm
 
 def test_customer_ref_is_in_the_payload_only(tmp_path):
     audited = make_engine(tmp_path)
-    result = audited.screen("Mohammed Ali Hassan", "1970-01-01", "iq", customer_ref="cust-7f3a9")
+    result = audited.audited_screen("Mohammed Ali Hassan", "1970-01-01", "iq", customer_ref="cust-7f3a9")
     header = audited.log.headers.read_all()[-1]
     assert audited.log.payloads.read(result.request_id).data["customer_ref"] == "cust-7f3a9"
     assert "cust-7f3a9" not in json.dumps(header) and "customer_ref" not in header
@@ -239,10 +242,10 @@ def test_customer_ref_is_in_the_payload_only(tmp_path):
 
 def test_customer_ref_is_optional_and_must_be_a_string(tmp_path):
     audited = make_engine(tmp_path)
-    result = audited.screen("Ivan Petrov")
+    result = audited.audited_screen("Ivan Petrov")
     assert audited.log.payloads.read(result.request_id).data["customer_ref"] is None
     with pytest.raises(ValueError):
-        audited.screen("Ivan Petrov", customer_ref=12345)  # type: ignore[arg-type]
+        audited.audited_screen("Ivan Petrov", customer_ref=12345)  # type: ignore[arg-type]
     assert len(audited.log.headers.read_all()) == 1  # the refused call wrote nothing
 
 
@@ -257,7 +260,7 @@ def test_the_header_carries_the_hash_of_the_context_the_engine_holds(tmp_path, m
 
     monkeypatch.setattr(asc, "build_run_context", boom)
     monkeypatch.setattr(rc, "build_run_context", boom)
-    audited.screen("Ivan Petrov")
+    audited.audited_screen("Ivan Petrov")
     assert (
         audited.log.headers.read_all()[-1]["run_context_hash"]
         == audited.run_context.context_hash
@@ -269,7 +272,7 @@ def test_the_header_carries_the_hash_of_the_context_the_engine_holds(tmp_path, m
 def test_the_held_hash_does_not_change_when_a_source_file_would(tmp_path):
     audited = make_engine(tmp_path)
     first = audited.context_hash
-    audited.screen("Ivan Petrov")
+    audited.audited_screen("Ivan Petrov")
     assert audited.log.headers.read_all()[-1]["run_context_hash"] == first
 
 
@@ -278,27 +281,27 @@ def test_the_held_hash_does_not_change_when_a_source_file_would(tmp_path):
 
 def test_a_header_write_failure_fails_the_call_and_leaves_no_payload(tmp_path):
     audited = make_engine(tmp_path)
-    (tmp_path / "audit").mkdir(exist_ok=True)
+    (tmp_path / "audit" / "headers.jsonl").unlink()
     (tmp_path / "audit" / "headers.jsonl").mkdir()  # a directory where the log file should be
     with pytest.raises(AuditError):
-        audited.screen("Mohammed Ali Hassan")
+        audited.audited_screen("Mohammed Ali Hassan")
     payloads = tmp_path / "audit" / "payloads"
     assert not payloads.exists() or not list(payloads.iterdir())
 
 
 def test_a_payload_write_failure_fails_the_call_and_writes_no_header(tmp_path):
     audited = make_engine(tmp_path)
-    (tmp_path / "audit").mkdir(exist_ok=True)
+    (tmp_path / "audit" / "payloads").rmdir()
     (tmp_path / "audit" / "payloads").write_text("a file where the store directory should be")
     with pytest.raises(AuditError):
-        audited.screen("Mohammed Ali Hassan")
+        audited.audited_screen("Mohammed Ali Hassan")
     assert audited.log.headers.read_all() == []
 
 
 def test_an_unencodable_name_fails_the_call(tmp_path):
     audited = make_engine(tmp_path)
     with pytest.raises(AuditError):
-        audited.screen("bad \ud800 name")
+        audited.audited_screen("bad \ud800 name")
     assert audited.log.headers.read_all() == []
 
 
@@ -330,12 +333,13 @@ def holdout_queries(sample: int | None) -> list[tuple[str, dict]]:
 
 
 def check_equivalence(tmp_path, queries: list[tuple[str, dict]]) -> tuple[int, int]:
+    AuditLog.create_new(tmp_path / "audit", fsync=False)
     audited = AuditedEngine.from_file(REAL_LIST, tmp_path / "audit", clock=CLOCK)
     audited.log.headers.fsync = audited.log.payloads.fsync = False  # speed only
     alerts = 0
     for holdout, q in queries:
         plain = audited.engine.screen(q["name"], q["dob"], q["country"])
-        result = audited.screen(q["name"], q["dob"], q["country"])
+        result = audited.audited_screen(q["name"], q["dob"], q["country"])
         assert result.matches == plain, (holdout, q["name"])
         assert [(m.entity_id, m.score) for m in result.matches] == [(m.entity_id, m.score) for m in plain]
         with open(audited.log.headers.path, "rb") as fh:

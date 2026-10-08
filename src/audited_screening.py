@@ -5,7 +5,7 @@
     result.matches       # the same ScreenMatch list that screening.screen() returns
     result.request_id    # key of the header (audit/headers.jsonl) and of the payload (audit/payloads/<id>.json)
 
-screening.py is a Stage 2 file and does not change, so this lives beside it. AuditedEngine.screen() calls the
+screening.py is a Stage 2 file and does not change, so this lives beside it. AuditedEngine.audited_screen() calls the
 screener's components() exactly once, applies config.threshold_for(script) itself, builds the matches the way
 ScreeningEngine.screen() does, and builds the audit header and payload from that same result. An equivalence test
 runs both on every query of the three hold-outs and compares entity IDs, scores and decisions.
@@ -30,6 +30,7 @@ from pathlib import Path
 
 from audit import (
     TOP_CANDIDATES,
+    AuditConfigError,
     AuditError,
     AuditLog,
     PayloadRecord,
@@ -54,15 +55,23 @@ from screening import (
     score_components,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
 AUDIT_DIR_ENV = "SCREENING_AUDIT_DIR"
-DEFAULT_AUDIT_DIR = ROOT / "audit"  # git-ignored: the payloads hold personal data
 
 
 @dataclass(frozen=True)
 class AuditedResult:
     request_id: str
     matches: list[ScreenMatch]
+
+
+def resolve_audit_dir(setting: str | Path | None = None) -> Path:
+    """The audit directory: the explicit setting (a CLI flag), else $SCREENING_AUDIT_DIR. There is no default,
+    because the payloads hold personal data and a silent default would put them somewhere nobody chose. Raises
+    AuditConfigError if neither is set."""
+    chosen = setting or os.environ.get(AUDIT_DIR_ENV)
+    if not chosen:
+        raise AuditConfigError(f"no audit directory: pass one explicitly or set ${AUDIT_DIR_ENV}")
+    return Path(chosen)
 
 
 def utc_now() -> datetime:
@@ -92,15 +101,19 @@ class AuditedEngine:
     def from_file(
         cls,
         path: Path = DEFAULT_INPUT,
-        audit_dir: Path | None = None,
+        audit_dir: Path | str | None = None,
         config: ScreeningConfig | None = None,
+        fsync: bool = True,
         **kwargs: object,
     ) -> "AuditedEngine":
+        """Build from a list file. `audit_dir` is resolved by resolve_audit_dir() before the list is read, so a
+        missing setting fails at once. The store must already exist (AuditLog.create_new): none is made here."""
+        log = AuditLog.in_directory(resolve_audit_dir(audit_dir), fsync=fsync)
+        log.headers.require_initialised()  # before the slow list build: a missing store fails at once
         engine = ScreeningEngine.from_file(path, config)
-        log = AuditLog.in_directory(audit_dir or Path(os.environ.get(AUDIT_DIR_ENV, DEFAULT_AUDIT_DIR)))
         return cls(engine, build_run_context(engine, path), log, **kwargs)  # type: ignore[arg-type]
 
-    def screen(
+    def audited_screen(
         self,
         name: str,
         birth_date: str | None = None,
@@ -156,7 +169,7 @@ _audited: AuditedEngine | None = None
 
 def get_audited_engine() -> AuditedEngine:
     """The shared audited engine over the downloaded list, built on first use (a few seconds). The audit directory
-    is $SCREENING_AUDIT_DIR, or audit/ in the project."""
+    is $SCREENING_AUDIT_DIR and must be set: there is no default."""
     global _audited
     if _audited is None:
         _audited = AuditedEngine.from_file()
@@ -170,4 +183,4 @@ def audited_screen(
 
     customer_ref is an optional opaque string from the caller that links the record to a customer. It goes in the
     payload only. A later purge needs it, because the retention period runs from the end of the relationship."""
-    return get_audited_engine().screen(name, birth_date, country, customer_ref)
+    return get_audited_engine().audited_screen(name, birth_date, country, customer_ref)

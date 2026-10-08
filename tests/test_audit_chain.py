@@ -35,7 +35,7 @@ def add(log: AuditLog, i: int) -> str:
 
 @pytest.fixture
 def log(tmp_path) -> AuditLog:
-    return AuditLog.in_directory(tmp_path / "audit", fsync=False)
+    return AuditLog.create_new(tmp_path / "audit", fsync=False)
 
 
 def filled(log: AuditLog, n: int = 5) -> AuditLog:
@@ -72,34 +72,65 @@ def test_a_clean_chain_passes(log):
 
 
 def test_an_initialised_empty_log_is_clean(log):
-    log.initialise()
     result = verify_chain(log)
     assert result.ok and result.records == 0
     assert log.headers.read_checkpoint() == {"count": 0, "record_hash": audit.GENESIS_PREV_HASH}
-    assert log.headers.path.read_bytes() == b""
+    assert log.headers.path.read_bytes() == b"" and log.payloads.directory.is_dir()
 
 
-def test_initialising_twice_changes_nothing_and_a_used_store_is_left_alone(log):
-    log.initialise()
+def test_create_new_refuses_a_directory_that_exists_and_is_not_empty(log):
+    before = snapshot(log.headers.path.parent)
+    with pytest.raises(AuditError, match="not empty"):
+        AuditLog.create_new(log.headers.path.parent)
     filled(log, 2)
-    before = (log.headers.path.read_bytes(), log.headers.checkpoint_path.read_text())
-    log.initialise()
-    assert (log.headers.path.read_bytes(), log.headers.checkpoint_path.read_text()) == before
-    assert verify_chain(log).ok
+    with pytest.raises(AuditError, match="not empty"):
+        AuditLog.create_new(log.headers.path.parent)
+    assert snapshot(log.headers.path.parent) >= before and verify_chain(log).ok and verify_chain(log).records == 2
 
 
-def test_initialising_refuses_a_log_with_records_and_no_checkpoint(log):
-    filled(log, 2)
+def test_create_new_accepts_an_existing_empty_directory_and_refuses_a_file(tmp_path):
+    (tmp_path / "empty").mkdir()
+    assert verify_chain(AuditLog.create_new(tmp_path / "empty", fsync=False)).ok
+    (tmp_path / "afile").write_text("x")
+    with pytest.raises(AuditError):
+        AuditLog.create_new(tmp_path / "afile")
+
+
+def test_appending_to_a_store_that_was_never_initialised_fails_with_log_missing_and_creates_nothing(tmp_path):
+    log = AuditLog.in_directory(tmp_path / "nowhere" / "audit", fsync=False)
+    with pytest.raises(audit.LogMissingError, match="log_missing"):
+        add(log, 0)
+    assert not (tmp_path / "nowhere").exists()
+    (tmp_path / "bare").mkdir()
+    with pytest.raises(audit.LogMissingError, match="init"):
+        add(AuditLog.in_directory(tmp_path / "bare", fsync=False), 0)
+    assert list((tmp_path / "bare").iterdir()) == []
+
+
+def test_a_wiped_store_is_refused_not_started_fresh(log):
+    filled(log, 3)
+    import shutil
+
+    shutil.rmtree(log.headers.path.parent)
+    with pytest.raises(audit.LogMissingError, match="log_missing"):
+        add(log, 9)
+    assert not log.headers.path.parent.exists()  # the refusal did not recreate it
+
+
+def test_an_emptied_store_directory_is_refused_too(log):
+    filled(log, 3)
+    for path in log.headers.path.parent.iterdir():
+        if path.is_file():
+            path.unlink()
+    with pytest.raises(audit.LogMissingError):
+        add(log, 9)
+    assert not log.headers.path.exists()
+
+
+def test_a_missing_checkpoint_on_an_empty_log_is_refused_on_append(log):
     log.headers.checkpoint_path.unlink()
-    with pytest.raises(AuditError, match="no checkpoint"):
-        log.initialise()
-    assert not log.headers.checkpoint_path.exists()  # nothing was written over the evidence
-
-
-def test_the_first_append_to_a_store_that_was_never_initialised_writes_the_genesis_checkpoint_first(log):
-    add(log, 0)
-    assert verify_chain(log).ok and log.headers.read_checkpoint()["count"] == 1
-    assert log.headers.read_all()[0]["prev_hash"] == audit.GENESIS_PREV_HASH
+    with pytest.raises(audit.LogMissingError, match="checkpoint"):
+        add(log, 0)
 
 
 def snapshot(root: Path) -> set[str]:
@@ -136,7 +167,6 @@ def test_deleting_only_the_headers_is_log_missing_and_truncation(log):
 
 
 def test_an_empty_headers_file_with_no_checkpoint_is_checkpoint_missing(log):
-    log.initialise()
     log.headers.checkpoint_path.unlink()
     assert verify_chain(log).kinds() == {"checkpoint_missing"}
 
@@ -443,6 +473,7 @@ def test_parallel_processes_write_one_valid_chain(tmp_path):
         "    log.write(h, p)\n"
     )
     workers, each = 6, 25
+    AuditLog.create_new(directory, fsync=False)
     procs = [
         subprocess.Popen(
             [sys.executable, "-c", worker, str(w), str(each), str(directory)],
@@ -490,7 +521,6 @@ def test_parallel_threads_write_one_valid_chain(log):
 
 
 def test_verify_running_alongside_threaded_writers_reports_nothing(log):
-    log.initialise()  # a verifier started before the store exists would rightly report log_missing
     stop = threading.Event()
     results, errors = [], []
 
@@ -538,8 +568,9 @@ def test_verify_running_alongside_writer_processes_reports_no_orphans(tmp_path):
         "        run_context_hash='c' * 64, entries=e, threshold=0.86, digest=p.digest())\n"
         "    log.write(h, p)\n"
     )
-    log = AuditLog.in_directory(directory, fsync=False)
-    log.initialise()  # a verifier started before the store exists would rightly report log_missing
+    log = AuditLog.create_new(
+        directory, fsync=False
+    )  # a verifier started before the store exists would report log_missing
     procs = [
         subprocess.Popen(
             [sys.executable, "-c", worker, str(w), "40", str(directory)],

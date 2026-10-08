@@ -4,6 +4,7 @@ Run:
     pytest tests/test_screening.py
 """
 
+import hashlib
 import json
 
 import pytest
@@ -171,7 +172,10 @@ def write_ftm(path):
         {"id": "n1", "schema": "Person", "target": False, "properties": {"name": ["Maria Garcia"]}},
         {"id": "t2", "schema": "Company", "target": True, "properties": {"name": ["Zorblax Holdings Ltd"]}},
     ]  # fmt: skip
-    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    body = "\n".join(json.dumps(r) for r in rows) + "\n"
+    path.write_text(body)
+    # the audited CLI identifies the list by its VERSION file
+    path.with_name("VERSION").write_text(f"version=test\nsha1={hashlib.sha1(body.encode()).hexdigest()}\n")  # noqa: S324
 
 
 def test_engine_from_file_screens_only_target_entities(tmp_path):
@@ -185,7 +189,11 @@ def test_engine_from_file_screens_only_target_entities(tmp_path):
 def test_cli_prints_matches_and_explanation(tmp_path, capsys):
     path = tmp_path / "entities.ftm.json"
     write_ftm(path)
-    code = screen_cli.main(["Ivan Petrov", "--birth-date", "1980", "--country", "ru", "--input", str(path)])
+    audit_dir = str(tmp_path / "audit")
+    assert screen_cli.main(["init", "--audit-dir", audit_dir]) == 0
+    code = screen_cli.main(
+        ["Ivan Petrov", "--birth-date", "1980", "--country", "ru", "--input", str(path), "--audit-dir", audit_dir]
+    )
     out = capsys.readouterr().out
     assert code == 0
     assert "t1" in out and "birth date agree" in out and "country agree" in out and "skeleton not used" in out
@@ -194,14 +202,19 @@ def test_cli_prints_matches_and_explanation(tmp_path, capsys):
 def test_cli_json_output_is_machine_readable(tmp_path, capsys):
     path = tmp_path / "entities.ftm.json"
     write_ftm(path)
-    screen_cli.main(["Ivan Petrov", "--json", "--limit", "1", "--input", str(path)])
-    data = json.loads(capsys.readouterr().out)
-    assert len(data) == 1 and data[0]["entity_id"] == "t1"
-    assert set(data[0]["explanation"]) >= {"name_score", "skeleton_used", "birth_date", "country"}
+    audit_dir = str(tmp_path / "audit")
+    assert screen_cli.main(["init", "--audit-dir", audit_dir]) == 0
+    capsys.readouterr()  # the init message
+    screen_cli.main(["Ivan Petrov", "--json", "--limit", "1", "--input", str(path), "--audit-dir", audit_dir])
+    data = json.loads(capsys.readouterr().out)  # the audited CLI wraps the matches with their record's request ID
+    assert data["request_id"] and len(data["matches"]) == 1 and data["matches"][0]["entity_id"] == "t1"
+    assert set(data["matches"][0]["explanation"]) >= {"name_score", "skeleton_used", "birth_date", "country"}
 
 
 def test_cli_says_when_there_is_no_alert(tmp_path, capsys):
     path = tmp_path / "entities.ftm.json"
     write_ftm(path)
-    assert screen_cli.main(["Zzyzx Qwrt", "--input", str(path)]) == 0
+    audit_dir = str(tmp_path / "audit")
+    assert screen_cli.main(["init", "--audit-dir", audit_dir]) == 0
+    assert screen_cli.main(["Zzyzx Qwrt", "--input", str(path), "--audit-dir", audit_dir]) == 0
     assert "No alert" in capsys.readouterr().out
