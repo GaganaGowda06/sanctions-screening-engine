@@ -13,6 +13,7 @@ Run:
     python src/screen_cli.py purge --mapping ended.jsonl --dry-run --audit-dir /var/lib/screening/audit
     python src/screen_cli.py metrics --from 0 --to 999 --audit-dir /var/lib/screening/audit
     python src/screen_cli.py drift --report /var/lib/screening/audit/monitoring/0-999.json
+    python src/screen_cli.py report --from SEQ --to SEQ --audit-dir DIR
     python src/screen_cli.py gate --new-snapshot data/snapshots/<version>/entities.ftm.json
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
@@ -75,6 +76,7 @@ from audit_drift import BASELINE_DIR, BaselineMismatch, compare_to_baseline, loa
 from audit_metrics import compute_metrics
 from audit_purge import PurgeRefused, purge
 from audit_recover import RecoveryRefused, recover
+from audit_report import ReportRefused, build_report, write_markdown
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
 from list_gate import SnapshotRefused, default_report_path, run_gate, summary_lines, write_report
 from profile_data import DEFAULT_INPUT
@@ -261,6 +263,29 @@ def cmd_metrics(args: argparse.Namespace) -> int:
         f"{len(report['groups'])} run context group(s)"
     )
     return 0
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    """Write the monitoring report as markdown. Exit 0 ok, 3 insufficient data, 10 warn, 20 alert, 2 refused (the log
+    failed verification, no matching baseline, or a bad window or directory)."""
+    try:
+        directory = resolve_audit_dir(args.audit_dir)
+    except AuditConfigError as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    target = directory / "monitoring" / f"{args.from_seq}-{args.to_seq}.md"
+    if target.exists():
+        print(f"the report {target.name} already exists; it is never overwritten", file=sys.stderr)
+        return EXIT_AUDIT_FAILURE
+    try:
+        text, status = build_report(directory, args.from_seq, args.to_seq)
+        path = write_markdown(directory, text, args.from_seq, args.to_seq)
+    except (ValueError, ReportRefused, AuditError) as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_USAGE
+    print(f"wrote {path}")
+    print(f"exit status {status}: {({0: 'ok', 3: 'insufficient data', 10: 'warn', 20: 'alert'})[status]}")
+    return status
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
@@ -525,7 +550,7 @@ def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int
 def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
     commands = parser.add_subparsers(
-        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics,drift,gate}"
+        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics,drift,report,gate}"
     )
     audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
 
@@ -579,6 +604,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     drift.add_argument("--audit-dir", help="optional: lets a refusal say which run context fields differ")
     drift.add_argument("--json", action="store_true", help="print the full result as JSON")
 
+    rpt = commands.add_parser("report", help="write the monitoring report for a window as plain markdown")
+    rpt.add_argument("--from", dest="from_seq", type=int, required=True, metavar="SEQ", help="first record (its seq)")
+    rpt.add_argument("--to", dest="to_seq", type=int, required=True, metavar="SEQ", help="last record, inclusive")
+    rpt.add_argument("--audit-dir", help=audit_dir_help)
+
     gate = commands.add_parser("gate", help="list-update regression gate: compare the hold-out on a newer snapshot")
     gate.add_argument("--new-snapshot", required=True, metavar="PATH", help="entities.ftm.json of the snapshot to try")
     gate.add_argument("--old-snapshot", metavar="PATH", help="the current snapshot (default: data/sanctions)")
@@ -602,6 +632,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_metrics(args)
     if args.command == "drift":
         return cmd_drift(args)
+    if args.command == "report":
+        return cmd_report(args)
     if args.command == "gate":
         return cmd_gate(args)
     return cmd_screen(args, screen_parser)

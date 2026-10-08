@@ -26,8 +26,8 @@ SRC = Path(__file__).resolve().parent.parent / "src"
 
 PRODUCTION = {"screen_cli.py", "audited_screening.py"}
 INFRASTRUCTURE = {
-    "audit.py", "audit_drift.py", "audit_metrics.py", "audit_purge.py", "audit_recover.py", "audit_schema.py",
-    "audit_verify.py", "make_baseline.py", "replay.py", "run_drift_batches.py", "run_context.py",
+    "audit.py", "audit_drift.py", "audit_metrics.py", "audit_purge.py", "audit_recover.py", "audit_report.py",
+    "audit_schema.py", "audit_verify.py", "make_baseline.py", "replay.py", "run_drift_batches.py", "run_context.py",
 }  # fmt: skip
 LIBRARY = {
     "arabic_names.py", "candidates.py", "entities.py", "idf_table.py", "matcher_model.py", "normalise.py",
