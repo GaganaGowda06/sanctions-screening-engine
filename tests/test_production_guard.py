@@ -37,9 +37,10 @@ RESEARCH = {
     "build_idf.py", "build_pair_features.py", "build_pair_splits.py", "build_screening_holdout.py",
     "build_screening_holdout_v3.py", "clean_pairs.py", "compare_matchers.py", "diagnose_arabic_fp.py",
     "diagnose_arabic_secondary.py", "diagnose_screening.py", "download_data.py", "download_pairs.py",
+    "download_snapshot.py",
     "evaluate_candidates.py", "evaluate_common_tier.py", "evaluate_final.py", "evaluate_orthographic.py",
     "evaluate_pairs_final.py", "evaluate_scoring.py", "evaluate_screening.py", "evaluate_skeleton_idf.py",
-    "evaluate_skeleton_particles.py", "measure_alert_disparity.py",
+    "evaluate_skeleton_particles.py", "f1_provenance.py", "list_gate.py", "measure_alert_disparity.py",
     "profile_normaliser.py", "profile_pairs.py",
     "train_constrained.py", "train_matcher.py",
 }  # fmt: skip

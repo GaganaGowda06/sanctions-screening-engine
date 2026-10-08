@@ -1,0 +1,34 @@
+{
+  "engine_effect_on_third_holdout": 0.03791541041375246,
+  "first_holdout_stage2_engine": {
+    "f1": 0.7764,
+    "report": "final_evaluation.json"
+  },
+  "headline_definition": "positive groups ['ar_to_latin', 'cyr_to_latin', 'latin_to_ar', 'latin_to_cyr', 'variant']; negatives in Latin, Cyrillic, Arabic",
+  "hold_out_effect_stage2_engine": -0.014362519851773392,
+  "reading": "the change from 0.777 to 0.8010 is the sum of a hold-out effect (the same Stage 2 engine on a different sample of queries and entities) and an engine effect (the Stage 3 rarity-weighted skeleton). Both engines here run on today's snapshot, not the one the earlier hold-outs were scored on, and the third hold-out is scored over its full 2,000 headline positives; the gate's 0.8010 is over the positives that survive resolution",
+  "second_holdout_stage2_engine": {
+    "f1": 0.7772,
+    "report": "screening_holdout_v2_evaluation.json"
+  },
+  "snapshot": "20261006074704-hib",
+  "third_holdout": {
+    "current_engine": {
+      "arabic_burden": 0.2257142857142857,
+      "f1": 0.8007528905619791,
+      "headline_negatives": 2000,
+      "headline_positives": 2000,
+      "precision": 0.8662012798138452,
+      "recall": 0.7445
+    },
+    "stage2_engine": {
+      "arabic_burden": 0.32571428571428573,
+      "f1": 0.7628374801482266,
+      "headline_negatives": 2000,
+      "headline_positives": 2000,
+      "precision": 0.8104611923509561,
+      "recall": 0.7205
+    }
+  },
+  "what_this_is": "the same third hold-out under the Stage 2 engine and the current engine; the figures for the first two hold-outs are copied from the reports written when they were scored once"
+}

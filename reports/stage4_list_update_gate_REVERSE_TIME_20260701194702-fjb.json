@@ -1,0 +1,144 @@
+{
+  "direction": "the new snapshot is OLDER than the current one",
+  "gate": {
+    "arabic_burden_tolerance": 0.02,
+    "f1_tolerance": 0.01,
+    "label": "REVERSE-TIME CHURN TEST",
+    "passed": true,
+    "reasons": [],
+    "tolerances_are": "judgement: how much F1 loss, or extra false alerts on Arabic names, a list update may cost"
+  },
+  "holdout": "screening_holdout_v3.json",
+  "label": "REVERSE-TIME CHURN TEST",
+  "list_diff": {
+    "added": 3628,
+    "changed": 8708,
+    "entity_lines_new": 287598,
+    "entity_lines_old": 301585,
+    "label": "REVERSE-TIME CHURN TEST",
+    "removed": 4916,
+    "screening_list_new": 68349,
+    "screening_list_old": 69637,
+    "unchanged": 56013
+  },
+  "list_growth_alerts_on_negatives": {
+    "all_negatives": {
+      "alert_new": 140,
+      "alert_old": 141,
+      "alerts_that_went_away": 9,
+      "negatives": 2400,
+      "new_alert_rate_from_new_only_entities": 0.0008333333333333334,
+      "new_alerts": 8,
+      "new_alerts_from_new_only_entities": 2
+    },
+    "arabic_script_negatives": {
+      "alert_new": 79,
+      "alert_old": 79,
+      "alerts_that_went_away": 4,
+      "negatives": 351,
+      "new_alert_rate_from_new_only_entities": 0.002849002849002849,
+      "new_alerts": 4,
+      "new_alerts_from_new_only_entities": 1
+    },
+    "arabic_script_synthetic_negatives": {
+      "alert_new": 79,
+      "alert_old": 79,
+      "alerts_that_went_away": 4,
+      "negatives": 350,
+      "new_alert_rate_from_new_only_entities": 0.002857142857142857,
+      "new_alerts": 4,
+      "new_alerts_from_new_only_entities": 1
+    },
+    "label": "REVERSE-TIME CHURN TEST",
+    "new_only_entities_on_the_list": 2173
+  },
+  "metrics_on_resolved_set": {
+    "arabic_burden": {
+      "delta": 0.0,
+      "delta_ci95": [
+        -0.01571736193210608,
+        0.01657688766114179
+      ],
+      "n": 350,
+      "new": 0.2257142857142857,
+      "old": 0.2257142857142857
+    },
+    "draws": 1000,
+    "f1": {
+      "delta": -0.0006738166878064167,
+      "delta_ci95": [
+        -0.005122723014052824,
+        0.0038253113356832864
+      ],
+      "new": 0.8070077864293659,
+      "old": 0.8076816031171723
+    },
+    "label": "REVERSE-TIME CHURN TEST",
+    "seed": 11
+  },
+  "new_snapshot": "20260701194702-fjb",
+  "old_snapshot": "20261006074704-hib",
+  "provenance": {
+    "arabic_burden": "alert rate on this hold-out's 350 synthetic clean Arabic-script names, current engine",
+    "decomposition": "reports/stage4_f1_provenance.json (src/f1_provenance.py): the Stage 2 and the current engine on this same hold-out",
+    "engine": "the current engine: the Stage 2 hand-tuned matcher plus the Stage 3 rarity-weighted skeleton, configuration from src/screening_config.json",
+    "f1": "F1 on this hold-out's 1,999 to 2,000 headline positives and 2,000 headline negatives, current engine",
+    "holdout": "screening_holdout_v3.json",
+    "holdout_is": "the third screening hold-out; spent, and used here only as a fixed regression benchmark",
+    "holdout_sha256": "963b278ba2b27eb6e872e99dd032aa35c208e3977bff1831f2d995f4ffffd81b",
+    "not_the_same_as": {
+      "Arabic burden 22.6%": "the Stage 3 result on this third hold-out, reports/fairness_current.json",
+      "F1 0.776": "the Stage 2 engine on the FIRST hold-out, reports/final_evaluation.json",
+      "F1 0.777": "the Stage 2 engine (no rarity-weighted skeleton) on the SECOND hold-out, reports/screening_holdout_v2_evaluation.json"
+    }
+  },
+  "queries_in_resolved_set": {
+    "headline_negatives": 2000,
+    "headline_positives": 1913,
+    "label": "REVERSE-TIME CHURN TEST",
+    "negatives": 2400,
+    "positives": 2308
+  },
+  "resolution": {
+    "by_script": {
+      "Arabic": {
+        "dropped": 5,
+        "kept": 288,
+        "remapped": 7
+      },
+      "Cyrillic": {
+        "dropped": 30,
+        "kept": 259,
+        "remapped": 11
+      },
+      "Latin": {
+        "dropped": 52,
+        "kept": 1322,
+        "remapped": 26
+      },
+      "other": {
+        "dropped": 5,
+        "kept": 386,
+        "remapped": 9
+      }
+    },
+    "dropped": 92,
+    "dropped_by_reason": {
+      "dropped_absent": 92
+    },
+    "dropped_by_script": {
+      "Arabic": 5,
+      "Cyrillic": 30,
+      "Latin": 52,
+      "other": 5
+    },
+    "kept": 2255,
+    "label": "REVERSE-TIME CHURN TEST",
+    "negatives": 2400,
+    "negatives_dropped": 0,
+    "note": "reverse-time: the 'new' list is OLDER, so a dropped positive is one whose entity is not on the older list (listed after it), not one that was delisted",
+    "positives": 2400,
+    "remapped": 53,
+    "remapped_ambiguous": 4
+  }
+}

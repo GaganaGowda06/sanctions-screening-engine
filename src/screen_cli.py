@@ -13,6 +13,7 @@ Run:
     python src/screen_cli.py purge --mapping ended.jsonl --dry-run --audit-dir /var/lib/screening/audit
     python src/screen_cli.py metrics --from 0 --to 999 --audit-dir /var/lib/screening/audit
     python src/screen_cli.py drift --report /var/lib/screening/audit/monitoring/0-999.json
+    python src/screen_cli.py gate --new-snapshot data/snapshots/<version>/entities.ftm.json
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
 refuses to start (exit status 2) before it builds the list. Screening never creates the store: "init" does, once, and
@@ -54,6 +55,11 @@ suppressed) and duration percentiles. It holds no request ID, name or customer r
 and on the script mix, per-script alert rates, the near-threshold rate. Exit status: 0 ok, 3 insufficient data, 10 warn,
 20 alert, 2 refused (a baseline only applies to the run context it was measured under).
 
+`gate --new-snapshot PATH` is the list-update regression gate (src/list_gate.py): it runs the spent hold-out on the new
+snapshot and on the current one, resolves each positive's entity through referents, and fails if the F1 loss, or the
+increase in false alerts on Arabic names, is beyond tolerance with 95% confidence. It uses screen() on the research
+path and writes no audit records. Exit status: 0 pass, 1 fail, 2 refused.
+
 `screen --customer-ref` links the record to a customer (opaque to the matcher; stored in the payload only). Exit
 status is 0 whether or not there are matches. Building the list takes a few seconds on every run.
 """
@@ -70,6 +76,7 @@ from audit_metrics import compute_metrics
 from audit_purge import PurgeRefused, purge
 from audit_recover import RecoveryRefused, recover
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
+from list_gate import SnapshotRefused, default_report_path, run_gate, summary_lines, write_report
 from profile_data import DEFAULT_INPUT
 from replay import replay
 from run_context import load_context
@@ -256,6 +263,29 @@ def cmd_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_gate(args: argparse.Namespace) -> int:
+    """The list-update regression gate. Exit 0 pass, 1 fail, 2 refused. Uses the research path (no audit records)."""
+    from list_gate import CURRENT_SNAPSHOT, HOLDOUT
+
+    try:
+        report = run_gate(
+            Path(args.old_snapshot) if args.old_snapshot else CURRENT_SNAPSHOT,
+            Path(args.new_snapshot),
+            Path(args.holdout) if args.holdout else HOLDOUT,
+        )
+        out = Path(args.out) if args.out else default_report_path(report)
+        path = write_report(report, out)
+    except (SnapshotRefused, OSError, ValueError) as exc:
+        print(f"refusing to run the gate: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    print("\n".join(summary_lines(report)))
+    print(f"wrote {path}")
+    return 0 if report["gate"]["passed"] else 1
+
+
+EXIT_DRIFT = {"ok": 0, "insufficient_data": 3, "warn": 10, "alert": 20}
+
+
 def describe_drift(result: dict) -> list[str]:
     """Plain lines for a drift result: numbers and statuses, no names."""
 
@@ -302,9 +332,6 @@ def describe_drift(result: dict) -> list[str]:
             f"{d['live']['p50']}/{d['live']['p95']}/{d['live']['p99']}"
         )
     return lines
-
-
-EXIT_DRIFT = {"ok": 0, "insufficient_data": 3, "warn": 10, "alert": 20}
 
 
 def cmd_drift(args: argparse.Namespace) -> int:
@@ -498,7 +525,7 @@ def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int
 def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
     commands = parser.add_subparsers(
-        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics,drift}"
+        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics,drift,gate}"
     )
     audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
 
@@ -551,6 +578,12 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     drift.add_argument("--baseline-dir", metavar="DIR", help="where to look for baseline/<context_hash>.json")
     drift.add_argument("--audit-dir", help="optional: lets a refusal say which run context fields differ")
     drift.add_argument("--json", action="store_true", help="print the full result as JSON")
+
+    gate = commands.add_parser("gate", help="list-update regression gate: compare the hold-out on a newer snapshot")
+    gate.add_argument("--new-snapshot", required=True, metavar="PATH", help="entities.ftm.json of the snapshot to try")
+    gate.add_argument("--old-snapshot", metavar="PATH", help="the current snapshot (default: data/sanctions)")
+    gate.add_argument("--holdout", metavar="FILE", help="hold-out file (default: screening_holdout_v3.json)")
+    gate.add_argument("--out", metavar="FILE", help="where to write the aggregate report (default: reports/)")
     return parser, screen_cmd
 
 
@@ -569,6 +602,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_metrics(args)
     if args.command == "drift":
         return cmd_drift(args)
+    if args.command == "gate":
+        return cmd_gate(args)
     return cmd_screen(args, screen_parser)
 
 

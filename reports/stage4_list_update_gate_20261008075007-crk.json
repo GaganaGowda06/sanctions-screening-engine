@@ -1,0 +1,135 @@
+{
+  "direction": "the new snapshot is newer",
+  "gate": {
+    "arabic_burden_tolerance": 0.02,
+    "f1_tolerance": 0.01,
+    "passed": true,
+    "reasons": [],
+    "tolerances_are": "judgement: how much F1 loss, or extra false alerts on Arabic names, a list update may cost"
+  },
+  "holdout": "screening_holdout_v3.json",
+  "label": "forward list update",
+  "list_diff": {
+    "added": 10,
+    "changed": 101,
+    "entity_lines_new": 302107,
+    "entity_lines_old": 301585,
+    "removed": 27,
+    "screening_list_new": 69620,
+    "screening_list_old": 69637,
+    "unchanged": 69509
+  },
+  "list_growth_alerts_on_negatives": {
+    "all_negatives": {
+      "alert_new": 141,
+      "alert_old": 141,
+      "alerts_that_went_away": 0,
+      "negatives": 2400,
+      "new_alert_rate_from_new_only_entities": 0.0,
+      "new_alerts": 0,
+      "new_alerts_from_new_only_entities": 0
+    },
+    "arabic_script_negatives": {
+      "alert_new": 79,
+      "alert_old": 79,
+      "alerts_that_went_away": 0,
+      "negatives": 351,
+      "new_alert_rate_from_new_only_entities": 0.0,
+      "new_alerts": 0,
+      "new_alerts_from_new_only_entities": 0
+    },
+    "arabic_script_synthetic_negatives": {
+      "alert_new": 79,
+      "alert_old": 79,
+      "alerts_that_went_away": 0,
+      "negatives": 350,
+      "new_alert_rate_from_new_only_entities": 0.0,
+      "new_alerts": 0,
+      "new_alerts_from_new_only_entities": 0
+    },
+    "new_only_entities_on_the_list": 3
+  },
+  "metrics_on_resolved_set": {
+    "arabic_burden": {
+      "delta": 0.0,
+      "delta_ci95": [
+        0.0,
+        0.0
+      ],
+      "n": 350,
+      "new": 0.2257142857142857,
+      "old": 0.2257142857142857
+    },
+    "draws": 1000,
+    "f1": {
+      "delta": 0.0,
+      "delta_ci95": [
+        0.0,
+        0.0
+      ],
+      "new": 0.800968262506724,
+      "old": 0.800968262506724
+    },
+    "seed": 11
+  },
+  "new_snapshot": "20261008075007-crk",
+  "old_snapshot": "20261006074704-hib",
+  "provenance": {
+    "arabic_burden": "alert rate on this hold-out's 350 synthetic clean Arabic-script names, current engine",
+    "decomposition": "reports/stage4_f1_provenance.json (src/f1_provenance.py): the Stage 2 and the current engine on this same hold-out",
+    "engine": "the current engine: the Stage 2 hand-tuned matcher plus the Stage 3 rarity-weighted skeleton, configuration from src/screening_config.json",
+    "f1": "F1 on this hold-out's 1,999 to 2,000 headline positives and 2,000 headline negatives, current engine",
+    "holdout": "screening_holdout_v3.json",
+    "holdout_is": "the third screening hold-out; spent, and used here only as a fixed regression benchmark",
+    "holdout_sha256": "963b278ba2b27eb6e872e99dd032aa35c208e3977bff1831f2d995f4ffffd81b",
+    "not_the_same_as": {
+      "Arabic burden 22.6%": "the Stage 3 result on this third hold-out, reports/fairness_current.json",
+      "F1 0.776": "the Stage 2 engine on the FIRST hold-out, reports/final_evaluation.json",
+      "F1 0.777": "the Stage 2 engine (no rarity-weighted skeleton) on the SECOND hold-out, reports/screening_holdout_v2_evaluation.json"
+    }
+  },
+  "queries_in_resolved_set": {
+    "headline_negatives": 2000,
+    "headline_positives": 1999,
+    "negatives": 2400,
+    "positives": 2398
+  },
+  "resolution": {
+    "by_script": {
+      "Arabic": {
+        "dropped": 1,
+        "kept": 299,
+        "remapped": 0
+      },
+      "Cyrillic": {
+        "dropped": 0,
+        "kept": 300,
+        "remapped": 0
+      },
+      "Latin": {
+        "dropped": 0,
+        "kept": 1400,
+        "remapped": 0
+      },
+      "other": {
+        "dropped": 1,
+        "kept": 399,
+        "remapped": 0
+      }
+    },
+    "dropped": 2,
+    "dropped_by_reason": {
+      "dropped_not_a_target": 2
+    },
+    "dropped_by_script": {
+      "Arabic": 1,
+      "other": 1
+    },
+    "kept": 2398,
+    "negatives": 2400,
+    "negatives_dropped": 0,
+    "positives": 2400,
+    "remapped": 0,
+    "remapped_ambiguous": 0
+  }
+}
