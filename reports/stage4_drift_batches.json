@@ -1,0 +1,751 @@
+{
+  "baseline": {
+    "script_mix": {
+      "Arabic": 222,
+      "Cyrillic": 248,
+      "Latin": 796,
+      "other": 234
+    },
+    "size": 1500
+  },
+  "drift_config": {
+    "alert_rate_abs_diff_alert": 0.06,
+    "alert_rate_abs_diff_warn": 0.03,
+    "alert_rate_ratio_alert": 2.0,
+    "alert_rate_ratio_warn": 1.5,
+    "min_psi_count": 200,
+    "near_threshold_diff_alert": 0.06,
+    "near_threshold_diff_warn": 0.03,
+    "psi_alert": 0.25,
+    "psi_alert_percentile": 99,
+    "psi_alpha_alert": 0.01,
+    "psi_alpha_warn": 0.05,
+    "psi_epsilon": 0.0001,
+    "psi_null_draws": 1000,
+    "psi_null_seed": 11,
+    "psi_warn": 0.1,
+    "psi_warn_percentile": 95
+  },
+  "holdout": "screening_holdout_v3.json",
+  "metrics_config": {
+    "min_cell": 10,
+    "near_threshold_band": 0.05
+  },
+  "noise_floor_of_the_baseline_sample": {
+    "Arabic": {
+      "decisions_per_half": 111,
+      "median": 0.309951908850439,
+      "p90": 0.490114046381842,
+      "p95": 0.5673113423978992
+    },
+    "Cyrillic": {
+      "decisions_per_half": 124,
+      "median": 0.40303918392837323,
+      "p90": 0.627524112431756,
+      "p95": 0.6897414599220715
+    },
+    "Latin": {
+      "decisions_per_half": 398,
+      "median": 0.10235399399284231,
+      "p90": 0.16204393345180299,
+      "p95": 0.17571327637107884
+    },
+    "all": {
+      "decisions_per_half": 750,
+      "median": 0.04920172757939262,
+      "p90": 0.07213880614371763,
+      "p95": 0.08209252184985821
+    },
+    "other": {
+      "decisions_per_half": 117,
+      "median": 0.32425687099259576,
+      "p90": 0.5578638124447062,
+      "p95": 0.6309852540322792
+    },
+    "what_this_is": "PSI between two random halves of the same baseline sample (400 shuffles): the PSI that sampling noise alone produces at that sample size"
+  },
+  "repeated_stable": {
+    "batch_size": 800,
+    "batches": 50,
+    "expected": "overall warn-or-worse rate <= 10% and overall alert rate <= 2%",
+    "k_values": {
+      "3": 50
+    },
+    "overall_alert_rate": 0.0,
+    "overall_counts": {
+      "ok": 49,
+      "warn": 1
+    },
+    "overall_warn_or_worse_rate": 0.02,
+    "per_comparison_uncorrected": {
+      "alert": 0,
+      "alert_rate": 0.0,
+      "total": 150,
+      "warn_or_worse": 4,
+      "warn_or_worse_rate": 0.02666666666666667
+    },
+    "pool_size": 3300,
+    "uncorrected_overall_alert_rate": 0.0,
+    "uncorrected_overall_warn_or_worse_rate": 0.08
+  },
+  "run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+  "scenarios": {
+    "degraded": {
+      "expected": "score PSI warn or alert; near-threshold rate warn or alert",
+      "expected_pattern_seen": true,
+      "observed": {
+        "input_mix_psi": {
+          "alert_limit": 0.25,
+          "categories": [
+            "Arabic",
+            "Cyrillic",
+            "Latin",
+            "other"
+          ],
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.015015230516619224,
+          "null_p99": 0.022276066010907647,
+          "status": "ok",
+          "value": 0.005055486020745624,
+          "warn_limit": 0.1
+        },
+        "near_threshold": {
+          "abs_diff": 0.16833333333333333,
+          "baseline_rate": 0.02666666666666667,
+          "live_rate": 0.195,
+          "status": "alert"
+        },
+        "overall": "alert",
+        "score_psi": {
+          "alert_limit": 0.25,
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "alert",
+          "corrected_warn_limit": 0.1,
+          "n": 799,
+          "n_baseline": 1500,
+          "null_p95": 0.05779608364927413,
+          "null_p99": 0.06978745304083844,
+          "status": "alert",
+          "value": 0.6287992740545862,
+          "warn_limit": 0.1
+        },
+        "within_script_score_psi": {
+          "Latin": {
+            "status": "alert",
+            "value": 0.9472904467167736
+          }
+        }
+      },
+      "result": {
+        "baseline_run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "count_baseline": 1500,
+        "count_live": 800,
+        "decision_context_hash": "407232a2137e68d95464bef9b86e41e33f5669e5cb5bbd025dbbafd83dbe0030",
+        "duration_ms": {
+          "baseline": {
+            "p50": 13,
+            "p95": 87,
+            "p99": 139
+          },
+          "informational": true,
+          "live": {
+            "p50": 1,
+            "p95": 61,
+            "p99": 86
+          },
+          "note": "machine-dependent: shown, never compared and never given a status"
+        },
+        "input_mix_psi": {
+          "alert_limit": 0.25,
+          "categories": [
+            "Arabic",
+            "Cyrillic",
+            "Latin",
+            "other"
+          ],
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.015015230516619224,
+          "null_p99": 0.022276066010907647,
+          "status": "ok",
+          "value": 0.005055486020745624,
+          "warn_limit": 0.1
+        },
+        "multiplicity": {
+          "alert_percentile": 99.6667,
+          "alpha_alert": 0.01,
+          "alpha_warn": 0.05,
+          "k": 3,
+          "warn_percentile": 98.3333,
+          "why": "the overall status is the worst of k PSI comparisons, so it uses Bonferroni-corrected percentiles"
+        },
+        "near_threshold": {
+          "abs_diff": 0.16833333333333333,
+          "baseline_rate": 0.02666666666666667,
+          "live_rate": 0.195,
+          "status": "alert"
+        },
+        "no_candidate_rate": {
+          "abs_diff": 0.00125,
+          "baseline": 0.0,
+          "live": 0.00125
+        },
+        "note_thin_data": null,
+        "other_matching_contexts": [],
+        "overall": "alert",
+        "overall_uncorrected": "alert",
+        "per_script": {
+          "Arabic": {
+            "alert_rate": {
+              "abs_diff": 0.2700331910858226,
+              "baseline": 0.5720720720720721,
+              "live": 0.8421052631578947,
+              "ratio": 1.4720265230004141,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 222,
+            "count_live": 114,
+            "score_psi": {
+              "n": 114,
+              "reason": "114 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          },
+          "Cyrillic": {
+            "alert_rate": {
+              "abs_diff": -0.13520126826578438,
+              "baseline": 0.38306451612903225,
+              "live": 0.24786324786324787,
+              "ratio": 0.6470535312640576,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 248,
+            "count_live": 117,
+            "score_psi": {
+              "n": 117,
+              "reason": "117 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          },
+          "Latin": {
+            "alert_rate": {
+              "abs_diff": -0.18373409101582677,
+              "baseline": 0.5879396984924623,
+              "live": 0.40420560747663553,
+              "ratio": 0.6874950075884656,
+              "status": "ok"
+            },
+            "count_baseline": 796,
+            "count_live": 428,
+            "score_psi": {
+              "alert_limit": 0.25,
+              "corrected_alert_limit": 0.25,
+              "corrected_status": "alert",
+              "corrected_warn_limit": 0.1392188438617909,
+              "n": 427,
+              "n_baseline": 796,
+              "null_p95": 0.1207088678609707,
+              "null_p99": 0.14873845875398886,
+              "status": "alert",
+              "value": 0.9472904467167736,
+              "warn_limit": 0.1207088678609707
+            }
+          },
+          "other": {
+            "alert_rate": {
+              "abs_diff": -0.12274959083469716,
+              "baseline": 0.5128205128205128,
+              "live": 0.3900709219858156,
+              "ratio": 0.7606382978723405,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 234,
+            "count_live": 141,
+            "score_psi": {
+              "n": 141,
+              "reason": "141 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          }
+        },
+        "run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "score_psi": {
+          "alert_limit": 0.25,
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "alert",
+          "corrected_warn_limit": 0.1,
+          "n": 799,
+          "n_baseline": 1500,
+          "null_p95": 0.05779608364927413,
+          "null_p99": 0.06978745304083844,
+          "status": "alert",
+          "value": 0.6287992740545862,
+          "warn_limit": 0.1
+        },
+        "skipped_scripts": {}
+      },
+      "script_mix": {
+        "Arabic": 114,
+        "Cyrillic": 117,
+        "Latin": 428,
+        "other": 141
+      },
+      "size": 800
+    },
+    "mix_shift": {
+      "expected": "input-mix PSI alert; every computed within-script score PSI ok",
+      "expected_pattern_seen": true,
+      "observed": {
+        "input_mix_psi": {
+          "alert_limit": 0.25,
+          "categories": [
+            "Arabic",
+            "Cyrillic",
+            "Latin",
+            "other"
+          ],
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "alert",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.013991818896629754,
+          "null_p99": 0.021487029670869313,
+          "status": "alert",
+          "value": 0.6221344276246291,
+          "warn_limit": 0.1
+        },
+        "near_threshold": {
+          "abs_diff": 0.04083333333333333,
+          "baseline_rate": 0.02666666666666667,
+          "live_rate": 0.0675,
+          "status": "warn"
+        },
+        "overall": "alert",
+        "score_psi": {
+          "alert_limit": 0.25,
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.060709346836334936,
+          "null_p99": 0.07459568075771929,
+          "status": "ok",
+          "value": 0.06868629161308136,
+          "warn_limit": 0.1
+        },
+        "within_script_score_psi": {
+          "Arabic": {
+            "status": "ok",
+            "value": 0.17244427561233572
+          },
+          "Latin": {
+            "status": "ok",
+            "value": 0.16408745965771046
+          }
+        }
+      },
+      "result": {
+        "baseline_run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "count_baseline": 1500,
+        "count_live": 800,
+        "decision_context_hash": "407232a2137e68d95464bef9b86e41e33f5669e5cb5bbd025dbbafd83dbe0030",
+        "duration_ms": {
+          "baseline": {
+            "p50": 13,
+            "p95": 87,
+            "p99": 139
+          },
+          "informational": true,
+          "live": {
+            "p50": 14,
+            "p95": 91,
+            "p99": 144
+          },
+          "note": "machine-dependent: shown, never compared and never given a status"
+        },
+        "input_mix_psi": {
+          "alert_limit": 0.25,
+          "categories": [
+            "Arabic",
+            "Cyrillic",
+            "Latin",
+            "other"
+          ],
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "alert",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.013991818896629754,
+          "null_p99": 0.021487029670869313,
+          "status": "alert",
+          "value": 0.6221344276246291,
+          "warn_limit": 0.1
+        },
+        "multiplicity": {
+          "alert_percentile": 99.75,
+          "alpha_alert": 0.01,
+          "alpha_warn": 0.05,
+          "k": 4,
+          "warn_percentile": 98.75,
+          "why": "the overall status is the worst of k PSI comparisons, so it uses Bonferroni-corrected percentiles"
+        },
+        "near_threshold": {
+          "abs_diff": 0.04083333333333333,
+          "baseline_rate": 0.02666666666666667,
+          "live_rate": 0.0675,
+          "status": "warn"
+        },
+        "no_candidate_rate": {
+          "abs_diff": 0.0,
+          "baseline": 0.0,
+          "live": 0.0
+        },
+        "note_thin_data": null,
+        "other_matching_contexts": [],
+        "overall": "alert",
+        "overall_uncorrected": "alert",
+        "per_script": {
+          "Arabic": {
+            "alert_rate": {
+              "abs_diff": 0.025427927927927918,
+              "baseline": 0.5720720720720721,
+              "live": 0.5975,
+              "ratio": 1.0444488188976377,
+              "status": "ok"
+            },
+            "count_baseline": 222,
+            "count_live": 400,
+            "score_psi": {
+              "alert_limit": 0.2871674813134211,
+              "corrected_alert_limit": 0.32123071534539605,
+              "corrected_status": "ok",
+              "corrected_warn_limit": 0.28013319593876274,
+              "n": 400,
+              "n_baseline": 222,
+              "null_p95": 0.23518760278705036,
+              "null_p99": 0.2871674813134211,
+              "status": "ok",
+              "value": 0.17244427561233572,
+              "warn_limit": 0.23518760278705036
+            }
+          },
+          "Cyrillic": {
+            "alert_rate": {
+              "abs_diff": 0.039470695138573375,
+              "baseline": 0.38306451612903225,
+              "live": 0.4225352112676056,
+              "ratio": 1.1030392883617495,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 248,
+            "count_live": 71,
+            "score_psi": {
+              "n": 71,
+              "reason": "71 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          },
+          "Latin": {
+            "alert_rate": {
+              "abs_diff": -0.08171563210242083,
+              "baseline": 0.5879396984924623,
+              "live": 0.5062240663900415,
+              "ratio": 0.8610135830052842,
+              "status": "ok"
+            },
+            "count_baseline": 796,
+            "count_live": 241,
+            "score_psi": {
+              "alert_limit": 0.25,
+              "corrected_alert_limit": 0.3008142323551072,
+              "corrected_status": "ok",
+              "corrected_warn_limit": 0.2396388449618686,
+              "n": 241,
+              "n_baseline": 796,
+              "null_p95": 0.19426807252266318,
+              "null_p99": 0.240006719158277,
+              "status": "ok",
+              "value": 0.16408745965771046,
+              "warn_limit": 0.19426807252266318
+            }
+          },
+          "other": {
+            "alert_rate": {
+              "abs_diff": 0.009906759906759932,
+              "baseline": 0.5128205128205128,
+              "live": 0.5227272727272727,
+              "ratio": 1.0193181818181818,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 234,
+            "count_live": 88,
+            "score_psi": {
+              "n": 88,
+              "reason": "88 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          }
+        },
+        "run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "score_psi": {
+          "alert_limit": 0.25,
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.060709346836334936,
+          "null_p99": 0.07459568075771929,
+          "status": "ok",
+          "value": 0.06868629161308136,
+          "warn_limit": 0.1
+        },
+        "skipped_scripts": {}
+      },
+      "script_mix": {
+        "Arabic": 400,
+        "Cyrillic": 71,
+        "Latin": 241,
+        "other": 88
+      },
+      "size": 800
+    },
+    "stable": {
+      "expected": "overall ok",
+      "expected_pattern_seen": true,
+      "observed": {
+        "input_mix_psi": {
+          "alert_limit": 0.25,
+          "categories": [
+            "Arabic",
+            "Cyrillic",
+            "Latin",
+            "other"
+          ],
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.01499415823053536,
+          "null_p99": 0.022217845420202817,
+          "status": "ok",
+          "value": 0.002888675176271571,
+          "warn_limit": 0.1
+        },
+        "near_threshold": {
+          "abs_diff": 0.013333333333333332,
+          "baseline_rate": 0.02666666666666667,
+          "live_rate": 0.04,
+          "status": "ok"
+        },
+        "overall": "ok",
+        "score_psi": {
+          "alert_limit": 0.25,
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.06017314995892867,
+          "null_p99": 0.07660868059785306,
+          "status": "ok",
+          "value": 0.06850488879998139,
+          "warn_limit": 0.1
+        },
+        "within_script_score_psi": {
+          "Latin": {
+            "status": "warn",
+            "value": 0.12226693365333641
+          }
+        }
+      },
+      "result": {
+        "baseline_run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "count_baseline": 1500,
+        "count_live": 800,
+        "decision_context_hash": "407232a2137e68d95464bef9b86e41e33f5669e5cb5bbd025dbbafd83dbe0030",
+        "duration_ms": {
+          "baseline": {
+            "p50": 13,
+            "p95": 87,
+            "p99": 139
+          },
+          "informational": true,
+          "live": {
+            "p50": 13,
+            "p95": 88,
+            "p99": 162
+          },
+          "note": "machine-dependent: shown, never compared and never given a status"
+        },
+        "input_mix_psi": {
+          "alert_limit": 0.25,
+          "categories": [
+            "Arabic",
+            "Cyrillic",
+            "Latin",
+            "other"
+          ],
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.01499415823053536,
+          "null_p99": 0.022217845420202817,
+          "status": "ok",
+          "value": 0.002888675176271571,
+          "warn_limit": 0.1
+        },
+        "multiplicity": {
+          "alert_percentile": 99.6667,
+          "alpha_alert": 0.01,
+          "alpha_warn": 0.05,
+          "k": 3,
+          "warn_percentile": 98.3333,
+          "why": "the overall status is the worst of k PSI comparisons, so it uses Bonferroni-corrected percentiles"
+        },
+        "near_threshold": {
+          "abs_diff": 0.013333333333333332,
+          "baseline_rate": 0.02666666666666667,
+          "live_rate": 0.04,
+          "status": "ok"
+        },
+        "no_candidate_rate": {
+          "abs_diff": 0.0,
+          "baseline": 0.0,
+          "live": 0.0
+        },
+        "note_thin_data": null,
+        "other_matching_contexts": [],
+        "overall": "ok",
+        "overall_uncorrected": "warn",
+        "per_script": {
+          "Arabic": {
+            "alert_rate": {
+              "abs_diff": -0.03361053361053368,
+              "baseline": 0.5720720720720721,
+              "live": 0.5384615384615384,
+              "ratio": 0.9412477286493034,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 222,
+            "count_live": 104,
+            "score_psi": {
+              "n": 104,
+              "reason": "104 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          },
+          "Cyrillic": {
+            "alert_rate": {
+              "abs_diff": 0.06297864933859365,
+              "baseline": 0.38306451612903225,
+              "live": 0.4460431654676259,
+              "ratio": 1.164407421431276,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 248,
+            "count_live": 139,
+            "score_psi": {
+              "n": 139,
+              "reason": "139 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          },
+          "Latin": {
+            "alert_rate": {
+              "abs_diff": -0.03805570777320477,
+              "baseline": 0.5879396984924623,
+              "live": 0.5498839907192575,
+              "ratio": 0.9352727705395919,
+              "status": "ok"
+            },
+            "count_baseline": 796,
+            "count_live": 431,
+            "score_psi": {
+              "alert_limit": 0.25,
+              "corrected_alert_limit": 0.25,
+              "corrected_status": "ok",
+              "corrected_warn_limit": 0.14230454688805644,
+              "n": 431,
+              "n_baseline": 796,
+              "null_p95": 0.12070090016007426,
+              "null_p99": 0.14793658209268007,
+              "status": "warn",
+              "value": 0.12226693365333641,
+              "warn_limit": 0.12070090016007426
+            }
+          },
+          "other": {
+            "alert_rate": {
+              "abs_diff": -0.028693528693528647,
+              "baseline": 0.5128205128205128,
+              "live": 0.48412698412698413,
+              "ratio": 0.9440476190476191,
+              "reason": "fewer decisions than min_psi_count",
+              "status": "insufficient_data"
+            },
+            "count_baseline": 234,
+            "count_live": 126,
+            "score_psi": {
+              "n": 126,
+              "reason": "126 decisions, fewer than min_psi_count 200",
+              "status": "insufficient_data",
+              "value": null
+            }
+          }
+        },
+        "run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "score_psi": {
+          "alert_limit": 0.25,
+          "corrected_alert_limit": 0.25,
+          "corrected_status": "ok",
+          "corrected_warn_limit": 0.1,
+          "n": 800,
+          "n_baseline": 1500,
+          "null_p95": 0.06017314995892867,
+          "null_p99": 0.07660868059785306,
+          "status": "ok",
+          "value": 0.06850488879998139,
+          "warn_limit": 0.1
+        },
+        "skipped_scripts": {}
+      },
+      "script_mix": {
+        "Arabic": 104,
+        "Cyrillic": 139,
+        "Latin": 431,
+        "other": 126
+      },
+      "size": 800
+    }
+  },
+  "seed": 11,
+  "what_this_is": "constructed batches of hold-out data through the audited path; not production traffic"
+}

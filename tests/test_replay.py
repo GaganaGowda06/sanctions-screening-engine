@@ -53,14 +53,16 @@ def write_list(directory: Path) -> Path:
     return path
 
 
-def make_engine(tmp_path, *, log=None, config=None, src_dir=None, for_screening=True) -> AuditedEngine:
+def make_engine(
+    tmp_path, *, log=None, config=None, src_dir=None, for_screening=True, git=None, versions=None
+) -> AuditedEngine:
     engine = ScreeningEngine.from_entities(ENTITIES, config or ScreeningConfig())
     kwargs = {"src_dir": src_dir} if src_dir else {}
     context = rc.build_run_context(
         engine,
         write_list(tmp_path / "list"),
-        git=lambda: ("a" * 40, False),
-        versions=lambda: {"rapidfuzz": "3.14.6"},
+        git=git or (lambda: ("a" * 40, False)),
+        versions=versions or (lambda: {"rapidfuzz": "3.14.6"}),
         **kwargs,
     )
     log = log or AuditLog.create_new(tmp_path / "audit", fsync=False)
@@ -216,7 +218,9 @@ def test_a_changed_context_file_is_refused(recorded, tmp_path):
     path.write_text(json.dumps(stored))
     other = make_engine(tmp_path, log=engine.log, config=ScreeningConfig(global_threshold=0.85), for_screening=False)
     result = replay(other, ids[0])
-    assert result.status == REFUSED_CONTEXT and "does not hash to its name" in result.reason
+    assert result.status == REFUSED_CONTEXT
+    # an edit to a decision field is caught by the decision hash stored beside it, any other by the context hash
+    assert "does not match the context it sits in" in result.reason or "does not hash to its name" in result.reason
 
 
 # ---------- the record itself ----------

@@ -12,6 +12,7 @@ Run:
     python src/screen_cli.py recover --audit-dir /var/lib/screening/audit                 (operator, after a crash)
     python src/screen_cli.py purge --mapping ended.jsonl --dry-run --audit-dir /var/lib/screening/audit
     python src/screen_cli.py metrics --from 0 --to 999 --audit-dir /var/lib/screening/audit
+    python src/screen_cli.py drift --report /var/lib/screening/audit/monitoring/0-999.json
 
 The audit directory comes from --audit-dir or $SCREENING_AUDIT_DIR and has no default. With neither set the command
 refuses to start (exit status 2) before it builds the list. Screening never creates the store: "init" does, once, and
@@ -49,6 +50,10 @@ backups and snapshots are outside its reach.
 context, the alert rate, a fixed 20-bin score histogram, near-threshold counts, per-script rates (small cells
 suppressed) and duration percentiles. It holds no request ID, name or customer reference.
 
+`drift --report FILE` compares a metrics report with baseline/<context_hash>.json (src/make_baseline.py), PSI on scores
+and on the script mix, per-script alert rates, the near-threshold rate. Exit status: 0 ok, 3 insufficient data, 10 warn,
+20 alert, 2 refused (a baseline only applies to the run context it was measured under).
+
 `screen --customer-ref` links the record to a customer (opaque to the matcher; stored in the payload only). Exit
 status is 0 whether or not there are matches. Building the list takes a few seconds on every run.
 """
@@ -60,12 +65,14 @@ from datetime import date
 from pathlib import Path
 
 from audit import AuditConfigError, AuditError, AuditLog, LogMissingError
+from audit_drift import BASELINE_DIR, BaselineMismatch, compare_to_baseline, load_baseline
 from audit_metrics import compute_metrics
 from audit_purge import PurgeRefused, purge
 from audit_recover import RecoveryRefused, recover
 from audited_screening import AuditedEngine, AuditedResult, resolve_audit_dir
 from profile_data import DEFAULT_INPUT
 from replay import replay
+from run_context import load_context
 from screening import ScreenMatch
 
 EXIT_AUDIT_FAILURE = 1
@@ -249,6 +256,108 @@ def cmd_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def describe_drift(result: dict) -> list[str]:
+    """Plain lines for a drift result: numbers and statuses, no names."""
+
+    def num(value: object) -> str:
+        return "n/a" if value is None else f"{value:.4f}"
+
+    lines = [
+        f"decision context {result['decision_context_hash'][:12]}...: overall {result['overall']} "
+        f"({result.get('count_live', '?')} live, {result.get('count_baseline', '?')} baseline decisions)"
+    ]
+    if "reason" in result:
+        return [*lines, f"  {result['reason']}"]
+
+    def psi_line(label: str, item: dict) -> str:
+        if item["value"] is None:
+            return f"  {label}: n/a [{item['status']}] {item.get('reason', '')}"
+        return (
+            f"  {label}: {num(item['value'])} [{item['status']}] (n {item['n']}; limits warn "
+            f"{num(item['warn_limit'])}, alert {num(item['alert_limit'])}; sampling null p95 "
+            f"{num(item['null_p95'])}, p99 {num(item['null_p99'])})"
+        )
+
+    for name, key in (("score PSI", "score_psi"), ("input-mix PSI", "input_mix_psi")):
+        lines.append(psi_line(name, result[key]))
+    for script, entry in result["per_script"].items():
+        a = entry["alert_rate"]
+        lines.append(psi_line(f"{script} score PSI", entry["score_psi"]))
+        lines.append(
+            f"  {script} alert rate {a['baseline']:.3f} -> {a['live']:.3f} "
+            f"(diff {a['abs_diff']:+.3f}, ratio {num(a['ratio'])}) [{a['status']}]"
+        )
+    n = result["near_threshold"]
+    lines.append(
+        f"  near-threshold rate {n['baseline_rate']:.3f} -> {n['live_rate']:.3f} "
+        f"(diff {n['abs_diff']:+.3f}) [{n['status']}]"
+    )
+    for script, why in result["skipped_scripts"].items():
+        lines.append(f"  {script}: not compared ({why})")
+    d = result["duration_ms"]
+    if d["baseline"] and d["live"]:
+        lines.append(
+            f"  duration_ms p50/p95/p99 (informational, machine-dependent, not compared): baseline "
+            f"{d['baseline']['p50']}/{d['baseline']['p95']}/{d['baseline']['p99']}, live "
+            f"{d['live']['p50']}/{d['live']['p95']}/{d['live']['p99']}"
+        )
+    return lines
+
+
+EXIT_DRIFT = {"ok": 0, "insufficient_data": 3, "warn": 10, "alert": 20}
+
+
+def cmd_drift(args: argparse.Namespace) -> int:
+    """Compare a monitoring report with the baseline for its run context. Exit 0 ok, 3 insufficient data, 10 warn,
+    20 alert, 2 refused (no baseline for the report's context, or a bad file)."""
+    try:
+        report = json.loads(Path(args.report).read_text(encoding="utf-8"))
+        groups = [g["run_context_hash"] for g in report["groups"]]
+        decision_hashes = [g.get("decision_context_hash") for g in report["groups"]]
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"refusing to start: {args.report} is not a monitoring report ({exc})", file=sys.stderr)
+        return EXIT_USAGE
+    directory = Path(args.baseline_dir) if args.baseline_dir else BASELINE_DIR
+    try:
+        candidates = (
+            [Path(args.baseline)]
+            if args.baseline
+            else [directory / f"{h}.json" for h in dict.fromkeys(decision_hashes) if h]
+        )
+        baselines = [load_baseline(p) for p in candidates if p.exists()]
+        live_contexts = {}
+        if args.audit_dir:
+            for h in groups:
+                stored = load_context(Path(args.audit_dir) / "contexts", h)
+                if stored:
+                    live_contexts[h] = stored.as_dict()
+    except (OSError, ValueError, AuditError) as exc:
+        print(f"refusing to start: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    if not baselines:
+        shown = ", ".join(str(h)[:12] + "..." for h in decision_hashes) or "none"
+        print(
+            f"refusing to compare: no baseline for this report's decision context(s) ({shown}) in {directory}. A "
+            "baseline only applies to the decision context it was measured under: make one with src/make_baseline.py.",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+    worst_exit, shown_results = 0, []
+    for baseline in baselines:
+        try:
+            result = compare_to_baseline(report, baseline, live_contexts=live_contexts)
+        except BaselineMismatch as exc:
+            print(str(exc), file=sys.stderr)
+            return EXIT_USAGE
+        shown_results.append(result)
+        worst_exit = max(worst_exit, EXIT_DRIFT[result["overall"]])
+    if args.json:
+        print(json.dumps(shown_results, indent=2, sort_keys=True))
+    else:
+        print("\n".join(line for r in shown_results for line in describe_drift(r)))
+    return worst_exit
+
+
 def cmd_purge(args: argparse.Namespace) -> int:
     """Delete payloads whose retention period (relationship end plus N years) is over. Exit 0 on success."""
     try:
@@ -389,7 +498,7 @@ def cmd_screen(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int
 def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog="screen_cli.py", description=__doc__.splitlines()[0])
     commands = parser.add_subparsers(
-        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics}"
+        dest="command", required=True, metavar="{screen,init,replay,recover,purge,metrics,drift}"
     )
     audit_dir_help = "audit directory (or set $SCREENING_AUDIT_DIR); there is no default"
 
@@ -435,6 +544,13 @@ def build_parser() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     met.add_argument("--from", dest="from_seq", type=int, required=True, metavar="SEQ", help="first record (its seq)")
     met.add_argument("--to", dest="to_seq", type=int, required=True, metavar="SEQ", help="last record, inclusive")
     met.add_argument("--audit-dir", help=audit_dir_help)
+
+    drift = commands.add_parser("drift", help="compare a monitoring report with the baseline for its run context")
+    drift.add_argument("--report", required=True, metavar="FILE", help="a monitoring report (from the metrics command)")
+    drift.add_argument("--baseline", metavar="FILE", help="a baseline file (default: baseline/<context_hash>.json)")
+    drift.add_argument("--baseline-dir", metavar="DIR", help="where to look for baseline/<context_hash>.json")
+    drift.add_argument("--audit-dir", help="optional: lets a refusal say which run context fields differ")
+    drift.add_argument("--json", action="store_true", help="print the full result as JSON")
     return parser, screen_cmd
 
 
@@ -451,6 +567,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_purge(args)
     if args.command == "metrics":
         return cmd_metrics(args)
+    if args.command == "drift":
+        return cmd_drift(args)
     return cmd_screen(args, screen_parser)
 
 

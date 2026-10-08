@@ -5,7 +5,9 @@
 The window is the records with seq from_seq to to_seq inclusive (seq is a record's position in the chain). Only
 decision records are measured; other kinds in the window are counted and left out. Records are grouped by run context
 hash and metrics are never mixed across contexts: a threshold change or a new list snapshot starts a new group, so a
-shift in the numbers cannot be blamed on traffic when the engine itself changed. Per group:
+shift in the numbers cannot be blamed on traffic when the engine itself changed. Each group also records its
+decision_context_hash (from the stored context file), so a baseline can match on what decides decisions rather than on
+the exact commit. Per group:
 
   count, alert rate
   final score histogram: 20 equal bins on [0, 1], fixed so a later PSI compares like with like. Bin i is
@@ -13,8 +15,9 @@ shift in the numbers cannot be blamed on traffic when the engine itself changed.
       counted separately (no_candidates)
   near-threshold count and rate: |final score - the record's threshold| <= near_threshold_band (from config; the
       difference is rounded to 9 places so a score exactly one band away counts, whatever the float noise)
-  per-script count and alert rate. The script of a record is query_script() (the Stage 3 script detection in
-      screening.py) applied to the raw name in its payload. A payload that is purged, missing, unreadable or does not
+  per-script count, alert rate and score histogram (the histogram is what per-script drift compares). The script
+      of a record is query_script() (the Stage 3 script detection in screening.py) applied to the raw name in its
+      payload. A payload that is purged, missing, unreadable or does not
       match its digest counts as "unavailable"
   duration_ms p50, p95, p99 (nearest rank: the value at position ceil(p/100 * n) of the sorted durations)
 
@@ -56,10 +59,11 @@ from pathlib import Path
 from audit import AuditError, AuditLog
 from audit_schema import KIND_DECISION
 from audit_verify import _verify_locked
+from run_context import load_context
 from screening import query_script
 
 BINS = 20  # fixed: later drift (PSI) compares histograms over the same bins
-REPORT_SCHEMA_VERSION = 1
+REPORT_SCHEMA_VERSION = 3  # 2: per-script score histograms; 3: each group records its decision_context_hash
 CONFIG_PATH = Path(__file__).with_name("monitoring_config.json")
 SCRIPTS = ("Latin", "Cyrillic", "Arabic", "other", "unavailable")
 
@@ -98,6 +102,17 @@ def percentile(sorted_values: list[int], p: int) -> int | None:
     return sorted_values[max(math.ceil(p / 100 * len(sorted_values)), 1) - 1]
 
 
+def decision_hash_of(audit_dir: Path, context_hash: str) -> str | None:
+    """The decision_context_hash of a stored run context, or None if its context file is missing or unreadable. Two
+    contexts with the same decision hash make the same decisions (they differ only in the git commit, the audit
+    schema and the like), which is what a baseline needs to match on."""
+    try:
+        stored = load_context(audit_dir / "contexts", context_hash)
+    except AuditError:
+        return None
+    return stored.decision_context_hash if stored else None
+
+
 def record_script(log: AuditLog, header: dict) -> str:
     """The script of a decision's name, from its payload, or "unavailable"."""
     try:
@@ -128,18 +143,30 @@ def suppress_script_cells(per_script: dict[str, dict], total: int, min_cell: int
     return per_script
 
 
-def group_metrics(rows: list[dict], config: MetricsConfig, context_hash: str) -> dict:
-    count = len(rows)
-    if count < config.min_cell:
-        return {"run_context_hash": context_hash, "count": f"<{config.min_cell}"}
-    alerts = sum(r["decision"] == "alert" for r in rows)
+def score_histogram(rows: list[dict]) -> dict:
     counts = [0] * BINS
-    no_candidates = near = 0
+    no_candidates = 0
     for r in rows:
         if r["final_score"] is None:
             no_candidates += 1
+        else:
+            counts[bin_index(r["final_score"])] += 1
+    return {"counts": counts, "no_candidates": no_candidates}
+
+
+def group_metrics(rows: list[dict], config: MetricsConfig, context_hash: str, decision_hash: str | None) -> dict:
+    count = len(rows)
+    if count < config.min_cell:
+        return {
+            "run_context_hash": context_hash,
+            "decision_context_hash": decision_hash,
+            "count": f"<{config.min_cell}",
+        }
+    alerts = sum(r["decision"] == "alert" for r in rows)
+    near = 0
+    for r in rows:
+        if r["final_score"] is None:
             continue
-        counts[bin_index(r["final_score"])] += 1
         if round(abs(r["final_score"] - r["threshold"]), 9) <= config.near_threshold_band:
             near += 1
     per_script: dict[str, dict] = {}
@@ -153,15 +180,17 @@ def group_metrics(rows: list[dict], config: MetricsConfig, context_hash: str) ->
             per_script[script] = {
                 "count": len(cell),
                 "alert_rate": rate(sum(r["decision"] == "alert" for r in cell), len(cell)),
+                "score_histogram": score_histogram(cell),
             }
     per_script = suppress_script_cells(per_script, count, config.min_cell)
     durations = sorted(r["duration_ms"] for r in rows)
     return {
         "run_context_hash": context_hash,
+        "decision_context_hash": decision_hash,
         "count": count,
         "alerts": alerts,
         "alert_rate": rate(alerts, count),
-        "score_histogram": {"counts": counts, "no_candidates": no_candidates},
+        "score_histogram": score_histogram(rows),
         "near_threshold": {"count": near, "rate": rate(near, count)},
         "per_script": per_script,
         "duration_ms": {
@@ -231,7 +260,10 @@ def compute_metrics(
     by_context: dict[str, list[dict]] = defaultdict(list)
     for row in rows:  # dict order is first appearance in the chain
         by_context[row["context"]].append(row)
-    groups = [group_metrics(group, config, context) for context, group in by_context.items()]
+    groups = [
+        group_metrics(group, config, context, decision_hash_of(Path(audit_dir), context))
+        for context, group in by_context.items()
+    ]
     any_suppressed = any(not isinstance(g["count"], int) for g in groups)
     crash = Counter(f.kind for f in verification.failures)
     report = {

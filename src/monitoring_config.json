@@ -1,4 +1,24 @@
 {
   "near_threshold_band": 0.05,
-  "min_cell": 10
+  "min_cell": 10,
+  "min_psi_count": 200,
+  "psi_epsilon": 0.0001,
+  "psi_warn": 0.1,
+  "psi_alert": 0.25,
+  "psi_null_draws": 1000,
+  "psi_null_seed": 11,
+  "psi_warn_percentile": 95,
+  "psi_alert_percentile": 99,
+  "psi_alpha_warn": 0.05,
+  "psi_alpha_alert": 0.01,
+  "alert_rate_ratio_warn": 1.5,
+  "alert_rate_ratio_alert": 2.0,
+  "alert_rate_abs_diff_warn": 0.03,
+  "alert_rate_abs_diff_alert": 0.06,
+  "near_threshold_diff_warn": 0.03,
+  "near_threshold_diff_alert": 0.06,
+  "gate_f1_tolerance": 0.01,
+  "gate_arabic_burden_tolerance": 0.02,
+  "gate_bootstrap_draws": 1000,
+  "gate_seed": 11
 }

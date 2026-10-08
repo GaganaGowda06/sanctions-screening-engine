@@ -63,12 +63,20 @@ def scenario(tmp_path):
     return log
 
 
+def hist(bins: dict[int, int], no_candidates: int = 0) -> dict:
+    """A score histogram with the given non-empty bins."""
+    counts = [0] * 20
+    for index, n in bins.items():
+        counts[index] = n
+    return {"counts": counts, "no_candidates": no_candidates}
+
+
 def assert_not_recoverable(report: dict) -> None:
     """No hidden count can be worked out as a total minus the visible counts: a group never has exactly one hidden
     per-script cell, and the window never has exactly one hidden group while it still gives the decision total."""
     for group in report["groups"]:
         if not isinstance(group["count"], int):
-            assert set(group) == {"run_context_hash", "count"}  # a suppressed group shows nothing else
+            assert set(group) == {"run_context_hash", "decision_context_hash", "count"}  # nothing else is shown
             continue
         hidden = [k for k, v in group["per_script"].items() if not isinstance(v["count"], int)]
         assert len(hidden) != 1, f"one hidden cell {hidden} could be recovered by subtraction: {group['per_script']}"
@@ -105,9 +113,13 @@ def test_a_hand_built_log_gives_exactly_the_expected_metrics(scenario):
     assert sum(expected_bins) + 2 == 20
     assert group["near_threshold"] == {"count": 7, "rate": 0.35}  # 0.84 0.86 0.91 | 0.87 0.88 0.89 | 0.865
     assert group["per_script"] == {
-        "Latin": {"count": 10, "alert_rate": 0.3},
-        "Cyrillic": {"count": 4, "alert_rate": 0.25},
-        "Arabic": {"count": 6, "alert_rate": 4 / 6},
+        "Latin": {
+            "count": 10,
+            "alert_rate": 0.3,
+            "score_histogram": hist({2: 2, 6: 1, 11: 1, 16: 1, 17: 1, 18: 1, 19: 1}, 2),
+        },
+        "Cyrillic": {"count": 4, "alert_rate": 0.25, "score_histogram": hist({1: 1, 12: 1, 14: 1, 17: 1})},
+        "Arabic": {"count": 6, "alert_rate": 4 / 6, "score_histogram": hist({4: 1, 10: 1, 17: 3, 19: 1})},
     }
     assert group["duration_ms"] == {"p50": 10, "p95": 19, "p99": 20}
     stamp = "2026-10-07T10:00:00.000000+00:00"
@@ -123,11 +135,10 @@ def test_a_hand_built_log_gives_exactly_the_expected_metrics(scenario):
 def test_a_sub_window_measures_only_its_own_records(scenario):
     report, path = measured(scenario.headers.path.parent, 8, 13, BAND_05, CLOCK)  # the six Arabic records
     group = only_group(report)
-    assert (
-        group["count"] == 6
-        and group["alerts"] == 4
-        and group["per_script"] == {"Arabic": {"count": 6, "alert_rate": 4 / 6}}
-    )
+    assert (group["count"], group["alerts"]) == (6, 4)
+    assert group["per_script"] == {
+        "Arabic": {"count": 6, "alert_rate": 4 / 6, "score_histogram": hist({4: 1, 10: 1, 17: 3, 19: 1})}
+    }
     assert group["duration_ms"] == {"p50": 11, "p95": 14, "p99": 14} and path.name == "8-13.json"
 
 
@@ -195,8 +206,8 @@ def test_a_purged_payload_counts_as_unavailable(tmp_path):
     report, _ = measured(log.headers.path.parent, 0, 9, BAND_05, CLOCK)  # seq 9 is the purge record
     group = only_group(report)
     assert group["per_script"] == {
-        "Latin": {"count": 3, "alert_rate": 0.0},
-        "unavailable": {"count": 6, "alert_rate": 1.0},
+        "Latin": {"count": 3, "alert_rate": 0.0, "score_histogram": hist({2: 3})},
+        "unavailable": {"count": 6, "alert_rate": 1.0, "score_histogram": hist({18: 6})},
     }
     assert report["window"]["records"] == 10 and report["window"]["decisions"] == 9
 
@@ -216,7 +227,8 @@ def test_a_missing_or_damaged_payload_without_a_purge_record_is_refused_not_coun
 def test_a_group_below_min_cell_is_suppressed(scenario):
     report, _ = measured(scenario.headers.path.parent, 0, 19, MetricsConfig(0.05, 10), CLOCK)
     per_script = only_group(report)["per_script"]
-    assert per_script["Latin"] == {"count": 10, "alert_rate": 0.3}  # 10 is not below 10
+    assert per_script["Latin"]["count"] == 10 and per_script["Latin"]["alert_rate"] == 0.3  # 10 is not below 10
+    assert per_script["Latin"]["score_histogram"] == hist({2: 2, 6: 1, 11: 1, 16: 1, 17: 1, 18: 1, 19: 1}, 2)
     assert per_script["Arabic"] == {"count": "<10"} and per_script["Cyrillic"] == {
         "count": "<10"
     }  # two hidden: no third
@@ -291,8 +303,8 @@ def test_the_report_has_only_the_expected_keys(scenario):
         "report_schema_version", "generated_at_utc", "window", "config", "integrity", "histogram", "groups",
     }  # fmt: skip
     assert set(only_group(report)) == {
-        "run_context_hash", "count", "alerts", "alert_rate", "score_histogram", "near_threshold", "per_script",
-        "duration_ms",
+        "run_context_hash", "decision_context_hash", "count", "alerts", "alert_rate", "score_histogram",
+        "near_threshold", "per_script", "duration_ms",
     }  # fmt: skip
 
 
@@ -431,7 +443,8 @@ def test_a_group_below_min_cell_is_fully_suppressed(tmp_path):
     report, _ = measured(log.headers.path.parent, 0, 15, MetricsConfig(0.05, 10), CLOCK)
     big, small = report["groups"]
     assert big["count"] == 12 and "alert_rate" in big and "score_histogram" in big and "duration_ms" in big
-    assert small == {"run_context_hash": CTX_Y, "count": "<10"}  # no rates, histogram, durations, or script cells
+    # no rates, histogram, durations, or script cells (the decision hash is None: no context file in a hand-built log)
+    assert small == {"run_context_hash": CTX_Y, "decision_context_hash": None, "count": "<10"}
     assert report["window"]["decisions"] == "withheld"  # else 16 - 12 would give the hidden 4
 
 

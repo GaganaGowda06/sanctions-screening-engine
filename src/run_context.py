@@ -100,23 +100,52 @@ class RunContext:
     lockfile_sha256: str | None  # None: the project has no lockfile
 
     def as_dict(self) -> dict:
-        """JSON-ready form: config and settings become objects, artefacts and libraries become mappings.
-        Round-trips through from_dict()."""
+        """JSON-ready form: config and settings become objects, artefacts and libraries become mappings. Includes
+        decision_context_hash (derived, so it is not a stored field). Round-trips through from_dict()."""
         out = asdict(self)
         for name in ("config", "engine_settings"):
             out[name] = json.loads(out[name])
         for name in ("artefacts", "libraries"):
             out[name] = {k: v for k, v in out[name]}
+        out["decision_context_hash"] = self.decision_context_hash
         return out
+
+    def decision_context(self) -> dict:
+        """Only what decides a screening decision: the configuration and threshold, the engine settings (the candidate
+        cap among them), the list snapshot and its hash, the rarity table, the hashes of the scoring and normalisation
+        source files, the library versions, and the Python and Unicode database versions. Left out: the git SHA and
+        the dirty flag (the same code from another commit decides the same), the audit schema and top_candidates (they
+        shape the record, not the decision), and the pins file."""
+        return {
+            "config": json.loads(self.config),
+            "engine_settings": json.loads(self.engine_settings),
+            "snapshot_id": self.snapshot_id,
+            "snapshot_sha256": self.snapshot_sha256,
+            "rarity_table_sha256": self.rarity_table_sha256,
+            "scoring_sources": {k: v for k, v in self.artefacts if k in SCORE_PATH_SOURCES},
+            "libraries": dict(self.libraries),
+            "python_version": self.python_version,
+            "unidata_version": self.unidata_version,
+        }
+
+    @property
+    def decision_context_hash(self) -> str:
+        """Two engines with the same decision_context_hash make the same decisions. Baselines match on this; replay
+        still requires the full context_hash, because exact replay needs the same code and the same record format."""
+        return sha256_text(canonical_json(self.decision_context()))
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> "RunContext":
         values = dict(data)
+        stated = values.pop("decision_context_hash", None)
         for name in ("config", "engine_settings"):
             values[name] = canonical_json(values[name])
         for name in ("artefacts", "libraries"):
             values[name] = pairs(values[name])  # type: ignore[arg-type]
-        return cls(**values)  # type: ignore[arg-type]
+        context = cls(**values)  # type: ignore[arg-type]
+        if stated is not None and stated != context.decision_context_hash:
+            raise ValueError("decision_context_hash does not match the context it sits in")
+        return context
 
     def canonical(self) -> str:
         """The text that is hashed: every field as stored, so the hash does not depend on parsing."""

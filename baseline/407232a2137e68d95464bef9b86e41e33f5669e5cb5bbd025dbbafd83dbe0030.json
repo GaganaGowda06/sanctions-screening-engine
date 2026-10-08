@@ -1,0 +1,283 @@
+{
+  "baseline_schema_version": 1,
+  "context": {
+    "artefacts": {
+      "audit_schema.py": "657b027d76c65a62aec850e2a41cef2dd7735c93c52e62b0c7b663a1ba41d69d",
+      "candidates.py": "7a6301f70ad86a3d70dfbd1e56f1ba72ce9fa96d0d562b61d6989e5274ea5689",
+      "entities.py": "f3a91d9dc5541ae70feca1f36b737b57dc779f8b4656cb6e8bbd28148d0d8970",
+      "normalise.py": "c65cf255a00b956ef6b4e460a746711c8afe1161838185d698fa2759d41b8cb8",
+      "profile_data.py": "35508486237f63a0c505f619fb5391bc9125d52b3647230de894588712405ed2",
+      "scoring.py": "c7756f2d308d569734241d8218e2acfde9702750fc9a2f20e88f3f22c58d6a70",
+      "screening.py": "bf1c7622f3fc1e31b3ad0ca8c828ffd98a527e6464c2a107c55f8a65a70ea607"
+    },
+    "audit_schema_version": 4,
+    "config": {
+      "blend": 0.5,
+      "global_threshold": 0.86,
+      "per_script": false,
+      "skeleton_floor": 0.6,
+      "skeleton_lift": 0.2,
+      "thresholds": {
+        "Arabic": 0.86,
+        "Cyrillic": 0.88,
+        "Latin": 0.86,
+        "other": 0.86
+      }
+    },
+    "config_file_sha256": "8d79a1a3f83b88b9a50d66cdb4a8d0a740ec4720b7235422c67137f820c75bc6",
+    "decision_context_hash": "407232a2137e68d95464bef9b86e41e33f5669e5cb5bbd025dbbafd83dbe0030",
+    "engine_settings": {
+      "adjustments": {
+        "country_agree": 0.03,
+        "country_conflict": 0.15,
+        "dob_conflict": 0.3,
+        "dob_full": 0.1,
+        "dob_year": 0.05
+      },
+      "candidate_cap": 10000,
+      "common_df": null,
+      "length_penalty": 0.0,
+      "max_df": 1000,
+      "orthographic": false,
+      "skeleton_idf": true,
+      "skeleton_particles": false
+    },
+    "git_dirty": true,
+    "git_sha": "f802642d409f8b172a95a47a3c03f51eb2dd9a53",
+    "libraries": {
+      "rapidfuzz": "3.14.6"
+    },
+    "lockfile_sha256": null,
+    "pins_file_sha256": "17e3c16ce354bde939dd12348aca7a57a02251c832fd1a74c1d2e1991410954b",
+    "python_implementation": "CPython",
+    "python_version": "3.14.7",
+    "rarity_table_sha256": "a3a1d5611b8b22847581e2eb6d75077b3db8af92376d5be9e4cc9c33906e25be",
+    "schema_version": 1,
+    "snapshot_id": "20261006074704-hib",
+    "snapshot_sha256": "433f5bb3cbd82ef0c102487facc2b36e05924e0e759934704d55bdd7b0be948c",
+    "top_candidates": 10,
+    "unidata_version": "16.0.0"
+  },
+  "decision_context_hash": "407232a2137e68d95464bef9b86e41e33f5669e5cb5bbd025dbbafd83dbe0030",
+  "report": {
+    "config": {
+      "file_sha256": "394779ea3696b67c353e10af8c03fdc2767219796aece2f23ac417e401c3303e",
+      "min_cell": 10,
+      "near_threshold_band": 0.05
+    },
+    "generated_at_utc": "2026-10-08T10:37:43+00:00",
+    "groups": [
+      {
+        "alert_rate": 0.54,
+        "alerts": 810,
+        "count": 1500,
+        "decision_context_hash": "407232a2137e68d95464bef9b86e41e33f5669e5cb5bbd025dbbafd83dbe0030",
+        "duration_ms": {
+          "p50": 13,
+          "p95": 88,
+          "p99": 139
+        },
+        "near_threshold": {
+          "count": 40,
+          "rate": 0.02666666666666667
+        },
+        "per_script": {
+          "Arabic": {
+            "alert_rate": 0.5720720720720721,
+            "count": 222,
+            "score_histogram": {
+              "counts": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                2,
+                0,
+                0,
+                5,
+                2,
+                9,
+                12,
+                17,
+                17,
+                15,
+                6,
+                12,
+                9,
+                115
+              ],
+              "no_candidates": 0
+            }
+          },
+          "Cyrillic": {
+            "alert_rate": 0.38306451612903225,
+            "count": 248,
+            "score_histogram": {
+              "counts": [
+                0,
+                0,
+                0,
+                0,
+                1,
+                1,
+                3,
+                4,
+                4,
+                5,
+                14,
+                58,
+                22,
+                13,
+                16,
+                8,
+                3,
+                3,
+                1,
+                92
+              ],
+              "no_candidates": 0
+            }
+          },
+          "Latin": {
+            "alert_rate": 0.5879396984924623,
+            "count": 796,
+            "score_histogram": {
+              "counts": [
+                0,
+                0,
+                1,
+                4,
+                1,
+                7,
+                2,
+                6,
+                12,
+                16,
+                33,
+                103,
+                41,
+                36,
+                29,
+                20,
+                11,
+                12,
+                4,
+                458
+              ],
+              "no_candidates": 0
+            }
+          },
+          "other": {
+            "alert_rate": 0.5128205128205128,
+            "count": 234,
+            "score_histogram": {
+              "counts": [
+                0,
+                1,
+                1,
+                5,
+                5,
+                17,
+                8,
+                13,
+                14,
+                12,
+                12,
+                9,
+                8,
+                7,
+                0,
+                2,
+                0,
+                0,
+                0,
+                120
+              ],
+              "no_candidates": 0
+            }
+          }
+        },
+        "run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+        "score_histogram": {
+          "counts": [
+            0,
+            1,
+            2,
+            9,
+            7,
+            26,
+            15,
+            23,
+            30,
+            38,
+            61,
+            179,
+            83,
+            73,
+            62,
+            45,
+            20,
+            27,
+            14,
+            785
+          ],
+          "no_candidates": 0
+        }
+      }
+    ],
+    "histogram": {
+      "bins": 20,
+      "edges": [
+        0.0,
+        0.05,
+        0.1,
+        0.15,
+        0.2,
+        0.25,
+        0.3,
+        0.35,
+        0.4,
+        0.45,
+        0.5,
+        0.55,
+        0.6,
+        0.65,
+        0.7,
+        0.75,
+        0.8,
+        0.85,
+        0.9,
+        0.95,
+        1.0
+      ]
+    },
+    "integrity": {
+      "crash_findings": {},
+      "tampering_findings": 0
+    },
+    "report_schema_version": 3,
+    "window": {
+      "decisions": 1500,
+      "first_timestamp_utc": "2026-10-08T10:37:07.591849+00:00",
+      "from_seq": 0,
+      "last_timestamp_utc": "2026-10-08T10:37:43.604818+00:00",
+      "records": 1501,
+      "to_seq": 1500
+    }
+  },
+  "run_context_hash": "7ca0da3ea71b453fc3e92e11068071dbaff6f4eb65ebc21cc7b63afde9281f76",
+  "sample": {
+    "holdout": "screening_holdout_v3.json",
+    "holdout_sha256": "963b278ba2b27eb6e872e99dd032aa35c208e3977bff1831f2d995f4ffffd81b",
+    "script_mix": {
+      "Arabic": 222,
+      "Cyrillic": 248,
+      "Latin": 796,
+      "other": 234
+    },
+    "seed": 11,
+    "size": 1500
+  }
+}

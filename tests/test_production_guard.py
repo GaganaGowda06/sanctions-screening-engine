@@ -26,8 +26,8 @@ SRC = Path(__file__).resolve().parent.parent / "src"
 
 PRODUCTION = {"screen_cli.py", "audited_screening.py"}
 INFRASTRUCTURE = {
-    "audit.py", "audit_metrics.py", "audit_purge.py", "audit_recover.py", "audit_schema.py", "audit_verify.py",
-    "replay.py", "run_context.py",
+    "audit.py", "audit_drift.py", "audit_metrics.py", "audit_purge.py", "audit_recover.py", "audit_schema.py",
+    "audit_verify.py", "make_baseline.py", "replay.py", "run_drift_batches.py", "run_context.py",
 }  # fmt: skip
 LIBRARY = {
     "arabic_names.py", "candidates.py", "entities.py", "idf_table.py", "matcher_model.py", "normalise.py",
@@ -39,7 +39,8 @@ RESEARCH = {
     "diagnose_arabic_secondary.py", "diagnose_screening.py", "download_data.py", "download_pairs.py",
     "evaluate_candidates.py", "evaluate_common_tier.py", "evaluate_final.py", "evaluate_orthographic.py",
     "evaluate_pairs_final.py", "evaluate_scoring.py", "evaluate_screening.py", "evaluate_skeleton_idf.py",
-    "evaluate_skeleton_particles.py", "measure_alert_disparity.py", "profile_normaliser.py", "profile_pairs.py",
+    "evaluate_skeleton_particles.py", "measure_alert_disparity.py",
+    "profile_normaliser.py", "profile_pairs.py",
     "train_constrained.py", "train_matcher.py",
 }  # fmt: skip
 AUDIT_MODULES = {
