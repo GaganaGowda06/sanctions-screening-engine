@@ -1,0 +1,715 @@
+{
+  "base_positives_caught_unperturbed": 1489,
+  "character_edit_slips": {
+    "slips": 1549,
+    "slips_from_a_catch_with_a_score_of_0.95_or_more": 1205,
+    "slips_that_alerted_another_entity_instead": 92,
+    "slips_where_the_true_entity_was_not_scored_at_all": 178
+  },
+  "character_edit_slips_on_one_word_names": 11,
+  "character_edits": {
+    "families": [
+      "vowel_swap",
+      "vowel_delete",
+      "consonant_double",
+      "consonant_delete"
+    ],
+    "positives_with_at_least_one_slip": 351,
+    "share_of_caught_positives": 0.23572867696440564,
+    "slip_through_rate": 0.1336035880627911,
+    "slip_throughs": 1549,
+    "variants": 11594
+  },
+  "controls": {
+    "families": [
+      "control_uppercase",
+      "translit_cyrillic_bgn"
+    ],
+    "positives_with_at_least_one_slip": 0,
+    "share_of_caught_positives": 0.0,
+    "slip_through_rate": 0.0,
+    "slip_throughs": 0,
+    "variants": 1462
+  },
+  "romanisation": {
+    "families": [
+      "translit_cyrillic_gost",
+      "translit_cyrillic_german",
+      "respell_cyrillic_conventions",
+      "respell_arabic_conventions"
+    ],
+    "positives_with_at_least_one_slip": 304,
+    "share_of_caught_positives": 0.20416386836803224,
+    "slip_through_rate": 0.19070133963750985,
+    "slip_throughs": 484,
+    "variants": 2538
+  },
+  "slip_through_rate_by_kind_and_hold_out_group": {
+    "character_edits": {
+      "latin_to_ar": {
+        "rate": 0.045998160073597055,
+        "slip_throughs": 100,
+        "variants": 2174
+      },
+      "latin_to_cyr": {
+        "rate": 0.16436824450242266,
+        "slip_throughs": 441,
+        "variants": 2683
+      },
+      "variant": {
+        "rate": 0.14962149324625204,
+        "slip_throughs": 1008,
+        "variants": 6737
+      }
+    },
+    "controls": {
+      "cyr_to_latin": {
+        "rate": 0.0,
+        "slip_throughs": 0,
+        "variants": 503
+      },
+      "latin_to_ar": {
+        "rate": 0.0,
+        "slip_throughs": 0,
+        "variants": 195
+      },
+      "latin_to_cyr": {
+        "rate": 0.0,
+        "slip_throughs": 0,
+        "variants": 219
+      },
+      "variant": {
+        "rate": 0.0,
+        "slip_throughs": 0,
+        "variants": 545
+      }
+    },
+    "romanisation": {
+      "cyr_to_latin": {
+        "rate": 0.435546875,
+        "slip_throughs": 223,
+        "variants": 512
+      },
+      "latin_to_ar": {
+        "rate": 0.012006861063464836,
+        "slip_throughs": 7,
+        "variants": 583
+      },
+      "latin_to_cyr": {
+        "rate": 0.20161290322580644,
+        "slip_throughs": 100,
+        "variants": 496
+      },
+      "variant": {
+        "rate": 0.16261879619852165,
+        "slip_throughs": 154,
+        "variants": 947
+      }
+    },
+    "token_edits": {
+      "ar_to_latin": {
+        "rate": 0.2700479780671693,
+        "slip_throughs": 394,
+        "variants": 1459
+      },
+      "cyr_to_latin": {
+        "rate": 0.19155639571518587,
+        "slip_throughs": 304,
+        "variants": 1587
+      },
+      "latin_to_ar": {
+        "rate": 0.2827338129496403,
+        "slip_throughs": 393,
+        "variants": 1390
+      },
+      "latin_to_cyr": {
+        "rate": 0.2566158781074579,
+        "slip_throughs": 320,
+        "variants": 1247
+      },
+      "variant": {
+        "rate": 0.22859744990892533,
+        "slip_throughs": 753,
+        "variants": 3294
+      }
+    },
+    "token_edits_without_dropping_a_token": {
+      "ar_to_latin": {
+        "rate": 0.010657193605683837,
+        "slip_throughs": 6,
+        "variants": 563
+      },
+      "cyr_to_latin": {
+        "rate": 0.0028530670470756064,
+        "slip_throughs": 2,
+        "variants": 701
+      },
+      "latin_to_ar": {
+        "rate": 0.0074211502782931356,
+        "slip_throughs": 4,
+        "variants": 539
+      },
+      "latin_to_cyr": {
+        "rate": 0.0,
+        "slip_throughs": 0,
+        "variants": 548
+      },
+      "variant": {
+        "rate": 0.002135231316725979,
+        "slip_throughs": 3,
+        "variants": 1405
+      }
+    }
+  },
+  "slips_by_schema_character_edits": {
+    "Company": 59,
+    "LegalEntity": 40,
+    "Organization": 1094,
+    "Person": 354,
+    "Security": 2
+  },
+  "token_edits": {
+    "families": [
+      "drop_middle_token",
+      "drop_one_token",
+      "reorder_tokens"
+    ],
+    "positives_with_at_least_one_slip": 1229,
+    "share_of_caught_positives": 0.8253861652115514,
+    "slip_through_rate": 0.24106048791355686,
+    "slip_throughs": 2164,
+    "variants": 8977
+  },
+  "token_edits_without_dropping_a_token": {
+    "families": [
+      "reorder_tokens"
+    ],
+    "positives_with_at_least_one_slip": 13,
+    "share_of_caught_positives": 0.008730691739422432,
+    "slip_through_rate": 0.003993610223642172,
+    "slip_throughs": 15,
+    "variants": 3756
+  },
+  "worst_character_edits": [
+    {
+      "alerted_another_entity": false,
+      "base_query": "2Rivers",
+      "base_score": 1.0,
+      "entity_id": "NK-4iSKCpWUXd5veMEXv9q89B",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Organization",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "2River",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "AGHAYEV RUSLAN",
+      "base_score": 1.0,
+      "entity_id": "NK-mEhL8rNjydbvLjBcWtVGk5",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "AGHAYEV RULAN",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "AGHAYEV RUSLAN",
+      "base_score": 1.0,
+      "entity_id": "NK-mEhL8rNjydbvLjBcWtVGk5",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "AGHAYEV RUSLA",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "ALEKSANDR BOYTSOV",
+      "base_score": 1.0,
+      "entity_id": "Q4090480",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "ALEKSANDR BOYSOV",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "AO EPK",
+      "base_score": 1.0,
+      "entity_id": "NK-3Ln2vRQrxoeeYf7rti7hKG",
+      "family": "consonant_delete",
+      "group": "latin_to_cyr",
+      "schema": "Organization",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "AO EK",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "AO EPK",
+      "base_score": 1.0,
+      "entity_id": "NK-3Ln2vRQrxoeeYf7rti7hKG",
+      "family": "consonant_delete",
+      "group": "latin_to_cyr",
+      "schema": "Organization",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "AO EP",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Adnan",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-02a953006224d6f12f36e034567f865c18f49550",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Anan",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Anas",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-b787839dc91006db2c59b121eecd1b2d304f635a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Au Anas",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Anas",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-b787839dc91006db2c59b121eecd1b2d304f635a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Aas",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Anas",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-b787839dc91006db2c59b121eecd1b2d304f635a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Ana",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Bakr",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-91ad0c323aba63eb0aaac65d4245cae58b592f31",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Bak",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Bakr",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-91ad0c323aba63eb0aaac65d4245cae58b592f31",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Bar",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Bakr",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-9b8d0fe4f34694560680d54311229b64357e45e8",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Bak",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Bakr",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-9b8d0fe4f34694560680d54311229b64357e45e8",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Bar",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Hajar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-91792cd95954b401a21ee7ca887c3297529f72b5",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Haar",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Hajar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-91792cd95954b401a21ee7ca887c3297529f72b5",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Haja",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Hamza",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-4254d6b929707238472d5f0c6d35e5cc6c16f09a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Haza",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Hamza",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-4254d6b929707238472d5f0c6d35e5cc6c16f09a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Hama",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Hamza",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-90023732c107555a64ff60ed2e9364cfe912523a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Haza",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Hamza",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-90023732c107555a64ff60ed2e9364cfe912523a",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Hama",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Haydar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-67293b6755dff4ebc31b395672da6e0702c3eb75",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Hayar",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Haydar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-67293b6755dff4ebc31b395672da6e0702c3eb75",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Hayda",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Ismail",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-ac23d676531d7f362751a12e11dbb4862bad4b88",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Ismai",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Ismail",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-ac23d676531d7f362751a12e11dbb4862bad4b88",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Isail",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Ismail",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-ac23d676531d7f362751a12e11dbb4862bad4b88",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Imail",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Jihan",
+      "base_score": 1.0,
+      "entity_id": "NK-VKbAiT2YoniFxXHTL3y7Pf",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Jian",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Jihan",
+      "base_score": 1.0,
+      "entity_id": "NK-VKbAiT2YoniFxXHTL3y7Pf",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Jiha",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Karam",
+      "base_score": 1.0,
+      "entity_id": "NK-dNCre6ZvFSsXqtwGeDzVDo",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Kaam",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Karam",
+      "base_score": 1.0,
+      "entity_id": "NK-dNCre6ZvFSsXqtwGeDzVDo",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Kara",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Mar'i",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-19b3dd78214079c501357a50ac01ef9fe4277f6b",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Au Mar'i",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Mar'i",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-19b3dd78214079c501357a50ac01ef9fe4277f6b",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Ma'i",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Mustafa",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-0760fb6706f333c9e21e752576bebb7a6de7c051",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Musafa",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Mustafa",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-0760fb6706f333c9e21e752576bebb7a6de7c051",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Mustaa",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Omar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-8c611a1c9e8664d535a6c4dcf41b5abd937994ea",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Au Omar",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Omar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-8c611a1c9e8664d535a6c4dcf41b5abd937994ea",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Oar",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Omar",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-8c611a1c9e8664d535a6c4dcf41b5abd937994ea",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Oma",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Rahma",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-19a780c77b0e5fd9e96bc1e090c9c67c08a4eeb4",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Raha",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Rahma",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-19a780c77b0e5fd9e96bc1e090c9c67c08a4eeb4",
+      "family": "consonant_delete",
+      "group": "variant",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Rama",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": true,
+      "base_query": "Abu Rayan",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-ae7c5d28f75be3e4a99bf2379c8f929f2814eb48",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Raya",
+      "variant_score": null
+    },
+    {
+      "alerted_another_entity": false,
+      "base_query": "Abu Rufaida",
+      "base_score": 1.0,
+      "entity_id": "iq-aml-8dbe1444ff3aafe0fcc1fbcc8981a3a8ae13d5c8",
+      "family": "consonant_delete",
+      "group": "latin_to_ar",
+      "schema": "Person",
+      "score_drop": 1.0,
+      "script": "Latin",
+      "variant": "Abu Ruaida",
+      "variant_score": null
+    }
+  ]
+}

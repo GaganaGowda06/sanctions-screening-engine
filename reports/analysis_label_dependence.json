@@ -1,0 +1,132 @@
+{
+  "A_attribute_modes": {
+    "birth_date_only": {
+      "f1": 0.7384,
+      "false_positive_rate": 0.1645,
+      "fpr_near_miss": 0.096,
+      "fpr_synthetic": 0.1873,
+      "precision": 0.755,
+      "recall": 0.7225
+    },
+    "both": {
+      "f1": 0.7772,
+      "false_positive_rate": 0.0935,
+      "fpr_near_miss": 0.03,
+      "fpr_synthetic": 0.1147,
+      "precision": 0.8221,
+      "recall": 0.737
+    },
+    "country_only": {
+      "f1": 0.6885,
+      "false_positive_rate": 0.1605,
+      "fpr_near_miss": 0.056,
+      "fpr_synthetic": 0.1953,
+      "precision": 0.7121,
+      "recall": 0.6665
+    },
+    "neither": {
+      "f1": 0.5865,
+      "false_positive_rate": 0.4665,
+      "fpr_near_miss": 1.0,
+      "fpr_synthetic": 0.2887,
+      "precision": 0.5317,
+      "recall": 0.654
+    }
+  },
+  "B_scope": {
+    "every_query": {
+      "f1": 0.7109227871939737,
+      "false_alerts": 191,
+      "negatives": 2400,
+      "positives": 2400,
+      "precision": 0.8170995670995671,
+      "recall": 0.6291666666666667,
+      "true_alerts": 1510,
+      "wrong_entity_alerts": 147
+    },
+    "every_query_with_the_two_excluded_positive_groups_only": {
+      "f1": 0.7115928369462772,
+      "false_alerts": 187,
+      "negatives": 2000,
+      "positives": 2400,
+      "precision": 0.8188720173535792,
+      "recall": 0.6291666666666667,
+      "true_alerts": 1510,
+      "wrong_entity_alerts": 147
+    },
+    "excluded_negatives_other_script_alert_rate": 0.01,
+    "headline": {
+      "f1": 0.7772211969417349,
+      "false_alerts": 187,
+      "negatives": 2000,
+      "positives": 2000,
+      "precision": 0.8220858895705522,
+      "recall": 0.737,
+      "true_alerts": 1474,
+      "wrong_entity_alerts": 132
+    }
+  },
+  "C_recall_by_similarity_of_the_variant_to_the_nearest_kept_alias": {
+    "0.3 to 0.5": {
+      "found": 79,
+      "recall": 0.6220472440944882,
+      "variant_positives": 127
+    },
+    "0.5 to 0.7": {
+      "found": 126,
+      "recall": 0.6666666666666666,
+      "variant_positives": 189
+    },
+    "0.7 to 0.85": {
+      "found": 82,
+      "recall": 0.6890756302521008,
+      "variant_positives": 119
+    },
+    "0.85 or more": {
+      "found": 282,
+      "recall": 0.986013986013986,
+      "variant_positives": 286
+    },
+    "under 0.3": {
+      "found": 42,
+      "recall": 0.5316455696202531,
+      "variant_positives": 79
+    }
+  },
+  "D_possible_unmerged_duplicates": {
+    "alerted_entity_has_an_alias_at_least_0.9_similar": 16,
+    "alerted_entity_shares_an_identical_alias": 18,
+    "wrong_entity_alerts_on_positives": 132
+  },
+  "E_what_a_hit_is": {
+    "extra_entity_alerts_on_hits": 1291,
+    "f1_if_every_extra_entity_alert_counted_as_false": 0.5798583792289536,
+    "hits": 1474,
+    "hits_where_another_entity_scored_higher_than_the_true_one": 103,
+    "hits_where_other_entities_also_alerted": 414,
+    "precision_if_every_extra_entity_alert_counted_as_false": 0.4779507133592737,
+    "precision_per_customer_alert_as_in_the_headline": 0.8220858895705522
+  },
+  "engine": "stage2",
+  "holdout": "screening_holdout_v2.json",
+  "holdout_sha256": "e5a9b7af6b94836b7105fd7fceecbe25fbacde214936aa73e67cfd34b5ae90f8",
+  "negatives_by_kind_and_group": {
+    "near_miss/Arabic": 4,
+    "near_miss/Cyrillic": 147,
+    "near_miss/Latin": 349,
+    "synthetic/Arabic": 350,
+    "synthetic/Cyrillic": 350,
+    "synthetic/Latin": 800,
+    "synthetic/other": 400
+  },
+  "positives_by_group": {
+    "ar_to_latin": 300,
+    "cyr_to_latin": 300,
+    "latin_to_ar": 300,
+    "latin_to_cyr": 300,
+    "other_same_script": 200,
+    "other_to_latin": 200,
+    "variant": 800
+  },
+  "snapshot": "20261006074704-hib"
+}

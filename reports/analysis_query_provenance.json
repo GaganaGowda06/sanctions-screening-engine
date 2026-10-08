@@ -1,0 +1,132 @@
+{
+  "second": {
+    "by_group": {
+      "ar_to_latin": {
+        "alias": 58,
+        "name": 224,
+        "name+alias": 17,
+        "weakAlias": 1
+      },
+      "cyr_to_latin": {
+        "alias": 29,
+        "name": 260,
+        "name+alias": 10,
+        "weakAlias": 1
+      },
+      "latin_to_ar": {
+        "alias": 58,
+        "name": 230,
+        "name+alias": 8,
+        "weakAlias": 4
+      },
+      "latin_to_cyr": {
+        "alias": 124,
+        "alias+weakAlias": 1,
+        "name": 161,
+        "name+alias": 13,
+        "weakAlias": 1
+      },
+      "other_same_script": {
+        "alias": 99,
+        "name": 86,
+        "name+alias": 11,
+        "previousName": 1,
+        "weakAlias": 3
+      },
+      "other_to_latin": {
+        "alias": 41,
+        "name": 152,
+        "name+alias": 6,
+        "weakAlias": 1
+      },
+      "variant": {
+        "alias": 292,
+        "alias+weakAlias": 2,
+        "name": 452,
+        "name+alias": 33,
+        "name+weakAlias": 1,
+        "previousName": 2,
+        "weakAlias": 18
+      }
+    },
+    "by_properties_the_text_appears_in": {
+      "alias": 701,
+      "alias+weakAlias": 3,
+      "name": 1565,
+      "name+alias": 98,
+      "name+weakAlias": 1,
+      "previousName": 3,
+      "weakAlias": 29
+    },
+    "holdout_sha256": "e5a9b7af6b94836b7105fd7fceecbe25fbacde214936aa73e67cfd34b5ae90f8",
+    "not_found_in_the_current_snapshot": 0,
+    "positives": 2400,
+    "positives_whose_query_is_also_a_weak_alias": 33,
+    "query_text_found_in_the_entity_properties": 2400
+  },
+  "snapshot": "20261006074704-hib",
+  "third": {
+    "by_group": {
+      "ar_to_latin": {
+        "alias": 50,
+        "name": 239,
+        "name+alias": 11
+      },
+      "cyr_to_latin": {
+        "alias": 35,
+        "alias+weakAlias": 1,
+        "name": 256,
+        "name+alias": 7,
+        "weakAlias": 1
+      },
+      "latin_to_ar": {
+        "alias": 42,
+        "alias+weakAlias": 2,
+        "name": 248,
+        "name+alias": 6,
+        "name+alias+weakAlias": 1,
+        "weakAlias": 1
+      },
+      "latin_to_cyr": {
+        "alias": 114,
+        "name": 171,
+        "name+alias": 12,
+        "previousName": 1,
+        "weakAlias": 2
+      },
+      "other_same_script": {
+        "alias": 96,
+        "name": 94,
+        "name+alias": 5,
+        "weakAlias": 5
+      },
+      "other_to_latin": {
+        "alias": 42,
+        "name": 151,
+        "name+alias": 7
+      },
+      "variant": {
+        "alias": 306,
+        "alias+weakAlias": 4,
+        "name": 441,
+        "name+alias": 33,
+        "previousName": 3,
+        "weakAlias": 13
+      }
+    },
+    "by_properties_the_text_appears_in": {
+      "alias": 685,
+      "alias+weakAlias": 7,
+      "name": 1600,
+      "name+alias": 81,
+      "name+alias+weakAlias": 1,
+      "previousName": 4,
+      "weakAlias": 22
+    },
+    "holdout_sha256": "963b278ba2b27eb6e872e99dd032aa35c208e3977bff1831f2d995f4ffffd81b",
+    "not_found_in_the_current_snapshot": 0,
+    "positives": 2400,
+    "positives_whose_query_is_also_a_weak_alias": 30,
+    "query_text_found_in_the_entity_properties": 2400
+  }
+}

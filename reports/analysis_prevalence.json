@@ -1,0 +1,626 @@
+{
+  "shipped_engine_on_third_holdout": {
+    "by_prevalence": [
+      {
+        "alert_rate": 0.4297500000000001,
+        "alerts_reviewed_per_true_hit": 1.1544660846205508,
+        "per_100000_customers": {
+          "alerts_to_review": 42975.00000000001,
+          "false_alerts_on_clean_customers": 3500.0000000000005,
+          "listed_parties": 50000.0,
+          "true_alerts": 37225.0,
+          "wrong_entity_alerts": 2250.0
+        },
+        "precision": 0.8662012798138452,
+        "prevalence": 0.5
+      },
+      {
+        "alert_rate": 0.077195,
+        "alerts_reviewed_per_true_hit": 10.368703828072531,
+        "per_100000_customers": {
+          "alerts_to_review": 7719.5,
+          "false_alerts_on_clean_customers": 6930.0,
+          "listed_parties": 1000.0,
+          "true_alerts": 744.5,
+          "wrong_entity_alerts": 45.0
+        },
+        "precision": 0.09644407021180129,
+        "prevalence": 0.01
+      },
+      {
+        "alert_rate": 0.0707195,
+        "alerts_reviewed_per_true_hit": 94.9892545332438,
+        "per_100000_customers": {
+          "alerts_to_review": 7071.950000000001,
+          "false_alerts_on_clean_customers": 6993.000000000001,
+          "listed_parties": 100.0,
+          "true_alerts": 74.45,
+          "wrong_entity_alerts": 4.5
+        },
+        "precision": 0.010527506557597268,
+        "prevalence": 0.001
+      },
+      {
+        "alert_rate": 0.07007195000000001,
+        "alerts_reviewed_per_true_hit": 941.1947615849564,
+        "per_100000_customers": {
+          "alerts_to_review": 7007.195000000001,
+          "false_alerts_on_clean_customers": 6999.300000000001,
+          "listed_parties": 10.0,
+          "true_alerts": 7.445,
+          "wrong_entity_alerts": 0.45
+        },
+        "precision": 0.001062479351580768,
+        "prevalence": 0.0001
+      },
+      {
+        "alert_rate": 0.07000719500000001,
+        "alerts_reviewed_per_true_hit": 9403.249832102083,
+        "per_100000_customers": {
+          "alerts_to_review": 7000.719500000001,
+          "false_alerts_on_clean_customers": 6999.930000000001,
+          "listed_parties": 1.0,
+          "true_alerts": 0.7445,
+          "wrong_entity_alerts": 0.045000000000000005
+        },
+        "precision": 0.00010634621198578232,
+        "prevalence": 1e-05
+      }
+    ],
+    "by_query_script": {
+      "Arabic": [
+        {
+          "alert_rate": 0.5058689458689458,
+          "alerts_reviewed_per_true_hit": 1.3922998510154472,
+          "per_100000_customers": {
+            "alerts_to_review": 50586.89458689458,
+            "false_alerts_on_clean_customers": 11253.561253561253,
+            "listed_parties": 50000.0,
+            "true_alerts": 36333.333333333336,
+            "wrong_entity_alerts": 3000.0
+          },
+          "precision": 0.7182360892092815,
+          "prevalence": 0.5
+        },
+        {
+          "alert_rate": 0.23068717948717948,
+          "alerts_reviewed_per_true_hit": 31.74594213126323,
+          "per_100000_customers": {
+            "alerts_to_review": 23068.71794871795,
+            "false_alerts_on_clean_customers": 22282.05128205128,
+            "listed_parties": 1000.0,
+            "true_alerts": 726.6666666666667,
+            "wrong_entity_alerts": 59.99999999999999
+          },
+          "precision": 0.03150008892050507,
+          "prevalence": 0.01
+        },
+        {
+          "alert_rate": 0.2256328205128205,
+          "alerts_reviewed_per_true_hit": 310.5038814396612,
+          "per_100000_customers": {
+            "alerts_to_review": 22563.28205128205,
+            "false_alerts_on_clean_customers": 22484.615384615383,
+            "listed_parties": 100.0,
+            "true_alerts": 72.66666666666667,
+            "wrong_entity_alerts": 6.0
+          },
+          "precision": 0.0032205716571511696,
+          "prevalence": 0.001
+        },
+        {
+          "alert_rate": 0.22512738461538462,
+          "alerts_reviewed_per_true_hit": 3098.0832745236416,
+          "per_100000_customers": {
+            "alerts_to_review": 22512.73846153846,
+            "false_alerts_on_clean_customers": 22504.871794871793,
+            "listed_parties": 10.0,
+            "true_alerts": 7.266666666666667,
+            "wrong_entity_alerts": 0.6
+          },
+          "precision": 0.00032278021970011736,
+          "prevalence": 0.0001
+        },
+        {
+          "alert_rate": 0.22507684102564102,
+          "alerts_reviewed_per_true_hit": 30973.87720536344,
+          "per_100000_customers": {
+            "alerts_to_review": 22507.6841025641,
+            "false_alerts_on_clean_customers": 22506.897435897434,
+            "listed_parties": 1.0,
+            "true_alerts": 0.7266666666666668,
+            "wrong_entity_alerts": 0.060000000000000005
+          },
+          "precision": 3.2285270370570205e-05,
+          "prevalence": 1e-05
+        }
+      ],
+      "Cyrillic": [
+        {
+          "alert_rate": 0.4491987829614605,
+          "alerts_reviewed_per_true_hit": 1.052809647565923,
+          "per_100000_customers": {
+            "alerts_to_review": 44919.878296146046,
+            "false_alerts_on_clean_customers": 1419.8782961460447,
+            "listed_parties": 50000.0,
+            "true_alerts": 42666.66666666667,
+            "wrong_entity_alerts": 833.3333333333334
+          },
+          "precision": 0.9498393202531741,
+          "prevalence": 0.5
+        },
+        {
+          "alert_rate": 0.03681359026369169,
+          "alerts_reviewed_per_true_hit": 4.314092609026369,
+          "per_100000_customers": {
+            "alerts_to_review": 3681.3590263691685,
+            "false_alerts_on_clean_customers": 2811.3590263691685,
+            "listed_parties": 1000.0,
+            "true_alerts": 853.3333333333334,
+            "wrong_entity_alerts": 16.666666666666668
+          },
+          "precision": 0.23179845465248047,
+          "prevalence": 0.01
+        },
+        {
+          "alert_rate": 0.02923916835699797,
+          "alerts_reviewed_per_true_hit": 34.26465041835699,
+          "per_100000_customers": {
+            "alerts_to_review": 2923.916835699797,
+            "false_alerts_on_clean_customers": 2836.916835699797,
+            "listed_parties": 100.0,
+            "true_alerts": 85.33333333333334,
+            "wrong_entity_alerts": 1.6666666666666667
+          },
+          "precision": 0.029184596597088254,
+          "prevalence": 0.001
+        },
+        {
+          "alert_rate": 0.0284817261663286,
+          "alerts_reviewed_per_true_hit": 333.7702285116633,
+          "per_100000_customers": {
+            "alerts_to_review": 2848.17261663286,
+            "false_alerts_on_clean_customers": 2839.47261663286,
+            "listed_parties": 10.0,
+            "true_alerts": 8.533333333333333,
+            "wrong_entity_alerts": 0.16666666666666666
+          },
+          "precision": 0.002996073090338721,
+          "prevalence": 0.0001
+        },
+        {
+          "alert_rate": 0.028405981947261665,
+          "alerts_reviewed_per_true_hit": 3328.8260094447255,
+          "per_100000_customers": {
+            "alerts_to_review": 2840.5981947261666,
+            "false_alerts_on_clean_customers": 2839.7281947261663,
+            "listed_parties": 1.0,
+            "true_alerts": 0.8533333333333335,
+            "wrong_entity_alerts": 0.016666666666666666
+          },
+          "precision": 0.0003004062084238545,
+          "prevalence": 1e-05
+        }
+      ],
+      "Latin": [
+        {
+          "alert_rate": 0.4067572911517548,
+          "alerts_reviewed_per_true_hit": 1.1220890790393236,
+          "per_100000_customers": {
+            "alerts_to_review": 40675.729115175476,
+            "false_alerts_on_clean_customers": 2032.871972318339,
+            "listed_parties": 50000.0,
+            "true_alerts": 36250.0,
+            "wrong_entity_alerts": 2392.8571428571427
+          },
+          "precision": 0.891194842441698,
+          "prevalence": 0.5
+        },
+        {
+          "alert_rate": 0.047979436480474535,
+          "alerts_reviewed_per_true_hit": 6.617853307651661,
+          "per_100000_customers": {
+            "alerts_to_review": 4797.943648047453,
+            "false_alerts_on_clean_customers": 4025.086505190311,
+            "listed_parties": 1000.0,
+            "true_alerts": 725.0,
+            "wrong_entity_alerts": 47.857142857142854
+          },
+          "precision": 0.15110640165501782,
+          "prevalence": 0.01
+        },
+        {
+          "alert_rate": 0.04138963914977756,
+          "alerts_reviewed_per_true_hit": 57.08915744796905,
+          "per_100000_customers": {
+            "alerts_to_review": 4138.963914977756,
+            "false_alerts_on_clean_customers": 4061.678200692041,
+            "listed_parties": 100.0,
+            "true_alerts": 72.5,
+            "wrong_entity_alerts": 4.785714285714286
+          },
+          "precision": 0.01751646100069699,
+          "prevalence": 0.001
+        },
+        {
+          "alert_rate": 0.04073065941670786,
+          "alerts_reviewed_per_true_hit": 561.8021988511429,
+          "per_100000_customers": {
+            "alerts_to_review": 4073.065941670786,
+            "false_alerts_on_clean_customers": 4065.337370242214,
+            "listed_parties": 10.0,
+            "true_alerts": 7.25,
+            "wrong_entity_alerts": 0.4785714285714286
+          },
+          "precision": 0.0017799859132715207,
+          "prevalence": 0.0001
+        },
+        {
+          "alert_rate": 0.040664761443400886,
+          "alerts_reviewed_per_true_hit": 5608.932612882881,
+          "per_100000_customers": {
+            "alerts_to_review": 4066.4761443400885,
+            "false_alerts_on_clean_customers": 4065.7032871972315,
+            "listed_parties": 1.0,
+            "true_alerts": 0.725,
+            "wrong_entity_alerts": 0.04785714285714286
+          },
+          "precision": 0.00017828704122833448,
+          "prevalence": 1e-05
+        }
+      ]
+    },
+    "by_query_script_rates": {
+      "Arabic": {
+        "f": 0.22507122507122507,
+        "negatives": 351,
+        "positives": 300,
+        "r": 0.7266666666666667,
+        "w": 0.06
+      },
+      "Cyrillic": {
+        "f": 0.028397565922920892,
+        "negatives": 493,
+        "positives": 300,
+        "r": 0.8533333333333334,
+        "w": 0.016666666666666666
+      },
+      "Latin": {
+        "f": 0.04065743944636678,
+        "negatives": 1156,
+        "positives": 1400,
+        "r": 0.725,
+        "w": 0.047857142857142855
+      }
+    },
+    "false_alert_rate_that_would_give_precision_50_percent": {
+      "0.0001": 6.995699569956996e-05,
+      "0.001": 0.0007002002002002003,
+      "0.01": 0.007065656565656566,
+      "1e-05": 6.9950699506995075e-06
+    },
+    "one_false_alert_per_n_clean_customers_needed_for_50_percent_precision": {
+      "0.0001": 14294.496068620443,
+      "0.001": 1428.1629735525373,
+      "0.01": 141.52966404574696,
+      "1e-05": 142957.8270192995
+    },
+    "rates": {
+      "f": 0.07,
+      "r": 0.7445,
+      "w": 0.045
+    }
+  },
+  "stage2_engine_on_second_holdout": {
+    "by_prevalence": [
+      {
+        "alert_rate": 0.44825,
+        "alerts_reviewed_per_true_hit": 1.2164179104477613,
+        "per_100000_customers": {
+          "alerts_to_review": 44825.0,
+          "false_alerts_on_clean_customers": 4675.0,
+          "listed_parties": 50000.0,
+          "true_alerts": 36850.0,
+          "wrong_entity_alerts": 3300.0
+        },
+        "precision": 0.8220858895705522,
+        "prevalence": 0.5
+      },
+      {
+        "alert_rate": 0.10059499999999999,
+        "alerts_reviewed_per_true_hit": 13.649253731343283,
+        "per_100000_customers": {
+          "alerts_to_review": 10059.499999999998,
+          "false_alerts_on_clean_customers": 9256.5,
+          "listed_parties": 1000.0,
+          "true_alerts": 737.0,
+          "wrong_entity_alerts": 66.0
+        },
+        "precision": 0.0732640787315473,
+        "prevalence": 0.01
+      },
+      {
+        "alert_rate": 0.0942095,
+        "alerts_reviewed_per_true_hit": 127.82835820895522,
+        "per_100000_customers": {
+          "alerts_to_review": 9420.95,
+          "false_alerts_on_clean_customers": 9340.65,
+          "listed_parties": 100.0,
+          "true_alerts": 73.7,
+          "wrong_entity_alerts": 6.6000000000000005
+        },
+        "precision": 0.007822990250452449,
+        "prevalence": 0.001
+      },
+      {
+        "alert_rate": 0.09357095,
+        "alerts_reviewed_per_true_hit": 1269.6194029850747,
+        "per_100000_customers": {
+          "alerts_to_review": 9357.095,
+          "false_alerts_on_clean_customers": 9349.064999999999,
+          "listed_parties": 10.0,
+          "true_alerts": 7.37,
+          "wrong_entity_alerts": 0.66
+        },
+        "precision": 0.0007876376161618536,
+        "prevalence": 0.0001
+      },
+      {
+        "alert_rate": 0.09350709500000001,
+        "alerts_reviewed_per_true_hit": 12687.529850746268,
+        "per_100000_customers": {
+          "alerts_to_review": 9350.7095,
+          "false_alerts_on_clean_customers": 9349.906500000001,
+          "listed_parties": 1.0,
+          "true_alerts": 0.7370000000000001,
+          "wrong_entity_alerts": 0.066
+        },
+        "precision": 7.881754855072762e-05,
+        "prevalence": 1e-05
+      }
+    ],
+    "by_query_script": {
+      "Arabic": [
+        {
+          "alert_rate": 0.5013559322033898,
+          "alerts_reviewed_per_true_hit": 1.5426336375488916,
+          "per_100000_customers": {
+            "alerts_to_review": 50135.59322033898,
+            "false_alerts_on_clean_customers": 13135.593220338984,
+            "listed_parties": 50000.0,
+            "true_alerts": 32500.0,
+            "wrong_entity_alerts": 4500.0
+          },
+          "precision": 0.6482420554428668,
+          "prevalence": 0.5
+        },
+        {
+          "alert_rate": 0.2674847457627119,
+          "alerts_reviewed_per_true_hit": 41.151499348109525,
+          "per_100000_customers": {
+            "alerts_to_review": 26748.47457627119,
+            "false_alerts_on_clean_customers": 26008.47457627119,
+            "listed_parties": 1000.0,
+            "true_alerts": 650.0000000000001,
+            "wrong_entity_alerts": 90.0
+          },
+          "precision": 0.02430045115831094,
+          "prevalence": 0.01
+        },
+        {
+          "alert_rate": 0.2631891525423729,
+          "alerts_reviewed_per_true_hit": 404.9063885267275,
+          "per_100000_customers": {
+            "alerts_to_review": 26318.91525423729,
+            "false_alerts_on_clean_customers": 26244.91525423729,
+            "listed_parties": 100.0,
+            "true_alerts": 65.00000000000001,
+            "wrong_entity_alerts": 9.0
+          },
+          "precision": 0.002469706649081411,
+          "prevalence": 0.001
+        },
+        {
+          "alert_rate": 0.26275959322033904,
+          "alerts_reviewed_per_true_hit": 4042.4552803129077,
+          "per_100000_customers": {
+            "alerts_to_review": 26275.959322033905,
+            "false_alerts_on_clean_customers": 26268.559322033903,
+            "listed_parties": 10.0,
+            "true_alerts": 6.500000000000001,
+            "wrong_entity_alerts": 0.9
+          },
+          "precision": 0.0002473744124938334,
+          "prevalence": 0.0001
+        },
+        {
+          "alert_rate": 0.2627166372881356,
+          "alerts_reviewed_per_true_hit": 40417.94419817471,
+          "per_100000_customers": {
+            "alerts_to_review": 26271.66372881356,
+            "false_alerts_on_clean_customers": 26270.923728813563,
+            "listed_parties": 1.0,
+            "true_alerts": 0.65,
+            "wrong_entity_alerts": 0.09000000000000001
+          },
+          "precision": 2.474148598693846e-05,
+          "prevalence": 1e-05
+        }
+      ],
+      "Cyrillic": [
+        {
+          "alert_rate": 0.4794600938967136,
+          "alerts_reviewed_per_true_hit": 1.0734181206642843,
+          "per_100000_customers": {
+            "alerts_to_review": 47946.00938967136,
+            "false_alerts_on_clean_customers": 2112.676056338028,
+            "listed_parties": 50000.0,
+            "true_alerts": 44666.666666666664,
+            "wrong_entity_alerts": 1166.6666666666667
+          },
+          "precision": 0.9316034271725826,
+          "prevalence": 0.5
+        },
+        {
+          "alert_rate": 0.05099765258215962,
+          "alerts_reviewed_per_true_hit": 5.708692453226823,
+          "per_100000_customers": {
+            "alerts_to_review": 5099.765258215962,
+            "false_alerts_on_clean_customers": 4183.098591549296,
+            "listed_parties": 1000.0,
+            "true_alerts": 893.3333333333333,
+            "wrong_entity_alerts": 23.333333333333336
+          },
+          "precision": 0.17517146144994247,
+          "prevalence": 0.01
+        },
+        {
+          "alert_rate": 0.043127934272300474,
+          "alerts_reviewed_per_true_hit": 48.27753836451546,
+          "per_100000_customers": {
+            "alerts_to_review": 4312.793427230047,
+            "false_alerts_on_clean_customers": 4221.12676056338,
+            "listed_parties": 100.0,
+            "true_alerts": 89.33333333333333,
+            "wrong_entity_alerts": 2.3333333333333335
+          },
+          "precision": 0.02071356647162879,
+          "prevalence": 0.001
+        },
+        {
+          "alert_rate": 0.04234096244131455,
+          "alerts_reviewed_per_true_hit": 473.96599747740163,
+          "per_100000_customers": {
+            "alerts_to_review": 4234.096244131455,
+            "false_alerts_on_clean_customers": 4224.929577464789,
+            "listed_parties": 10.0,
+            "true_alerts": 8.933333333333334,
+            "wrong_entity_alerts": 0.23333333333333336
+          },
+          "precision": 0.0021098559924600485,
+          "prevalence": 0.0001
+        },
+        {
+          "alert_rate": 0.04226226525821596,
+          "alerts_reviewed_per_true_hit": 4730.850588606265,
+          "per_100000_customers": {
+            "alerts_to_review": 4226.226525821597,
+            "false_alerts_on_clean_customers": 4225.30985915493,
+            "listed_parties": 1.0,
+            "true_alerts": 0.8933333333333333,
+            "wrong_entity_alerts": 0.023333333333333334
+          },
+          "precision": 0.0002113784786203966,
+          "prevalence": 1e-05
+        }
+      ],
+      "Latin": [
+        {
+          "alert_rate": 0.42783818227029724,
+          "alerts_reviewed_per_true_hit": 1.1849128688000319,
+          "per_100000_customers": {
+            "alerts_to_review": 42783.818227029726,
+            "false_alerts_on_clean_customers": 3176.6753698868583,
+            "listed_parties": 50000.0,
+            "true_alerts": 36107.14285714286,
+            "wrong_entity_alerts": 3500.0000000000005
+          },
+          "precision": 0.8439439104182452,
+          "prevalence": 0.5
+        },
+        {
+          "alert_rate": 0.07081960089518838,
+          "alerts_reviewed_per_true_hit": 9.806868571044879,
+          "per_100000_customers": {
+            "alerts_to_review": 7081.960089518838,
+            "false_alerts_on_clean_customers": 6289.81723237598,
+            "listed_parties": 1000.0,
+            "true_alerts": 722.1428571428572,
+            "wrong_entity_alerts": 70.00000000000001
+          },
+          "precision": 0.10196934860048343,
+          "prevalence": 0.01
+        },
+        {
+          "alert_rate": 0.06426211674748228,
+          "alerts_reviewed_per_true_hit": 88.98809440798732,
+          "per_100000_customers": {
+            "alerts_to_review": 6426.211674748228,
+            "false_alerts_on_clean_customers": 6346.997389033942,
+            "listed_parties": 100.0,
+            "true_alerts": 72.21428571428572,
+            "wrong_entity_alerts": 7.000000000000001
+          },
+          "precision": 0.011237458298806348,
+          "prevalence": 0.001
+        },
+        {
+          "alert_rate": 0.06360636833271167,
+          "alerts_reviewed_per_true_hit": 880.8003527774118,
+          "per_100000_customers": {
+            "alerts_to_review": 6360.636833271167,
+            "false_alerts_on_clean_customers": 6352.715404699739,
+            "listed_parties": 10.0,
+            "true_alerts": 7.221428571428572,
+            "wrong_entity_alerts": 0.7000000000000001
+          },
+          "precision": 0.0011353310620808882,
+          "prevalence": 0.0001
+        },
+        {
+          "alert_rate": 0.0635407934912346,
+          "alerts_reviewed_per_true_hit": 8798.922936471656,
+          "per_100000_customers": {
+            "alerts_to_review": 6354.079349123461,
+            "false_alerts_on_clean_customers": 6353.287206266318,
+            "listed_parties": 1.0,
+            "true_alerts": 0.7221428571428573,
+            "wrong_entity_alerts": 0.07
+          },
+          "precision": 0.00011365027370054424,
+          "prevalence": 1e-05
+        }
+      ]
+    },
+    "by_query_script_rates": {
+      "Arabic": {
+        "f": 0.2627118644067797,
+        "negatives": 354,
+        "positives": 300,
+        "r": 0.65,
+        "w": 0.09
+      },
+      "Cyrillic": {
+        "f": 0.04225352112676056,
+        "negatives": 497,
+        "positives": 300,
+        "r": 0.8933333333333333,
+        "w": 0.023333333333333334
+      },
+      "Latin": {
+        "f": 0.06353350739773717,
+        "negatives": 1149,
+        "positives": 1400,
+        "r": 0.7221428571428572,
+        "w": 0.07
+      }
+    },
+    "false_alert_rate_that_would_give_precision_50_percent": {
+      "0.0001": 6.710671067106711e-05,
+      "0.001": 0.0006716716716716717,
+      "0.01": 0.0067777777777777775,
+      "1e-05": 6.710067100671007e-06
+    },
+    "one_false_alert_per_n_clean_customers_needed_for_50_percent_precision": {
+      "0.0001": 14901.639344262294,
+      "0.001": 1488.822652757079,
+      "0.01": 147.54098360655738,
+      "1e-05": 149029.80625931444
+    },
+    "rates": {
+      "f": 0.0935,
+      "r": 0.737,
+      "w": 0.066
+    }
+  }
+}

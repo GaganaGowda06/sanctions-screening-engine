@@ -1,0 +1,31 @@
+{
+  "adversarial_character_edit_slips_with_no_score_at_all": {
+    "cases": 178,
+    "still_under_0.80": 26,
+    "would_have_alerted": 128,
+    "would_have_been_scored": 178,
+    "would_have_scored_0.80_to_under_threshold": 24
+  },
+  "second_holdout_stage2_engine": {
+    "false_negatives_with_no_score_at_all": {
+      "cases": 126,
+      "still_under_0.80": 106,
+      "would_have_alerted": 17,
+      "would_have_been_scored": 59,
+      "would_have_scored_0.80_to_under_threshold": 3
+    },
+    "headline_false_negatives": 526
+  },
+  "snapshot": "20261006074704-hib",
+  "third_holdout_shipped_engine": {
+    "false_negatives_with_no_score_at_all": {
+      "cases": 102,
+      "still_under_0.80": 86,
+      "would_have_alerted": 14,
+      "would_have_been_scored": 52,
+      "would_have_scored_0.80_to_under_threshold": 2
+    },
+    "headline_false_negatives": 511
+  },
+  "threshold": 0.86
+}
