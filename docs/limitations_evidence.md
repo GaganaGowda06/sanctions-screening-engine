@@ -391,6 +391,14 @@ Why it failed. The retrieval analysis (`analysis/retrieval_gap.py`) had already 
 
 What it leaves. The fragility to a one-letter change is mostly a scoring problem, and a retrieval fix is not the lever for it. If it is pursued, a change to scoring is the next candidate, not another index key.
 
+## 8. A shortened name can clear even with a matching birth date (found in the web page, not fixed)
+
+Found on 2026-10-09 while trying the local web page on a well-known listed person. The list holds "BOUT, Viktor Anatolijevitch" (us_trade_csl, us_ofac_sdn; birth dates 1967-01-13 and 1970-01-13; no country listed). Screening "Viktor Bout" with birth date 1967-01-13 (and country ru, which is not used because the listed entity has no country) gives a top score of **0.7953 against the threshold of 0.86, and the decision is clear**. The same person with the full name "Viktor Anatolijevitch Bout" scores 1.0000 and alerts.
+
+The components for the short name: name similarity 0.674, consonant-skeleton similarity 0.695 (higher, so it is used), birth date agrees (+0.10), country nothing. 0.695 + 0.10 gives 0.795, which is 0.065 under the threshold. The listed name has a patronymic that the query lacks, and that missing token pulls the name similarity under what a matching birth date can make up.
+
+This is a **scoring limitation, and it is not fixed**. The right entity was retrieved and ranked first; it was scored under the threshold, so a retrieval change would not help (consistent with part 7). It was found by one hand-typed query, so this section gives no rate: how often a query that omits a middle name or patronymic clears has not been measured, and the hold-outs do not isolate that case. Nothing was tuned or changed in response.
+
 ## What it adds up to
 
 Stated without softening:
@@ -403,3 +411,4 @@ Stated without softening:
 6. Everything above comes from one generator of queries. None of it was tested on names from real customers or real screening traffic.
 7. Against analyst labels the pairwise scoring holds up for people and organisations (F1 0.969 overall, 0.818 on pairs with no shared name), and fails for vessels, securities and crypto wallets, for pairs with no birth date and no shared name, and for namesakes (93% alert when no birth date is on both sides). Those labels do not validate the list-screening false-alert rate.
 8. A retrieval fix for typos (deletion keys) did not pass dev: the single-letter slip rate fell only from 13.9% to 12.9%, and the false-alert rate rose, 2.4 points for Arabic script. It is rejected.
+9. A query that omits a middle name or patronymic can clear even when the birth date matches: "Viktor Bout" with a matching birth date scores 0.7953 against 0.86 and clears, while the full listed name scores 1.0. Found on one hand-typed query; the rate is not measured and the limitation is not fixed (part 8).

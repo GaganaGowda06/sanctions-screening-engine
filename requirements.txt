@@ -11,6 +11,9 @@ scipy==1.18.1
 scikit-learn==1.9.1
 joblib==1.6.0
 
+# Local web page (app/streamlit_app.py); not needed by the engine or the tests of the engine
+streamlit==1.65.0
+
 # Dev dependencies (tests and lint only)
 pytest==9.1.1
 ruff==0.16.10

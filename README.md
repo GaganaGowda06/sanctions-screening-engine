@@ -53,6 +53,14 @@ python src/screen_cli.py replay REQUEST_ID --audit-dir /path/to/audit
 
 Every mode is an explicit subcommand (`init`, `screen`, `replay`); a bare name is a usage error (exit 2), so a customer called `init` or `replay` is screened like anyone else with `screen init`. The command line is the production entry point, so it is audited: each name's record is written before its decision is printed, and if a record cannot be written the command prints no decision and exits non-zero. The audit directory comes from `--audit-dir` or `$SCREENING_AUDIT_DIR`; there is no default, and the command refuses to start without one. `init` creates the store once and refuses a directory that is not empty; screening never creates it, and a missing or wiped store stops screening with `log_missing` rather than starting a new one. `replay REQUEST_ID` rebuilds a recorded decision from its header, payload and run context and exits 0 only if the result is identical; it refuses, with a field-level diff, if the engine's run context differs from the record's. `screen()` itself is unchanged and is what the evaluation scripts use, so evaluation runs write no audit records.
 
+### A local web page
+
+```
+venv/bin/streamlit run app/streamlit_app.py
+```
+
+`app/streamlit_app.py` is a single local page (no deployment): type a name, and optionally a birth date and a country, and it shows the decision, the top score against the threshold of 0.86, the five best candidates (listed name, entity type, birth date, country, source list) and, in plain words, the score components behind the top match. When the birth date or the country is missing it says recall is weaker without them, with the measured figures from `docs/limitations_evidence.md`. The engine is built once and cached. The page writes **no audit record** and imports nothing from the audit modules, so it cannot touch any audit store; it is for looking at how the matcher behaves, not for decisions that must be kept and replayed, which go through `src/screen_cli.py`.
+
 ## Stage 4: audit log and monitoring
 
 The full write-up is in [docs/stage4_audit_and_monitoring.md](docs/stage4_audit_and_monitoring.md). Stage 4 adds no matching logic; scores and decisions are unchanged. It answers the question an auditor would ask: why was this name flagged or cleared on this date, under which list, code, configuration and threshold. It also notices when the matcher's behaviour moves, and checks that a new list snapshot does not make it worse.
@@ -373,7 +381,7 @@ Developed and tested on Python 3.14. The data pipeline and candidate index use o
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt     # rapidfuzz for scoring, pytest and ruff for development
+pip install -r requirements.txt     # rapidfuzz for scoring, streamlit for the local page, pytest and ruff for development
 python src/download_data.py         # about 350 MB, verifies SHA1, skips if already current
 python src/profile_data.py          # writes reports/stage1_profile.json
 python src/profile_normaliser.py    # normalisation report, reports/stage2_normaliser.json
@@ -403,6 +411,10 @@ ruff check .
 ## Project structure
 
 ```
+app/
+  streamlit_app.py       the local web page (no audit, no deployment)
+scripts/
+  demo.py                end-to-end terminal demo against a throwaway audit store
 src/
   download_data.py       download and verify the OpenSanctions entities file
   profile_data.py        stream the file and write the profile report

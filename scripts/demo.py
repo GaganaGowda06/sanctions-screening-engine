@@ -58,8 +58,7 @@ def check(ok: bool, message: str) -> None:
 
 def variants(name: str) -> list[tuple[str, str]]:
     """Realistic variants of a name, in the order they are tried: a misspelling of one letter in the longest word (a
-    consonant dropped, then a consonant doubled, middle letter first and then outwards), then, as the fallback, the
-    tokens reordered."""
+    consonant dropped, then a consonant doubled, middle letter first and then outwards)."""
     tokens = name.replace(",", " ").split()
     longest = max(range(len(tokens)), key=lambda i: (len(tokens[i]), -i))
     word = tokens[longest]
@@ -77,9 +76,6 @@ def variants(name: str) -> list[tuple[str, str]]:
     found += [
         (with_word(word[:i] + word[i] + word[i:]), f"one consonant doubled ({word[i]!r} in {word!r})") for i in spots
     ]
-    reordered = " ".join(reversed(tokens))
-    if reordered != name:
-        found.append((reordered, "token reorder (fallback)"))
     return found
 
 

@@ -2,8 +2,10 @@
 
 It runs against the downloaded list, so it takes about 20 seconds, and is skipped where the list is absent.
 
+Marked slow: it runs with the slow suite, not the default one.
+
 Run:
-    pytest tests/test_demo.py
+    pytest -m slow tests/test_demo.py
 """
 
 import re
@@ -17,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LIST = ROOT / "data" / "sanctions" / "entities.ftm.json"
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not LIST.exists(), reason="needs the downloaded list (python src/download_data.py)")
 def test_the_demo_runs_all_eight_steps_and_never_touches_the_real_store(tmp_path):
     # The real list is used because a fuzzy match (a misspelling that alerts with a score below 1.0) needs a list big
