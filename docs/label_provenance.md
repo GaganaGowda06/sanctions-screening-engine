@@ -91,3 +91,7 @@ Each item says what the matcher decides, which way it moves the F1, and how much
 ## Reading the F1
 
 The 0.777 is a measure of internal consistency on a constructed set. Its direction of error is mixed: items 1 and 8 push it down, items 4, 5 and 6 push it up and item 7 depends on the definition. Items 5 and 6 are large and measured, and they push it up. A reader should take 0.777 as the matcher's score on this construction, with attributes supplied correctly 70% of the time, and not as its performance in use.
+
+## A check against labels people made
+
+Part 6 of `docs/limitations_evidence.md` scores the engine against OpenSanctions Pairs, whose labels are analyst judgements of whether two entities are the same, not rules over the list. Data: OpenSanctions, "Pairs: Cross-Referencing Training Data" (snapshot 2025-12-09), via the Hugging Face mirror `sanctions-er-anon/opensanctions_pairs`; Smith, Sesodia, Lindenberg and Schroeder de Witt (2026), arXiv:2603.11051. Licence: CC BY-NC 4.0, non-commercial use only, with attribution to OpenSanctions. This project is non-commercial, and the data is kept in a git-ignored local cache and is not redistributed. It answers part of the first limitation above, for the pairwise scoring of two given entities. It does not check the labels of the hold-outs in this document, which remain unreviewed by a person.

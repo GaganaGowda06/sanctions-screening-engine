@@ -168,6 +168,81 @@ def test_the_retrieval_gap_figures():
     assert g["second_holdout_stage2_engine"]["false_negatives_with_no_score_at_all"]["would_have_alerted"] == 17
 
 
+def test_the_pairs_alignment_counts_add_up_and_match_the_doc():
+    a = load("pairs_external_alignment.json")
+    assert a["pairs_total"] == 755540 and a["judgements"] == {"negative": 174391, "positive": 581149}
+    assert a["scope"] == {"entity_pairs": 474950, "relationship_or_role_records": 280590}
+    assert sum(a["not_scored_by_schema_pair"].values()) == 280590
+    assert a["file"]["sha256"] == "4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1"
+    s = load("pairs_external_scores.json")
+    assert s["file_sha256"] == a["file"]["sha256"]
+    assert (
+        s["pairs_scored"] + sum(s["pairs_not_scored"].values()) - s["pairs_not_scored"]["not_an_entity_pair"] == 474950
+    )
+    assert s["pairs_not_scored"] == {
+        "a_side_has_no_name_property": 5531, "conflicting_labels_left_out": 14,
+        "duplicate_line": 29592, "not_an_entity_pair": 280590,
+    }  # fmt: skip
+    assert s["self_check_against_screen"] == {"entities_checked_against_screen": 300, "mismatches": 0}
+    for text in (
+        "439,813",
+        "755,540",
+        "280,590",
+        "5,531",
+        "29,592",
+        "4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1",
+    ):
+        assert text in LIMITS
+
+
+def test_the_pairs_scores_are_consistent_and_match_the_doc():
+    s = load("pairs_external_scores.json")["left_names_as_queries_against_right"]
+    o = s["overall"]
+    assert o["tp"] + o["fp"] + o["fn"] + o["tn"] == o["pairs"] == 439813 and o["positives"] == 268490
+    assert o["precision"] == pytest.approx(o["tp"] / (o["tp"] + o["fp"]), rel=1e-12)
+    assert o["recall"] == pytest.approx(o["tp"] / o["positives"], rel=1e-12)
+    assert o["f1"] == pytest.approx(2 * o["precision"] * o["recall"] / (o["precision"] + o["recall"]), rel=1e-12)
+    assert o["auc"] > 0.9 and o["f1_95_interval"][0] < o["f1"] < o["f1_95_interval"][1]
+    for name in ("by_entity_type", "by_script"):
+        assert sum(v["pairs"] for v in s[name].values()) == o["pairs"]
+        assert sum(v["tp"] for v in s[name].values()) == o["tp"]
+    same, none = s["shares_an_identical_name"], s["shares_no_identical_name"]
+    assert same["pairs"] + none["pairs"] == o["pairs"] and same["positives"] + none["positives"] == o["positives"]
+    assert (
+        same["auc"] < 0.6 < none["auc"]
+    )  # an identical name carries no ranking information among the pairs it contains
+    for text in (
+        f"{o['f1']:.4f}",
+        f"{none['f1']:.4f}",
+        f"{none['recall']:.4f}",
+        f"{same['false_positive_rate'] * 100:.2f}%",
+    ):
+        assert text in LIMITS, text
+    vessels = s["shares_no_identical_name_by_schema_pair"]["Vessel/Vessel"]
+    assert vessels["auc"] < 0.5 and f"{vessels['f1']:.4f}" in LIMITS and f"{vessels['recall']:.4f}" in LIMITS
+
+
+def test_the_pairs_direction_sensitivity_is_close_to_the_main_run():
+    both = load("pairs_external_scores.json")
+    assert (
+        abs(
+            both["left_names_as_queries_against_right"]["overall"]["f1"]
+            - both["right_names_as_queries_against_left"]["overall"]["f1"]
+        )
+        < 0.01
+    )
+
+
+def test_the_licence_and_attribution_are_stated_in_the_readme_and_the_docs():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for text in (readme, LIMITS, LABELS):
+        assert "CC BY-NC 4.0" in text or "CC-BY-NC-4.0" in text
+        assert "OpenSanctions" in text and "non-commercial" in text.lower()
+    assert "arXiv:2603.11051" in LIMITS and "arXiv:2603.11051" in LABELS and "arXiv:2603.11051" in readme
+    assert "This project is non-commercial" in LIMITS and "not stored in the repository" in LIMITS
+    assert "data/external/" in (ROOT / ".gitignore").read_text()
+
+
 def test_the_docs_are_plain_writing():
     for text in (LIMITS, LABELS):
         assert "—" not in text and "–" not in text

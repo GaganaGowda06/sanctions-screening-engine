@@ -8,7 +8,7 @@ This is an analysis of the matcher, not a new feature. Nothing in scoring, match
 - The list is the snapshot `20261006074704-hib`. The 0.777 was first measured on an earlier snapshot. The harness here reproduces it exactly on this one, which also shows the list has not moved the figure: 1,474 true alerts, 132 wrong-entity alerts and 187 false alerts, F1 0.7772.
 - Two engines are used. The Stage 2 engine (no rarity-weighted skeleton) is the one behind the 0.777, so the error analysis, the label work and the prevalence table use it on the second hold-out. The shipped engine (with the rarity-weighted skeleton) is used on the third hold-out, where it reproduces F1 0.8008 (1,489 true alerts, 90 wrong-entity alerts, 140 false alerts). The adversarial test uses the shipped engine, because that is the one deployed.
 - Positives means all 2,400 positive queries of a hold-out. Headline positives means the 2,000 used for the headline F1. Negatives means all 2,400 negatives; headline negatives are the 2,000 in Latin, Cyrillic and Arabic script. Every count below says which.
-- Scripts and reports: `analysis/error_analysis.py`, `label_dependence.py`, `query_provenance.py`, `prevalence.py`, `tuning_transfer.py`, `adversarial.py`, `adversarial_summary.py`, `retrieval_gap.py`, with `common.py`, `perturb.py` and `textsim.py` as helpers. They use the research path (the components the engine scores with), so no audit record is written.
+- Scripts and reports: `analysis/error_analysis.py`, `label_dependence.py`, `query_provenance.py`, `prevalence.py`, `tuning_transfer.py`, `adversarial.py`, `adversarial_summary.py`, `retrieval_gap.py`, `pairs_external.py` with `pairs_external_score.py`, with `common.py`, `perturb.py` and `textsim.py` as helpers. They use the research path (the components the engine scores with), so no audit record is written.
 
 ## 1. Error analysis of the headline F1
 
@@ -266,6 +266,108 @@ The full list of every slip, with scores, is in `reports/analysis_adversarial_v3
 
 The matcher is not robust to ordinary typing and spelling variation. About one catch in four is lost to at least one one-letter slip in a name, and one in five to a different romanisation convention. A name written under the German convention is lost more often than not. Names of organisations are hit hardest. Part of this is a retrieval limit: the candidate index finds an entity from name keys, so a one-letter change can remove the entity from the candidate list even though scoring it directly would have alerted. That is a different cause from the score-threshold causes in part 1, and a different fix. It also means the recall figures in the project, which test aliases the list already contains, overstate recall against a customer who spells a listed name slightly differently.
 
+## 6. External human-labelled validation (OpenSanctions Pairs)
+
+Everything above is measured on queries this project built from the list. This part scores the engine against labels that people made. Nothing was changed or tuned: the engine is the shipped one, with its one threshold of 0.86.
+
+### The data, its licence and its attribution
+
+The data is OpenSanctions Pairs, the snapshot of 2025-12-09 (OpenSanctions, "Pairs: Cross-Referencing Training Data", https://www.opensanctions.org/docs/opensource/pairs/), read from the Hugging Face mirror `sanctions-er-anon/opensanctions_pairs`. Each pair is two entities and an analyst's judgement of whether they are the same real-world entity. The paper that describes it is Smith, Sesodia, Lindenberg and Schroeder de Witt (2026), "OpenSanctions Pairs: Large-Scale Entity Matching with LLMs", arXiv:2603.11051. The data is licensed CC BY-NC 4.0: it may be used for non-commercial purposes only, with attribution to OpenSanctions. This project is non-commercial. The data is not stored in the repository and is not redistributed; it is read from a local cache that is git-ignored (`data/external/`), and the reports hold aggregate counts only. The paper's own licence (CC BY 4.0) is separate and does not apply to the data.
+
+File: `pairs.json.gz`, 409,088,814 bytes, SHA-256 `4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1`. It is byte-identical to the copy the project had already downloaded and checked against the hash Hugging Face publishes. Each line holds `judgement`, `left` and `right`; a side has `id`, `caption`, `schema` and `properties`, with `datasets`, `referents` and timestamps besides.
+
+### Alignment with what the engine consumes
+
+| | Count |
+|---|---|
+| Pairs in the file | 755,540 |
+| Positive (same entity) | 581,149 (76.9%) |
+| Negative (different entities) | 174,391 (23.1%) |
+| Relationship and role records, not scoreable by a name matcher | 280,590 (37.1% of the file) |
+| Entity pairs | 474,950 |
+| Duplicate lines of an entity pair, scored once | 29,592 |
+| Pairs whose duplicates disagree on the label, left out | 14 |
+| Pairs with a side that has no name property (a caption only) | 5,531 |
+| Pairs scored | 439,813 (268,490 positive, 171,323 negative) |
+
+The dataset card describes persons and organisations. The file also holds Occupancy 213,448, Succession 33,607, Position 26,330, Ownership 2,392, Family 2,301, Directorship 2,099, UnknownLink 395 and a few smaller record types. Those are 37% of the lines and were counted, not scored.
+
+The pairs scored are 268,027 person to person, 157,218 organisation to organisation (Organization, Company, LegalEntity, PublicBody), 4,704 person to organisation, and 9,864 of other types (Vessel 7,336, Security 1,644, CryptoWallet 800, Airplane 84).
+
+What the engine reads: names (`name`, `alias`, `previousName`, `weakAlias`), the first birth date, and country (`country`, `nationality`, `citizenship`, `jurisdiction`, `birthCountry`, `mainCountry`, `flag`). It ignores the entity type, the caption, and 89 other property keys, among them `address` (on either side of 261,552 pairs), `gender` (218,929), `idNumber` (93,511), `passportNumber` (41,711), `innCode` (87,672), `incorporationDate` (97,977), `imoNumber` (14,517), `leiCode` (13,368), and first, middle and last names. Birth dates are on both sides of 201,189 scored pairs (45.7%) and country on both sides of 383,211 (87.1%); 35,103 pairs have neither on both sides.
+
+Script coverage of the scored pairs, by the engine's own order (Arabic over Cyrillic over other): Latin 166,896, Cyrillic 144,174, Arabic 102,369 (80,949 of them person pairs) and other non-Latin 26,374. Only 1,736 pairs have no script in common between the two sides, because entities carry aliases in several scripts.
+
+Pairs the engine cannot score: the 280,590 relationship records; the 5,531 pairs where a side has only a caption; and 9,210 scored pairs (2.1%) for which none of the left names reached the engine's minimum name score against the right entity, so no score exists. They are counted as predicted non-matches.
+
+### How a pair is scored
+
+Fixed before scoring (`analysis/pairs_external.py`). Each of the left entity's first 12 names is used as a query, with the left entity's first birth date and first country, against the right entity as it would stand on the list (all its names, birth dates and countries). The pair's score is the highest final score. A pair is predicted a match at 0.86 or above. It is the engine's own scoring: the deployment list's rarity statistics, with retrieval bypassed for the one right-hand entity, checked equal to `screen()` on 300 list entities (no difference). 118,311 scored pairs had more than 12 names on a side and used only the first 12. The same was run with the right entity as the query.
+
+A first scoring run was discarded: a mistake in the record order meant every left entity was scored against itself, and the output (recall 1.0, AUC 0.5) showed it. It was fixed and a test now pins the order. The pairs were then scored; two further runs that only added breakdown columns gave identical headline numbers.
+
+### Result against the human labels
+
+Left names as queries, threshold 0.86, 439,813 pairs:
+
+| | Pairs | Positive share | Precision | Recall | F1 (95% interval) | False-alert rate | AUC |
+|---|---|---|---|---|---|---|---|
+| All | 439,813 | 61.0% | 0.9635 | 0.9750 | 0.9692 (0.9688 to 0.9697) | 5.79% | 0.9747 |
+| Person to person | 268,027 | 69.8% | 0.9707 | 0.9888 | 0.9797 | 6.89% | 0.9694 |
+| Organisation to organisation | 157,218 | 46.0% | 0.9604 | 0.9570 | 0.9587 | 3.35% | 0.9838 |
+| Person to organisation | 4,704 | 87.8% | 0.9758 | 0.8696 | 0.9196 | 15.56% | 0.8977 |
+| Other entity types | 9,864 | 51.7% | 0.7466 | 0.8111 | 0.7775 | 29.43% | 0.8149 |
+| Latin | 166,896 | 66.2% | 0.9512 | 0.9647 | 0.9579 | 9.71% | 0.9555 |
+| Cyrillic | 144,174 | 56.2% | 0.9680 | 0.9755 | 0.9717 | 4.13% | 0.9817 |
+| Arabic | 102,369 | 57.7% | 0.9777 | 0.9915 | 0.9845 | 3.09% | 0.9875 |
+| Other non-Latin | 26,374 | 67.9% | 0.9722 | 0.9830 | 0.9776 | 5.95% | 0.9794 |
+| Person to person, Arabic | 80,949 | 66.9% | 0.9819 | 0.9926 | 0.9872 | 3.68% | 0.9833 |
+| Person to person, Latin | 105,466 | 71.5% | 0.9561 | 0.9850 | 0.9703 | 11.33% | 0.9518 |
+| No script in common (cross-script) | 1,736 | 98.2% | 0.9915 | 0.6860 | 0.8110 | 31.25% | 0.7677 |
+
+With the right entity as the query the overall figures are precision 0.9637, recall 0.9644, F1 0.9641, false-alert rate 5.69%.
+
+### Most of this is easy, and the hard part is a different number
+
+57.5% of the pairs (252,867), and 91.4% of the positives (245,356 of 268,490), have an identical name on both sides, the same tokens in any order ignoring case and accents. Any name matcher gets those. They also contain 7,511 negatives, namesakes the analysts judged to be different entities, and the engine alerts on 86.4% of them.
+
+| Subset | Pairs | Positives | Negatives | Precision | Recall | F1 (95% interval) | False-alert rate | AUC |
+|---|---|---|---|---|---|---|---|---|
+| An identical name on both sides | 252,867 | 245,356 | 7,511 | 0.9740 | 0.9920 | 0.9829 | 86.42% | 0.5637 |
+| No identical name | 186,946 | 23,134 | 163,812 | 0.8428 | 0.7953 | 0.8184 (0.8144 to 0.8222) | 2.09% | 0.9596 |
+
+The hold-out positives are built so that the tested alias is removed from the list, so no identical name is left. The "no identical name" row is the one built most like them. Its positive share is 12.4%, so its precision is not comparable with a 50% balance; at the hold-outs' balance of equal numbers its precision would be 0.9743 and its F1 0.8758. With the right entity as the query it is recall 0.7744, F1 0.8070.
+
+Namesakes, by whether the birth date is on both sides: with an identical name and a birth date on both sides there are 750 negatives and the engine alerts on 27.5% of them; with an identical name and no birth date on both sides there are 6,761 negatives and the engine alerts on 93.0%. With no identical name and no birth date on both sides (125,130 pairs) precision is 0.7724, recall 0.7189 and F1 0.7447; with a birth date on both sides (61,816 pairs) F1 is 0.9680 and the false-alert rate 0.23%.
+
+### Against the hold-out numbers
+
+| | Recall | Precision | F1 | False-alert rate |
+|---|---|---|---|---|
+| Second hold-out, Stage 2 engine | 0.737 | 0.8221 | 0.7772 | 9.35% |
+| Third hold-out, shipped engine | 0.7445 | 0.8662 | 0.8008 | 7.0% |
+| Human-labelled pairs, all | 0.9750 | 0.9635 | 0.9692 | 5.79% |
+| Human-labelled pairs, no identical name | 0.7953 | 0.8428 | 0.8184 | 2.09% |
+
+Where the human-labelled result is worse than the hold-out band (F1 0.777 to 0.801), and by how much:
+
+- **Vessels, securities and crypto wallets.** The 9,864 pairs of other entity types score F1 0.7775 (0.023 under the third hold-out) with a 29.4% false-alert rate. Without an identical name, vessel to vessel pairs score recall 0.0881, F1 0.1083 and AUC 0.292, which is below chance (318 positives, 2,067 negatives): the engine finds almost none of the vessels that analysts matched, and ranks them backwards. All 800 crypto wallet pairs are negatives and the engine alerts on 99.75% of them; 21.4% of 1,644 security pairs, all negatives, alert.
+- **Pairs with no birth date on both sides and no identical name.** F1 0.7447, which is 0.056 under the third hold-out and 0.033 under the second.
+- **Organisation pairs with no identical name.** F1 0.7832 (recall 0.7631), 0.018 under the third hold-out. Organization to Organization alone is F1 0.6394 (pos 963, neg 18,661). Person to organisation pairs without an identical name have recall 0.6665.
+- **Person pairs written in Latin script.** False-alert rate 11.33%, against 6.35% for Latin queries on the second hold-out and 4.07% on the third.
+- **Cross-script pairs.** Recall 0.6860, which is 0.051 under the second hold-out's overall recall and sits with its weak directions (Arabic to Latin 0.65, Latin to Arabic 0.5967).
+- **Namesakes.** The engine alerts on 86.4% of different-entity pairs that share a name, and on 93.0% of them when no birth date is on both sides.
+
+Where it is better: overall F1 is 0.969, which is 0.17 to 0.19 above the hold-outs, but 91% of the positives are identical names. On pairs with no identical name, F1 is 0.8184, 0.041 above the second hold-out and 0.018 above the third, and recall is 0.7953 against 0.737 and 0.7445. Arabic-script pairs have a false-alert rate of 3.09% and person pairs in Arabic script 3.68%, against 26.3% and 22.5% for Arabic-script clean names on the second and third hold-outs.
+
+### Verdict
+
+**On the question these labels answer, the engine holds up for people and for organisations, with named exceptions.** Scoring two given entities against each other, it gets 0.969 F1 and 0.975 AUC against analyst labels, and on the harder pairs without a shared name it gets 0.818 F1 (interval 0.814 to 0.822), inside the hold-out band and slightly above it. So the constructed hold-outs did not overstate the F1 of the pairwise scoring. It does not hold up for vessels, securities or crypto wallets, for pairs with no birth date and no identical name (F1 0.745), for organisation pairs without a shared name, for cross-script pairs, or for namesakes: when two different people share a name and a birth date is missing, it alerts about nine times in ten.
+
+**What this does not validate.** The pairs are candidate pairs chosen by OpenSanctions' own pipeline, and each is judged one pair at a time. A false-alert rate of 3.1% on Arabic-script pairs is the share of analyst-rejected candidate pairs the engine scores over the threshold; it is not the rate at which a clean Arabic-script customer alerts against a list of 69,637 entities, which the hold-out measured at 22.6% to 26.3%. Retrieval is bypassed, so the retrieval limits in part 5 and the typo fragility are untouched by this test. Prevalence is a property of the file (77% positive before scoring), not of a customer book, so part 3 stands. The pairs also fix their spellings, so they say nothing about a customer who types a name differently.
+
+The earlier limitation, that the labels were never human-checked, is partly answered. The pairwise scoring is now checked against 439,813 analyst judgements. The list-screening figures (the 26.3% Arabic false-alert rate, the recall of the hold-out groups, the precision at realistic prevalence) are still measured only on constructed queries.
+
 ## What it adds up to
 
 Stated without softening:
@@ -276,3 +378,4 @@ Stated without softening:
 4. The matcher is fragile to a one-letter change in a name, in 13% of single-letter variants overall and 24% for consonant deletion. Part of the cause is retrieval, not scoring.
 5. The tuning is not overfit, but it does not explain the weakness either, and `max_df` is set at a value that is worse for F1 than a smaller one on this slice.
 6. Everything above comes from one generator of queries. None of it was tested on names from real customers or real screening traffic.
+7. Against analyst labels the pairwise scoring holds up for people and organisations (F1 0.969 overall, 0.818 on pairs with no shared name), and fails for vessels, securities and crypto wallets, for pairs with no birth date and no shared name, and for namesakes (93% alert when no birth date is on both sides). Those labels do not validate the list-screening false-alert rate.

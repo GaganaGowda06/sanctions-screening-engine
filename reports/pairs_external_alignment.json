@@ -1,0 +1,353 @@
+{
+  "attribute_coverage_entity_pairs": {
+    "birth_date:both": 201191,
+    "birth_date:left_only": 5707,
+    "birth_date:neither": 194851,
+    "birth_date:right_only": 38078,
+    "country:both": 383225,
+    "country:left_only": 12349,
+    "country:neither": 11221,
+    "country:right_only": 33032,
+    "pairs": 439827
+  },
+  "cross_script_pairs_by_label": {
+    "cross-script/negative": 32,
+    "cross-script/positive": 1704
+  },
+  "duplicate_lines_of_an_entity_pair": 29592,
+  "duplicates_with_a_different_label": 27,
+  "entity_pairs_unique": 445358,
+  "entity_pairs_with_conflicting_labels": 14,
+  "file": {
+    "bytes": 409088814,
+    "licence": "CC BY-NC 4.0",
+    "name": "pairs.json.gz",
+    "sha256": "4044cf5f6edb0d2cdccf11326063f905408224c3b2fe261baa0d779d80a0edd1",
+    "source": "huggingface.co/datasets/sanctions-er-anon/opensanctions_pairs"
+  },
+  "judgements": {
+    "negative": 174391,
+    "positive": 581149
+  },
+  "n_ignored_property_keys": 89,
+  "not_scored_by_schema_pair": {
+    "Associate/Associate": 1,
+    "Directorship/Directorship": 2099,
+    "Documentation/Documentation": 6,
+    "Employment/Employment": 4,
+    "Family/Family": 2301,
+    "Occupancy/Occupancy": 213448,
+    "Ownership/Ownership": 2392,
+    "Position/Position": 26330,
+    "Representation/Representation": 7,
+    "Succession/Succession": 33607,
+    "UnknownLink/UnknownLink": 395
+  },
+  "pairs_total": 755540,
+  "pairs_whose_two_sides_have_no_name_property": {
+    "...of which the side has a caption": 5531,
+    "either side has no name property": 5531,
+    "left has no name property": 64,
+    "right has no name property": 5467
+  },
+  "positive_share": 0.7691836302512111,
+  "properties_the_engine_consumes": {
+    "alias": {
+      "pairs_with_it_on_both": 162800,
+      "pairs_with_it_on_either_side": 287973
+    },
+    "birthCountry": {
+      "pairs_with_it_on_both": 13227,
+      "pairs_with_it_on_either_side": 67081
+    },
+    "birthDate": {
+      "pairs_with_it_on_both": 201191,
+      "pairs_with_it_on_either_side": 244976
+    },
+    "citizenship": {
+      "pairs_with_it_on_both": 46225,
+      "pairs_with_it_on_either_side": 196961
+    },
+    "country": {
+      "pairs_with_it_on_both": 258050,
+      "pairs_with_it_on_either_side": 393682
+    },
+    "flag": {
+      "pairs_with_it_on_both": 4147,
+      "pairs_with_it_on_either_side": 6613
+    },
+    "jurisdiction": {
+      "pairs_with_it_on_both": 56397,
+      "pairs_with_it_on_either_side": 100649
+    },
+    "mainCountry": {
+      "pairs_with_it_on_both": 298,
+      "pairs_with_it_on_either_side": 4842
+    },
+    "name": {
+      "pairs_with_it_on_both": 439016,
+      "pairs_with_it_on_either_side": 439027
+    },
+    "nationality": {
+      "pairs_with_it_on_both": 57777,
+      "pairs_with_it_on_either_side": 152381
+    },
+    "previousName": {
+      "pairs_with_it_on_both": 1028,
+      "pairs_with_it_on_either_side": 13207
+    },
+    "weakAlias": {
+      "pairs_with_it_on_both": 11167,
+      "pairs_with_it_on_either_side": 76298
+    }
+  },
+  "properties_the_engine_ignores": {
+    "address": {
+      "pairs_with_it_on_both": 179696,
+      "pairs_with_it_on_either_side": 261552
+    },
+    "addressEntity": {
+      "pairs_with_it_on_both": 94775,
+      "pairs_with_it_on_either_side": 189506
+    },
+    "birthPlace": {
+      "pairs_with_it_on_both": 67084,
+      "pairs_with_it_on_either_side": 161733
+    },
+    "classification": {
+      "pairs_with_it_on_both": 3462,
+      "pairs_with_it_on_either_side": 132941
+    },
+    "createdAt": {
+      "pairs_with_it_on_both": 66838,
+      "pairs_with_it_on_either_side": 169075
+    },
+    "description": {
+      "pairs_with_it_on_both": 4885,
+      "pairs_with_it_on_either_side": 21993
+    },
+    "education": {
+      "pairs_with_it_on_both": 4643,
+      "pairs_with_it_on_either_side": 74670
+    },
+    "email": {
+      "pairs_with_it_on_both": 9893,
+      "pairs_with_it_on_either_side": 53326
+    },
+    "fatherName": {
+      "pairs_with_it_on_both": 33068,
+      "pairs_with_it_on_either_side": 78405
+    },
+    "firstName": {
+      "pairs_with_it_on_both": 181569,
+      "pairs_with_it_on_either_side": 234804
+    },
+    "gender": {
+      "pairs_with_it_on_both": 148701,
+      "pairs_with_it_on_either_side": 218929
+    },
+    "idNumber": {
+      "pairs_with_it_on_both": 34196,
+      "pairs_with_it_on_either_side": 93511
+    },
+    "imoNumber": {
+      "pairs_with_it_on_both": 9138,
+      "pairs_with_it_on_either_side": 14517
+    },
+    "incorporationDate": {
+      "pairs_with_it_on_both": 50610,
+      "pairs_with_it_on_either_side": 97977
+    },
+    "innCode": {
+      "pairs_with_it_on_both": 44351,
+      "pairs_with_it_on_either_side": 87672
+    },
+    "kppCode": {
+      "pairs_with_it_on_both": 27419,
+      "pairs_with_it_on_either_side": 61968
+    },
+    "lastName": {
+      "pairs_with_it_on_both": 164868,
+      "pairs_with_it_on_either_side": 225384
+    },
+    "legalForm": {
+      "pairs_with_it_on_both": 37461,
+      "pairs_with_it_on_either_side": 82590
+    },
+    "leiCode": {
+      "pairs_with_it_on_both": 2187,
+      "pairs_with_it_on_either_side": 13368
+    },
+    "middleName": {
+      "pairs_with_it_on_both": 35308,
+      "pairs_with_it_on_either_side": 92370
+    },
+    "modifiedAt": {
+      "pairs_with_it_on_both": 71678,
+      "pairs_with_it_on_either_side": 224414
+    },
+    "notes": {
+      "pairs_with_it_on_both": 100108,
+      "pairs_with_it_on_either_side": 292696
+    },
+    "ogrnCode": {
+      "pairs_with_it_on_both": 37870,
+      "pairs_with_it_on_either_side": 64543
+    },
+    "passportNumber": {
+      "pairs_with_it_on_both": 9741,
+      "pairs_with_it_on_either_side": 41711
+    },
+    "permId": {
+      "pairs_with_it_on_both": 16673,
+      "pairs_with_it_on_either_side": 59901
+    },
+    "phone": {
+      "pairs_with_it_on_both": 12820,
+      "pairs_with_it_on_either_side": 55325
+    },
+    "position": {
+      "pairs_with_it_on_both": 101132,
+      "pairs_with_it_on_either_side": 214810
+    },
+    "programId": {
+      "pairs_with_it_on_both": 212671,
+      "pairs_with_it_on_either_side": 290172
+    },
+    "registrationNumber": {
+      "pairs_with_it_on_both": 47766,
+      "pairs_with_it_on_either_side": 94395
+    },
+    "religion": {
+      "pairs_with_it_on_both": 1109,
+      "pairs_with_it_on_either_side": 18375
+    },
+    "secondName": {
+      "pairs_with_it_on_both": 15450,
+      "pairs_with_it_on_either_side": 61909
+    },
+    "sector": {
+      "pairs_with_it_on_both": 4482,
+      "pairs_with_it_on_either_side": 30960
+    },
+    "sourceUrl": {
+      "pairs_with_it_on_both": 160272,
+      "pairs_with_it_on_either_side": 259123
+    },
+    "status": {
+      "pairs_with_it_on_both": 18664,
+      "pairs_with_it_on_either_side": 65298
+    },
+    "swiftBic": {
+      "pairs_with_it_on_both": 5268,
+      "pairs_with_it_on_either_side": 14308
+    },
+    "taxNumber": {
+      "pairs_with_it_on_both": 31744,
+      "pairs_with_it_on_either_side": 84668
+    },
+    "title": {
+      "pairs_with_it_on_both": 5783,
+      "pairs_with_it_on_either_side": 30431
+    },
+    "topics": {
+      "pairs_with_it_on_both": 389766,
+      "pairs_with_it_on_either_side": 428011
+    },
+    "website": {
+      "pairs_with_it_on_both": 25376,
+      "pairs_with_it_on_either_side": 90342
+    },
+    "wikidataId": {
+      "pairs_with_it_on_both": 39784,
+      "pairs_with_it_on_either_side": 171377
+    }
+  },
+  "record_keys": {
+    "judgement+left+right": 755540
+  },
+  "schema_pairs_left_right": {
+    "Airplane/Airplane": 84,
+    "Associate/Associate": 1,
+    "Company/Company": 70885,
+    "Company/LegalEntity": 1314,
+    "Company/Organization": 21953,
+    "Company/Person": 51,
+    "Company/PublicBody": 1,
+    "CryptoWallet/CryptoWallet": 818,
+    "Directorship/Directorship": 2099,
+    "Documentation/Documentation": 6,
+    "Employment/Employment": 4,
+    "Family/Family": 2301,
+    "LegalEntity/Company": 7738,
+    "LegalEntity/LegalEntity": 6424,
+    "LegalEntity/Organization": 4648,
+    "LegalEntity/Person": 3969,
+    "Occupancy/Occupancy": 213448,
+    "Organization/Company": 25849,
+    "Organization/LegalEntity": 1071,
+    "Organization/Organization": 35429,
+    "Organization/Person": 123,
+    "Organization/PublicBody": 8,
+    "Ownership/Ownership": 2392,
+    "Person/Company": 44,
+    "Person/LegalEntity": 466,
+    "Person/Organization": 52,
+    "Person/Person": 284808,
+    "Position/Position": 26330,
+    "PublicBody/Organization": 4,
+    "Representation/Representation": 7,
+    "Security/Security": 1661,
+    "Succession/Succession": 33607,
+    "UnknownLink/UnknownLink": 395,
+    "Vessel/Vessel": 7550
+  },
+  "scope": {
+    "entity_pairs": 474950,
+    "relationship_or_role_records": 280590
+  },
+  "unique_entity_pairs_by_script_bucket_and_label": {
+    "Arabic/negative": 43325,
+    "Arabic/positive": 59051,
+    "Cyrillic/negative": 63169,
+    "Cyrillic/positive": 81009,
+    "Latin/negative": 56361,
+    "Latin/positive": 110538,
+    "other non-Latin/negative": 8475,
+    "other non-Latin/positive": 17899
+  },
+  "unique_entity_pairs_by_type": {
+    "organisation_organisation": 161426,
+    "other_entity_types": 9916,
+    "person_organisation": 4705,
+    "person_person": 269311
+  },
+  "unique_entity_pairs_by_type_and_label": {
+    "organisation_organisation/negative": 84953,
+    "organisation_organisation/positive": 76473,
+    "other_entity_types/negative": 4802,
+    "other_entity_types/positive": 5114,
+    "person_organisation/negative": 572,
+    "person_organisation/positive": 4133,
+    "person_person/negative": 81057,
+    "person_person/positive": 188254
+  },
+  "unique_entity_pairs_by_type_and_script_bucket": {
+    "organisation_organisation/Arabic": 20991,
+    "organisation_organisation/Cyrillic": 78424,
+    "organisation_organisation/Latin": 47897,
+    "organisation_organisation/other non-Latin": 9918,
+    "other_entity_types/Arabic": 4,
+    "other_entity_types/Cyrillic": 100,
+    "other_entity_types/Latin": 9555,
+    "other_entity_types/other non-Latin": 205,
+    "person_organisation/Arabic": 430,
+    "person_organisation/Cyrillic": 188,
+    "person_organisation/Latin": 3981,
+    "person_organisation/other non-Latin": 105,
+    "person_person/Arabic": 80951,
+    "person_person/Cyrillic": 65466,
+    "person_person/Latin": 105466,
+    "person_person/other non-Latin": 16146
+  }
+}
