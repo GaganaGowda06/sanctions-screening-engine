@@ -1,40 +1,31 @@
 """The terminal demo (scripts/demo.py) runs every step against a throwaway store and leaves the real one alone.
 
-The list is a few entities in a temporary file (with its VERSION file), so the run takes seconds.
+It runs against the downloaded list, so it takes about 20 seconds, and is skipped where the list is absent.
 
 Run:
     pytest tests/test_demo.py
 """
 
-import hashlib
-import json
 import re
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
-FTM = [
-    {"id": "e1", "schema": "Person", "target": True,
-     "properties": {"name": ["Mohammed Ali Hassan"], "birthDate": ["1970-01-01"], "country": ["iq"]}},
-    {"id": "e2", "schema": "Person", "target": True,
-     "properties": {"name": ["Ivan Petrov"], "birthDate": ["1980-05-05"], "country": ["ru"]}},
-    {"id": "e4", "schema": "Company", "target": True, "properties": {"name": ["Acme Trading Limited"]}},
-]  # fmt: skip
+LIST = ROOT / "data" / "sanctions" / "entities.ftm.json"
 
 
+@pytest.mark.skipif(not LIST.exists(), reason="needs the downloaded list (python src/download_data.py)")
 def test_the_demo_runs_all_eight_steps_and_never_touches_the_real_store(tmp_path):
-    directory = tmp_path / "list"
-    directory.mkdir()
-    body = "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in FTM).encode("utf-8")
-    entities = directory / "entities.ftm.json"
-    entities.write_bytes(body)
-    (directory / "VERSION").write_text(f"version=20260101000000-test\nsha1={hashlib.sha1(body).hexdigest()}\n")  # noqa: S324
+    # The real list is used because a fuzzy match (a misspelling that alerts with a score below 1.0) needs a list big
+    # enough for the name's rarity weights; on a few-entity list every one-letter variant scores exactly 1.0.
     real_store = tmp_path / "real-audit"  # pointed to by the environment; the demo must neither use nor create it
     env = {"PATH": "/usr/bin:/bin", "SCREENING_AUDIT_DIR": str(real_store)}
 
     done = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "demo.py"), "--input", str(entities)],
+        [sys.executable, str(ROOT / "scripts" / "demo.py"), "--input", str(LIST)],
         capture_output=True, text=True, env=env, timeout=120,
     )  # fmt: skip
 
@@ -44,8 +35,9 @@ def test_the_demo_runs_all_eight_steps_and_never_touches_the_real_store(tmp_path
     assert "FAILED" not in out and "All 8 steps succeeded" in out
     for line in (
         "Decision: ALERT",
-        "transformation applied: token reorder",
+        "edit applied: one consonant",
         "Score: exact name",
+        "with a lower score",
         "Audit clock simulated to",
         "real deployments never backdate.",
         "Decision: CLEAR",

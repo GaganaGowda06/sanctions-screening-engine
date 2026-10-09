@@ -39,6 +39,7 @@ CLEAN_COUNTRY = "gb"
 ON_LIST_REF = "demo-customer-001"
 CLEAN_REF = "demo-customer-002"
 MAX_TRIES = 20000
+VOWELS = set("aeiouy")
 
 
 class DemoFailure(Exception):
@@ -56,19 +57,29 @@ def check(ok: bool, message: str) -> None:
 
 
 def variants(name: str) -> list[tuple[str, str]]:
-    """Realistic variants of a name, in the order they are tried: the tokens reordered (surname first becomes surname
-    last, or the reverse), then single-letter deletions in the longest word, middle letter first and then outwards."""
+    """Realistic variants of a name, in the order they are tried: a misspelling of one letter in the longest word (a
+    consonant dropped, then a consonant doubled, middle letter first and then outwards), then, as the fallback, the
+    tokens reordered."""
     tokens = name.replace(",", " ").split()
-    found = []
-    reordered = " ".join(reversed(tokens))
-    if reordered != name:
-        found.append((reordered, "token reorder"))
     longest = max(range(len(tokens)), key=lambda i: (len(tokens[i]), -i))
     word = tokens[longest]
     middle = len(word) // 2
-    for position in sorted(range(1, len(word)), key=lambda i: (abs(i - middle), i)):
-        edited = tokens[:longest] + [word[:position] + word[position + 1 :]] + tokens[longest + 1 :]
-        found.append((" ".join(edited), f"single-letter edit (deleted {word[position]!r} from {word!r})"))
+    spots = sorted((i for i in range(1, len(word)) if word[i].lower() not in VOWELS and word[i].isalpha()),
+                   key=lambda i: (abs(i - middle), i))  # fmt: skip
+
+    def with_word(new: str) -> str:
+        return " ".join(tokens[:longest] + [new] + tokens[longest + 1 :])
+
+    found = [
+        (with_word(word[:i] + word[i + 1 :]), f"one consonant dropped ({word[i]!r} removed from {word!r})")
+        for i in spots
+    ]
+    found += [
+        (with_word(word[:i] + word[i] + word[i:]), f"one consonant doubled ({word[i]!r} in {word!r})") for i in spots
+    ]
+    reordered = " ".join(reversed(tokens))
+    if reordered != name:
+        found.append((reordered, "token reorder (fallback)"))
     return found
 
 
@@ -81,7 +92,8 @@ def alerts_on(engine: AuditedEngine, name: str, entity: dict, birth_date: str, c
 def pick_list_name(engine: AuditedEngine, entities: list[dict]) -> dict:
     """The first sanctions target (by entity id) that has a Latin-script name of two or more words, a full birth date
     and a country, that the engine alerts on when its own name is screened, and for which at least one variant
-    (see variants) also alerts. The first variant that alerts is used; if none does, the next entity is tried."""
+    (see variants) also alerts with a score below 1.0, so the demo shows a fuzzy match. The first such variant is
+    used; if none qualifies, the next entity is tried."""
     for entity in sorted((e for e in entities if e["target"] and e["schema"] == "Person"), key=lambda e: e["id"])[
         :MAX_TRIES
     ]:
@@ -93,7 +105,8 @@ def pick_list_name(engine: AuditedEngine, entities: list[dict]) -> dict:
         if alerts_on(engine, name, entity, birth_date, country) is None:
             continue
         for variant, how in variants(name):
-            if alerts_on(engine, variant, entity, birth_date, country) is not None:
+            score = alerts_on(engine, variant, entity, birth_date, country)
+            if score is not None and score < 1.0:
                 return {
                     "entity": entity["id"], "name": name, "birth_date": birth_date, "country": country,
                     "variant": variant, "how": how,
@@ -171,14 +184,17 @@ def run(input_path: Path) -> dict:
         print(f"  Decision: ALERT, {len(hit.matches)} match(es), best {top.entity_id} score {top.score:.4f}")
         check(top.entity_id == listed["entity"], f"the alert is on the listed entity {listed['entity']}")
 
-        heading(3, "Screen a realistic variant of the same listed name")
-        print(f"  Variant: {listed['variant']!r} -- transformation applied: {listed['how']}")
+        heading(3, "Screen a misspelt variant of the same listed name")
+        print(f"  Variant: {listed['variant']!r} (from {listed['name']!r}) -- edit applied: {listed['how']}")
         print(f"  Same birth date and country, same customer reference {ON_LIST_REF}")
         variant = engine.audited_screen(listed["variant"], listed["birth_date"], listed["country"], ON_LIST_REF)
         vtop = variant.matches[0]
         print(f"  Decision: ALERT, best {vtop.entity_id} score {vtop.score:.4f}")
         print(f"  Score: exact name {top.score:.4f}, variant {vtop.score:.4f}")
-        check(vtop.entity_id == listed["entity"], "the variant alerts on the same listed entity")
+        check(
+            vtop.entity_id == listed["entity"] and vtop.score < top.score,
+            "the variant alerts on the same listed entity with a lower score",
+        )
 
         heading(4, "Screen a clean name that should not alert")
         print(f"  Query: {CLEAN_NAME!r}, born {CLEAN_BIRTH_DATE}, country {CLEAN_COUNTRY}")
