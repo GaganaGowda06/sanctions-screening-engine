@@ -8,6 +8,16 @@ spelling variants of one sound meet (see FOLDS), and yields two keys:
 The skeleton lets an Arabic-derived form line up with its Latin spellings:
   "mhmd" (from محمد), "mohammed", "muhammad" and "mohamed" all give "s:mhmd".
 
+Deletion keys (optional, off by default): so that one wrong, missing or extra letter still retrieves the entity, a
+token also yields
+  d:<token>            the folded token itself, and
+  d:<token minus one letter>   one key for each single-letter deletion of it
+A query token yields the same set, and the two sets share a key whenever the tokens differ by one substitution,
+insertion or deletion. The folded token is used, so the typo is folded the same way as the indexed spelling. Only
+tokens of at least 3 letters get the d:<token> key and only tokens of at least 4 get deletions (a deletion of a
+3-letter token leaves 2 letters, which everything shares). Joined words get none: they are long, and a typo in a joined
+name still reaches the entity through its tokens. These keys follow the same max_df rule as every other key.
+
 Joined tokens: adjacent pairs and triples of tokens are also joined into one word and keyed the
 same way, so "abd allah" and "abdallah", or "al hamdani" and "alhamdani", share keys.
 
@@ -33,6 +43,8 @@ _VOWELS = re.compile("[aeiouyw]")
 _REPEATS = re.compile(r"(.)\1+")
 _ARTICLE_MIN_LENGTH = 5  # "alhmdany" gets an extra key without "al", "alan" does not
 _MAX_JOIN = 3  # longest run of adjacent tokens that is also keyed as one word
+_DELETION_BASE_MIN = 3  # shortest token that gets a d:<token> key
+_DELETION_MIN = 4  # shortest token that also gets the keys for its single-letter deletions
 
 # Applied in order, to ASCII tokens only. Each rule folds spellings of one sound together:
 #   dzh zh dj -> j     Russian ж/дж, Balkan dj
@@ -65,7 +77,19 @@ def skeleton(token: str) -> str:
     return _REPEATS.sub(r"\1", _VOWELS.sub("", token))
 
 
-def name_keys(name: str, do_fold: bool = True, join: bool = True, strip_article: bool = True) -> set[str]:
+def deletion_neighbourhood(token: str) -> set[str]:
+    """The d: keys of one token: itself, and each single-letter deletion (see the module docstring)."""
+    keys: set[str] = set()
+    if len(token) >= _DELETION_BASE_MIN:
+        keys.add(f"d:{token}")
+    if len(token) >= _DELETION_MIN:
+        keys |= {f"d:{token[:i]}{token[i + 1 :]}" for i in range(len(token))}
+    return keys
+
+
+def name_keys(
+    name: str, do_fold: bool = True, join: bool = True, strip_article: bool = True, deletion_keys: bool = False
+) -> set[str]:
     """All index keys for a name. Used for both indexing and querying."""
     tokens = [t for t in normalise(name).split() if not (len(t) == 1 and t.isascii())]
     if do_fold:
@@ -76,6 +100,9 @@ def name_keys(name: str, do_fold: bool = True, join: bool = True, strip_article:
             for start in range(len(tokens) - size + 1):
                 words.add("".join(tokens[start : start + size]))
     keys: set[str] = set()
+    if deletion_keys:
+        for token in set(tokens):
+            keys |= deletion_neighbourhood(token)
     for word in words:
         keys.add(f"t:{word}")
         if sk := skeleton(word):
@@ -94,9 +121,15 @@ def _rank_key(item: tuple[int, float]) -> tuple[float, int]:
 
 class CandidateIndex:
     def __init__(
-        self, max_df: int = 1000, do_fold: bool = True, join: bool = True, strip_article: bool = True
+        self,
+        max_df: int = 1000,
+        do_fold: bool = True,
+        join: bool = True,
+        strip_article: bool = True,
+        deletion_keys: bool = False,
     ) -> None:
         self.max_df = max_df
+        self.deletion_keys = deletion_keys
         self.do_fold = do_fold
         self.join = join
         self.strip_article = strip_article
@@ -111,15 +144,16 @@ class CandidateIndex:
         do_fold: bool = True,
         join: bool = True,
         strip_article: bool = True,
+        deletion_keys: bool = False,
     ) -> "CandidateIndex":
         """Build from (entity id, names) pairs."""
-        index = cls(max_df=max_df, do_fold=do_fold, join=join, strip_article=strip_article)
+        index = cls(max_df=max_df, do_fold=do_fold, join=join, strip_article=strip_article, deletion_keys=deletion_keys)
         for entity_id, names in entities:
             index.add(entity_id, names)
         return index
 
     def _keys(self, name: str) -> set[str]:
-        return name_keys(name, self.do_fold, self.join, self.strip_article)
+        return name_keys(name, self.do_fold, self.join, self.strip_article, self.deletion_keys)
 
     def add(self, entity_id: str, names: Sequence[str]) -> None:
         keys: set[str] = set()

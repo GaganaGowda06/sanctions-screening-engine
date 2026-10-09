@@ -125,10 +125,14 @@ class ScreeningEngine:
 
     @classmethod
     def from_entities(
-        cls, entities: list[dict], config: ScreeningConfig | None = None, max_df: int = 1000
+        cls,
+        entities: list[dict],
+        config: ScreeningConfig | None = None,
+        max_df: int = 1000,
+        deletion_keys: bool = False,
     ) -> "ScreeningEngine":
         config = config or ScreeningConfig.load()
-        return cls(Screener.build(entities, max_df=max_df, blend=config.blend), config)
+        return cls(Screener.build(entities, max_df=max_df, blend=config.blend, deletion_keys=deletion_keys), config)
 
     @classmethod
     def from_file(cls, path: Path = DEFAULT_INPUT, config: ScreeningConfig | None = None) -> "ScreeningEngine":

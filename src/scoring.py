@@ -533,10 +533,14 @@ class Screener:
         skeleton_particles: bool = False,
         common_df: int | None = None,
         orthographic: bool = False,
+        deletion_keys: bool = False,
     ) -> "Screener":
-        """Build from dicts with id, names and optionally birth_dates and countries."""
+        """Build from dicts with id, names and optionally birth_dates and countries. `deletion_keys` adds the
+        single-letter-deletion keys to the candidate index (see candidates.py)."""
         entities = list(entities)
-        index = CandidateIndex.build(((e["id"], e["names"]) for e in entities), max_df=max_df)
+        index = CandidateIndex.build(
+            ((e["id"], e["names"]) for e in entities), max_df=max_df, deletion_keys=deletion_keys
+        )
         records = {e["id"]: make_record(e["names"], e.get("birth_dates", ()), e.get("countries", ())) for e in entities}
         return cls(
             index, records, adjustments or Adjustments(), blend, length_penalty, idf_table,

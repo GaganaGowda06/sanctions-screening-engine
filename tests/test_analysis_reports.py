@@ -243,6 +243,26 @@ def test_the_licence_and_attribution_are_stated_in_the_readme_and_the_docs():
     assert "data/external/" in (ROOT / ".gitignore").read_text()
 
 
+def test_the_stage_5_dev_verdict_follows_the_criteria_written_before_the_run():
+    d = load("stage5_dev.json")
+    v = d["verdict"]
+    one, two, three, four = (
+        v["1_single_letter_slip_rate"],
+        v["2_f1"],
+        v["3_false_alert_rate"],
+        v["4_candidates_and_latency"],
+    )
+    assert one["pass"] == (one["after"] <= 0.5 * one["before"] and not one["families_whose_rate_rose"])
+    assert two["pass"] == (two["after"] >= two["before"] - 0.005)
+    assert three["pass"] == (three["overall_rise_points"] <= 0.5 and three["arabic_rise_points"] <= 1.0)
+    assert four["pass"] == (four["candidates_ratio"] <= 2 and four["latency_ratio"] <= 2)
+    assert v["all_pass"] == (one["pass"] and two["pass"] and three["pass"] and four["pass"])
+    assert v["all_pass"] is False and not (REPORTS / "stage5_v4.json").exists()  # rejected on dev: v4 is not scored
+    assert d["max_df_250_vs_1000_with_the_new_index"]["adopt"] is False
+    for text in ("13.90%", "12.92%", "+0.95", "+2.36", "1.35x", "1.43x"):
+        assert text in LIMITS, text
+
+
 def test_the_docs_are_plain_writing():
     for text in (LIMITS, LABELS):
         assert "—" not in text and "–" not in text

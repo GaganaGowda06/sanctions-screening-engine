@@ -185,6 +185,7 @@ def rarity_table_sha256(screener: Screener) -> str:
 def engine_settings(screener: Screener) -> dict[str, object]:
     return {
         "max_df": screener.index.max_df,
+        "deletion_keys": screener.index.deletion_keys,
         "skeleton_idf": screener.skeleton_idf,
         "skeleton_particles": screener.skeleton_particles,
         "common_df": screener.common_df,

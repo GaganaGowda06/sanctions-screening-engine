@@ -8,7 +8,7 @@ This is an analysis of the matcher, not a new feature. Nothing in scoring, match
 - The list is the snapshot `20261006074704-hib`. The 0.777 was first measured on an earlier snapshot. The harness here reproduces it exactly on this one, which also shows the list has not moved the figure: 1,474 true alerts, 132 wrong-entity alerts and 187 false alerts, F1 0.7772.
 - Two engines are used. The Stage 2 engine (no rarity-weighted skeleton) is the one behind the 0.777, so the error analysis, the label work and the prevalence table use it on the second hold-out. The shipped engine (with the rarity-weighted skeleton) is used on the third hold-out, where it reproduces F1 0.8008 (1,489 true alerts, 90 wrong-entity alerts, 140 false alerts). The adversarial test uses the shipped engine, because that is the one deployed.
 - Positives means all 2,400 positive queries of a hold-out. Headline positives means the 2,000 used for the headline F1. Negatives means all 2,400 negatives; headline negatives are the 2,000 in Latin, Cyrillic and Arabic script. Every count below says which.
-- Scripts and reports: `analysis/error_analysis.py`, `label_dependence.py`, `query_provenance.py`, `prevalence.py`, `tuning_transfer.py`, `adversarial.py`, `adversarial_summary.py`, `retrieval_gap.py`, `pairs_external.py` with `pairs_external_score.py`, with `common.py`, `perturb.py` and `textsim.py` as helpers. They use the research path (the components the engine scores with), so no audit record is written.
+- Scripts and reports: `analysis/error_analysis.py`, `label_dependence.py`, `query_provenance.py`, `prevalence.py`, `tuning_transfer.py`, `adversarial.py`, `adversarial_summary.py`, `retrieval_gap.py`, `pairs_external.py` with `pairs_external_score.py`, and `stage5.py`, with `common.py`, `perturb.py` and `textsim.py` as helpers. They use the research path (the components the engine scores with), so no audit record is written.
 
 ## 1. Error analysis of the headline F1
 
@@ -368,6 +368,29 @@ Where it is better: overall F1 is 0.969, which is 0.17 to 0.19 above the hold-ou
 
 The earlier limitation, that the labels were never human-checked, is partly answered. The pairwise scoring is now checked against 439,813 analyst judgements. The list-screening figures (the 26.3% Arabic false-alert rate, the recall of the hold-out groups, the precision at realistic prevalence) are still measured only on constructed queries.
 
+## 7. Stage 5: deletion-neighbourhood keys in the candidate index (rejected on dev)
+
+The change adds a key for every single-letter deletion of each indexed token and of each query token, so one wrong, missing or extra letter still retrieves the entity (`src/candidates.py`, behind `deletion_keys`, default off; scoring unchanged). The criteria were written into the project notes before any code changed. Dev is the dev split of the existing generator: 1,000 headline positives and 1,900 headline negatives. v4, the fresh hold-out, was frozen and is **not scored**, because the rule is that dev must pass first. Before is the shipped engine; after is the same engine with the new keys.
+
+| Criterion | Before | After | Limit | Verdict |
+|---|---|---|---|---|
+| 1. Single-letter slip rate (5,920 variants, 750 positives caught by the before engine) | 13.90% (823) | 12.92% (765) | after at most 0.5 x before, no family rising | **fail** (ratio 0.93) |
+| 2. F1 | 0.7400 | 0.7355 | fall of at most 0.005 | pass (fall 0.0045) |
+| 3. False-alert rate overall | 12.21% (232 of 1,900) | 13.16% (250 of 1,900) | rise of at most 0.5 points | **fail** (+0.95) |
+| 3. False-alert rate, Arabic script | 27.47% | 29.84% | rise of at most 1 point | **fail** (+2.36) |
+| 4. Median candidates per query | 488 | 656.5 | at most 2x | pass (1.35x) |
+| 4. p95 latency of Screener.components | 84.3 ms | 120.9 ms | at most 2x | pass (1.43x) |
+
+**The fix is rejected**, as max_df 10000 was. Per family (slips of variants, before to after): consonant_delete 24.68% to 20.69% (1,329 variants), consonant_double 11.29% to 11.10% (1,523), vowel_delete 10.24% to 10.18% (1,533), vowel_swap 10.81% to 10.75% (1,535). No family rose, and only consonant deletion moved by more than a fraction of a point. Token edits 24.83% to 24.74%, romanisation 19.90% to 19.15%, controls 0.
+
+Other measurements. Recall 0.750 to 0.755; precision 0.7303 to 0.7170; positives whose true entity was not scored 69 to 60; mean candidates 630.8 to 818.2, p95 1,750 to 2,226. Index over the full list: keys 1,137,909 to 2,013,081, postings 2,565,225 to 6,828,805 (2.7x), memory 210 MB to 392 MB, index build 4.9 s to 8.3 s on an idle machine. Per-script false-alert rate: Latin 4.16% to 4.29%, Cyrillic 3.02% to 3.26%, Arabic 27.47% to 29.84%.
+
+max_df 250 against 1000 with the new index, on dev: F1 0.7355 to 0.7501 (+0.0146), recall 0.755 to 0.743 (-1.2 points), false-alert rate 13.16% to 10.11%, no script's rate rises, median candidates 201, p95 latency 41.4 ms. The adoption rule needed recall to fall by no more than a point, so it is **not adopted**.
+
+Why it failed. The retrieval analysis (`analysis/retrieval_gap.py`) had already shown that only 178 of 1,549 single-letter slips on the third hold-out (11.5%) were retrieval misses; the rest were retrieved and scored under the threshold. A fix that only improves retrieval has a ceiling near that share. That figure existed when I set the bar of halving the slip rate, and I did not apply it; I did not change the bar after seeing the result. The extra false alerts are concentrated in Arabic script (+2.36 points, against +0.13 for Latin and +0.24 for Cyrillic). I have not diagnosed why.
+
+What it leaves. The fragility to a one-letter change is mostly a scoring problem, and a retrieval fix is not the lever for it. If it is pursued, a change to scoring is the next candidate, not another index key.
+
 ## What it adds up to
 
 Stated without softening:
@@ -379,3 +402,4 @@ Stated without softening:
 5. The tuning is not overfit, but it does not explain the weakness either, and `max_df` is set at a value that is worse for F1 than a smaller one on this slice.
 6. Everything above comes from one generator of queries. None of it was tested on names from real customers or real screening traffic.
 7. Against analyst labels the pairwise scoring holds up for people and organisations (F1 0.969 overall, 0.818 on pairs with no shared name), and fails for vessels, securities and crypto wallets, for pairs with no birth date and no shared name, and for namesakes (93% alert when no birth date is on both sides). Those labels do not validate the list-screening false-alert rate.
+8. A retrieval fix for typos (deletion keys) did not pass dev: the single-letter slip rate fell only from 13.9% to 12.9%, and the false-alert rate rose, 2.4 points for Arabic script. It is rejected.

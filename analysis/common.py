@@ -11,6 +11,7 @@ over the threshold, because the error analysis needs the true entity's score eve
 import hashlib
 import json
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -78,9 +79,11 @@ def score_query(
     country = q["country"] if country == "__q__" else country
     config = engine.config
     threshold = config.threshold_for(query_script(name))
+    started = time.perf_counter()
     comps = engine.screener.components(
         name, dob, country, keep=CANDIDATE_CAP, blends=(config.blend,), always=q.get("true_id")
     )
+    seconds = time.perf_counter() - started
     scored = score_components(comps, config)
     true = next((entry(c, s, u) for c, s, u in scored if c.entity_id == q.get("true_id")), None)
     alerts = sorted((entry(c, s, u) for c, s, u in scored if s >= threshold), key=lambda e: (-e["score"], e["id"]))
@@ -91,6 +94,7 @@ def score_query(
         "alerts": alerts[:25],
         "n_alerts": len(alerts),
         "best_other": round(max(others, default=0.0), 6),
+        "components_seconds": seconds,
     }
 
 
