@@ -37,7 +37,7 @@ GATE_GLOB = "stage4_list_update_gate_*.json"
 EXIT_BY_STATUS = {"ok": 0, "insufficient_data": 3, "warn": 10, "alert": 20}
 EXIT_REFUSED = 2
 
-# The two stated gaps. The README's Stage 4 section says the same things in the same words; a test checks it.
+# The two stated gaps. The Stage 4 section of docs/project_report.md says the same in the same words (a test checks).
 GAP_CONSTRUCTED = (
     "Monitoring is demonstrated on constructed batches, not production traffic. The baseline and the stable, mix-shift "
     "and degraded batches are samples of a spent hold-out, so how often a live deployment would warn or alert is "

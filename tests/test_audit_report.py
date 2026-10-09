@@ -360,7 +360,7 @@ def test_the_report_command_is_listed_and_the_module_is_classified():
 # ---------- the README summary and the doc say the same things ----------
 
 ROOT = Path(__file__).resolve().parent.parent
-README = ROOT / "README.md"
+README = ROOT / "docs" / "project_report.md"  # the long README; the short one at the root is checked in test_readme.py
 DOC = ROOT / "docs" / "stage4_audit_and_monitoring.md"
 
 
@@ -375,7 +375,7 @@ def doc_text() -> str:
 
 def test_the_readme_summary_links_the_doc_and_is_short():
     summary = readme_summary()
-    assert "(docs/stage4_audit_and_monitoring.md)" in summary and DOC.is_file()
+    assert "(stage4_audit_and_monitoring.md)" in summary and DOC.is_file()
     assert 300 <= len(summary.split()) <= 520  # about 400 words
 
 
