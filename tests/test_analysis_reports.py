@@ -263,6 +263,25 @@ def test_the_stage_5_dev_verdict_follows_the_criteria_written_before_the_run():
         assert text in LIMITS, text
 
 
+def test_the_threshold_sweep_table_in_the_doc_matches_the_report():
+    sweep = load("pairs_external_threshold_sweep.json")
+    rows = {"All scored pairs": "all_pairs", "No shared name": "no_shared_name", "Person to person": "person_person"}
+    for label, key in rows.items():
+        line = next(
+            ln for ln in LIMITS.splitlines() if ln.startswith(f"| {label} | ") and "Best" not in ln and "0.85" in ln
+        )
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        at, best = sweep[key]["at_086"], sweep[key]["best"]
+        assert sweep[key]["reproduces_stored_086"] is True
+        assert cells[1] == f"{sweep[key]['pairs']:,}"
+        assert cells[2] == f"{at['precision']:.4f} / {at['recall']:.4f} / {at['f1']:.4f}"
+        assert cells[3] == f"{best['threshold']:.2f}" == "0.85"
+        assert cells[4] == f"{best['precision']:.4f} / {best['recall']:.4f} / {best['f1']:.4f}"
+        assert cells[5] == f"{best['f1'] - at['f1']:+.4f}"
+        assert best["f1"] == max(r["f1"] for r in sweep[key]["sweep"])
+        assert [r["threshold"] for r in sweep[key]["sweep"]] == [round(0.5 + i / 100, 2) for i in range(50)]
+
+
 def test_the_docs_are_plain_writing():
     for text in (LIMITS, LABELS):
         assert "—" not in text and "–" not in text

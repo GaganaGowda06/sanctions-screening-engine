@@ -368,6 +368,20 @@ Where it is better: overall F1 is 0.969, which is 0.17 to 0.19 above the hold-ou
 
 The earlier limitation, that the labels were never human-checked, is partly answered. The pairwise scoring is now checked against 439,813 analyst judgements. The list-screening figures (the 26.3% Arabic false-alert rate, the recall of the hold-out groups, the precision at realistic prevalence) are still measured only on constructed queries.
 
+### Would a different threshold do better on these pairs? (analysis only, nothing changed)
+
+The first scoring run saved only aggregates at 0.86, so the pairs were scored a second time with the same code and engine and the per-pair table kept (label, entity-type pair, shared-name flag, forward and reverse score; no names or pair content) in `data/external/pairs_scores_table.npz`, which is git-ignored with the rest of the data. The table was checked against the stored report before use: at 0.86 it gives the same true positives, false positives, false negatives and F1 in all three slices (all pairs 261,790 / 9,922 / 6,700, F1 0.9692). `analysis/pairs_external_sweep.py` then swept the threshold from 0.50 to 0.99 in steps of 0.01 (left names as queries; a pair matches when its score is at or above the threshold) and wrote `reports/pairs_external_threshold_sweep.json`.
+
+| Slice | Pairs | At 0.86: precision / recall / F1 | Best threshold | At best: precision / recall / F1 | F1 gain |
+|---|---|---|---|---|---|
+| All scored pairs | 439,813 | 0.9635 / 0.9750 / 0.9692 | 0.85 | 0.9608 / 0.9819 / 0.9712 | +0.0020 |
+| No shared name | 186,946 | 0.8428 / 0.7953 / 0.8184 | 0.85 | 0.8283 / 0.8117 / 0.8199 | +0.0015 |
+| Person to person | 268,027 | 0.9707 / 0.9888 / 0.9797 | 0.85 | 0.9690 / 0.9908 / 0.9798 | +0.0001 |
+
+The gap is small. On these labels 0.86 is within one step of the F1 optimum in every slice, and the curve is flat around it: F1 stays within 0.005 of the best from 0.78 to 0.92 for all pairs, from 0.71 to 0.95 for person to person, and from 0.83 to 0.87 for pairs with no shared name, where it is steepest (F1 0.8047 at 0.80, 0.7998 at 0.90, 0.7318 at 0.95). The threshold is not what limits the pairwise scoring.
+
+Limits of this. The best threshold is picked on the same pairs it is reported on, so the gain is an in-sample figure, and a gain of 0.0001 to 0.002 is below any difference worth acting on. F1 depends on the share of positives in the file (61.0% overall, 12.4% for no shared name), so the optimum would move at a customer book's prevalence, and these pairs are not a customer book. Retrieval is bypassed, so this says nothing about the threshold for list screening. The threshold in the engine stays at 0.86; no decision follows from this table.
+
 ## 7. Stage 5: deletion-neighbourhood keys in the candidate index (rejected on dev)
 
 The change adds a key for every single-letter deletion of each indexed token and of each query token, so one wrong, missing or extra letter still retrieves the entity (`src/candidates.py`, behind `deletion_keys`, default off; scoring unchanged). The criteria were written into the project notes before any code changed. Dev is the dev split of the existing generator: 1,000 headline positives and 1,900 headline negatives. v4, the fresh hold-out, was frozen and is **not scored**, because the rule is that dev must pass first. Before is the shipped engine; after is the same engine with the new keys.
