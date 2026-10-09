@@ -89,8 +89,8 @@ def test_links_and_commands_point_at_files_that_exist():
 def test_the_licence_and_attribution_are_stated():
     text = section("Licence and attribution")
     assert "CC BY-NC 4.0" in text and "non-commercial" in text and "OpenSanctions" in text
-    assert "arXiv:2603.11051" in text and "does not redistribute" in text
-    assert "code is MIT licensed" in text and "remains CC BY-NC 4.0" in text
+    assert "arXiv:2603.11051" in text and "derived names, birth dates and IDs" in text
+    assert "code is MIT licensed" in text and "covers the code only, not the data" in text
     assert (ROOT / "LICENSE").read_text().startswith("MIT License")
 
 

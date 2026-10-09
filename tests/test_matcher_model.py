@@ -40,9 +40,7 @@ def test_probability_is_the_logistic_of_the_weighted_sum():
     z = 2.0 * 0.8 - 1.0
     assert model.probability(features(name_score=0.8)) == pytest.approx(1 / (1 + math.exp(-z)))
     z = 2.0 * 0.8 - 1.0 - 3.0
-    assert model.probability(features(name_score=0.8, birth_state="conflict")) == pytest.approx(
-        1 / (1 + math.exp(-z))
-    )
+    assert model.probability(features(name_score=0.8, birth_state="conflict")) == pytest.approx(1 / (1 + math.exp(-z)))
     assert mm.LogisticMatcher({}, 0.0).probability(features()) == 0.5
 
 

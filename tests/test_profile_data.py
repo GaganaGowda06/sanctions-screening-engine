@@ -6,6 +6,7 @@ not copied from profiler output. The derivation is in the comment above each ass
 Run:
     pytest
 """
+
 import json
 
 import pytest
@@ -28,12 +29,28 @@ def entity(eid, schema, target=False, **props):
 
 FIXTURE_ENTITIES = [
     # Arabic name + Latin alias listed twice + the same alias again as weakAlias: dedupes to 2 names.
-    entity("P1", "Person", True, name=[ARABIC], alias=["Mohammed Ali", "Mohammed Ali"],
-           weakAlias=["Mohammed Ali"], birthDate=["1970"], nationality=["sa"]),
+    entity(
+        "P1",
+        "Person",
+        True,
+        name=[ARABIC],
+        alias=["Mohammed Ali", "Mohammed Ali"],
+        weakAlias=["Mohammed Ali"],
+        birthDate=["1970"],
+        nationality=["sa"],
+    ),
     entity("P2", "Person", True, name=[CYRILLIC], idNumber=["123"]),
     # Han name + Latin alias + the same Latin string as previousName: dedupes to 2 names.
-    entity("P3", "Person", False, name=[HAN], alias=["Zhang Wei"], previousName=["Zhang Wei"],
-           birthDate=["1980-01-01"], citizenship=["cn"]),
+    entity(
+        "P3",
+        "Person",
+        False,
+        name=[HAN],
+        alias=["Zhang Wei"],
+        previousName=["Zhang Wei"],
+        birthDate=["1980-01-01"],
+        citizenship=["cn"],
+    ),
     entity("P4", "Person", True, name=[HANGUL], birthDate=["1990"]),
     entity("P5", "Person", False, name=[HIRAGANA], alias=[KATAKANA]),
     entity("P6", "Person", False, name=[FULLWIDTH], programId=["PRG"]),
@@ -82,7 +99,12 @@ def test_names_all_entities(result):
     # Latin: Mohammed Ali, Zhang Wei, fullwidth John Smith, mixed, Acme Ltd = 5.
     # Cyrillic: Владимир Иванов, mixed = 2. Kana: 2 names. Arabic, Han, Hangul: 1 each.
     assert n["names_containing_script"] == {
-        "Latin": 5, "Cyrillic": 2, "Japanese kana": 2, "Arabic": 1, "Han": 1, "Hangul": 1,
+        "Latin": 5,
+        "Cyrillic": 2,
+        "Japanese kana": 2,
+        "Arabic": 1,
+        "Han": 1,
+        "Hangul": 1,
     }
     # Entities with a non-Latin name: P1, P2, P3, P4, P5, C1 = 6.
     assert n["entities_with_any_non_latin_name"] == 6
@@ -168,6 +190,9 @@ def test_top_identifier_properties(result):
     # One entity each: P2 idNumber (target), C1 leiCode (target), PS1 number and passportNumber,
     # P6 programId. wikidataId on C2 is excluded.
     assert top == {
-        "idNumber": (1, 1), "leiCode": (1, 1), "number": (1, 0),
-        "passportNumber": (1, 0), "programId": (1, 0),
+        "idNumber": (1, 1),
+        "leiCode": (1, 1),
+        "number": (1, 0),
+        "passportNumber": (1, 0),
+        "programId": (1, 0),
     }

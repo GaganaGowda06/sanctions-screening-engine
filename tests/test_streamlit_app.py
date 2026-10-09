@@ -26,7 +26,7 @@ def entity(i, name, schema="Person", born=None, country=None):
 
 
 LIST = [
-    entity("e1", "Mohammad Mahdi Maghfoori", born="1969-12-20", country="ir"),
+    entity("e1", "Zanthor Fictionalis Examplewood", born="1900-01-01", country="ir"),
     entity("e2", "Ivan Petrovich Sokolov", born="1980-05-05", country="ru"),
     entity("e3", "Acme Trading Limited", schema="Company"),
 ]
@@ -51,12 +51,12 @@ META = {"e1": ("Person", "us_ofac_sdn"), "e2": ("Person", "eu_fsf"), "e3": ("Com
 def test_a_listed_name_alerts_and_shows_the_columns_and_components(app, engine, tmp_path, monkeypatch):
     real_store = tmp_path / "real-audit"
     monkeypatch.setenv("SCREENING_AUDIT_DIR", str(real_store))
-    result = app.screen_name(engine, META, "Mohammad Mahdi Maghfoori", "1969-12-20", "IR")
+    result = app.screen_name(engine, META, "Zanthor Fictionalis Examplewood", "1900-01-01", "IR")
     assert result.decision == "alert" and result.top_score >= result.threshold == 0.86
     assert result.missing == [] and len(result.candidates) <= app.TOP
     top = result.candidates[0]
     assert (top.entity_id, top.entity_type, top.source_lists) == ("e1", "Person", "us_ofac_sdn")
-    assert top.birth_dates == "1969-12-20" and top.countries == "ir"
+    assert top.birth_dates == "1900-01-01" and top.countries == "ir"
     text = " ".join(app.explain(top))
     assert "closest listed name" in text and "birth date agrees" in text and "country agrees" in text
     assert not real_store.exists()
