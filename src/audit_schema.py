@@ -2,7 +2,7 @@
 
 This module defines header content and nothing about how headers are stored. Storage, the hash chain, verification
 and replay are in audit.py, audit_verify.py and replay.py and are not hashed into the run context; this file is
-(the project notes: the hash covers what a record says, not how it is stored). The schema version below and TOP_CANDIDATES
+(project notes: the hash covers what a record says, not how it is stored). The schema version below and TOP_CANDIDATES
 are also run context fields, so a record made under another schema or another candidate cut-off cannot be replayed
 as if nothing changed.
 

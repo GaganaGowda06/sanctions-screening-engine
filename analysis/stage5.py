@@ -14,7 +14,8 @@ The criteria are the ones written into the project notes before any code changed
   4. Median candidates per query (len of CandidateIndex.query) rise by no more than 2x, and p95 latency (per query,
      Screener.components; median of three runs of the p95, after a warm-up pass) by no more than 2x.
 Also reported: index keys, postings, tracemalloc MB, build time; recall by group; retrieval misses; the token-edit and
-romanisation families; and, on dev, max_df 250 against 1000 with the new index and the adoption rule from the project notes.
+romanisation families; and, on dev, max_df 250 against 1000 with the new index, under the adoption rule in
+the project notes.
 
 "Before" is the shipped engine (rarity-weighted skeleton, max_df 1000, no deletion keys); "after" is the same engine
 with deletion_keys=True. Nothing is tuned here. Dev is rebuilt as evaluate_screening.py builds it; v4 is read from its

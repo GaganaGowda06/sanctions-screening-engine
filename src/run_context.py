@@ -4,7 +4,7 @@ An audit record has to say not only what the matcher decided but under what. Rep
 exact if the code, configuration, list and libraries are the same, so each record carries the hash of the run
 context it was made under, and replay refuses to run under a different one.
 
-What goes in, and why it is there (found by reading the score path, see the project notes running notes):
+What goes in, and why it is there (found by reading the score path, see the project notes):
   code            git SHA and a dirty-tree flag, plus the SHA-256 of each source file on the score path. The
                   normalisation and transliteration tables are Python source, so their hash is the source hash.
   config          the ScreeningConfig values, and the SHA-256 of src/screening_config.json when it exists.

@@ -3,7 +3,7 @@
 Run:
     python analysis/tuning_transfer.py
 
-What was tuned, and on what (the project notes, README, reports/stage2_screening.json, reports/stage3_skeleton_idf.json):
+What was tuned, and on what (project notes, README, reports/stage2_screening.json, reports/stage3_skeleton_idf.json):
   floor, lift, blend, global threshold   grid search on dev (step 4); frozen at 0.6, 0.2, 0.5, 0.86
   per-script thresholds                  chosen on dev (0.86 / 0.88 / 0.86); kept for reference and switched off
   rarity-weighted skeleton               Stage 3, judged on dev and test; kept

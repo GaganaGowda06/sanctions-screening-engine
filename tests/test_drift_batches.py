@@ -109,8 +109,8 @@ def test_fifty_stable_batches_rarely_raise_an_overall_warning(batches):
     status ok. A single draw cannot be asserted against a probabilistic limit: even with correct limits a clean batch
     sometimes warns, so one batch passing or failing says little. The expectation is now about the rate over 50 seeded
     stable batches: the overall status is warn or worse in at most 10% of them and alert in at most 2%. This is a
-    change of expectation, made after the single batch came out warn, and it is recorded here and in the project notes. The
-    original single stable batch is still run, and its result is in the report (see the next test)."""
+    change of expectation, made after the single batch came out warn, and it is recorded here and in the project notes.
+    The original single stable batch is still run, and its result is in the report (see the next test)."""
     out, _ = batches
     repeated = out["repeated_stable"]
     assert repeated["batches"] == 50
