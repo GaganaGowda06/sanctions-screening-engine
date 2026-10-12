@@ -12,3 +12,5 @@ audit/
 
 # external human-labelled data (CC BY-NC 4.0): a local cache only, never committed or redistributed
 data/external/
+
+# local project notes, not published
