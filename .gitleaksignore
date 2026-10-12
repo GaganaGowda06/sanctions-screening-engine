@@ -1,0 +1,3 @@
+# False positives: SHA-256 digests of the pair keys, named pair_keys_sha256. Not credentials.
+81ca7787a931ba0dc5eafe14c5cff48b647d3092:splits/pairs/manifest.json:generic-api-key:21
+81ca7787a931ba0dc5eafe14c5cff48b647d3092:reports/pairs_splits.json:generic-api-key:22
