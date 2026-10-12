@@ -20,6 +20,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def repo_relative(path: Path) -> str:
+    """The path as written into reports: relative to the repository root, never an absolute path on this machine."""
+    resolved = Path(path).resolve()
+    return str(resolved.relative_to(ROOT)) if resolved.is_relative_to(ROOT) else resolved.name
 DEFAULT_INPUT = ROOT / "data" / "sanctions" / "entities.ftm.json"
 DEFAULT_OUTPUT = ROOT / "reports" / "stage1_profile.json"
 PROPS_PATH = Path(__file__).resolve().parent / "ftm_props.json"
@@ -258,7 +264,7 @@ def profile(path: Path) -> dict:
 
     size = path.stat().st_size
     return {
-        "input": str(path),
+        "input": repo_relative(path),
         "dataset_version": version,
         "file_sha1": sha1,
         "sha1_matches_version_file": (sha1 == recorded["sha1"]) if "sha1" in recorded else None,

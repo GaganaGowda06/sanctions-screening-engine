@@ -25,7 +25,7 @@ from collections import Counter
 from pathlib import Path
 
 from pairs import PAIRS_PATH, in_scope, iter_pairs
-from profile_data import COUNTRY_PROPS, NAME_PROPS, PROPS_PATH, name_scripts
+from profile_data import COUNTRY_PROPS, NAME_PROPS, PROPS_PATH, name_scripts, repo_relative
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = ROOT / "reports" / "pairs_profile.json"
@@ -199,7 +199,7 @@ def profile(path: Path) -> dict:
         }
 
     return {
-        "file": str(path),
+        "file": repo_relative(path),
         "python_version": platform.python_version(),
         "pairs": total,
         "positive_share_by_tenth_of_file": by_tenth,
