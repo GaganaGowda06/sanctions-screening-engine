@@ -65,7 +65,7 @@ def test_cyrillic_decomposed_input_matches_composed():
         ("عائشة", "aisha"),  # ئ as i
         ("پوتین", "pwtyn"),  # Persian پ and ی
         ("٢٠٢٤", "2024"),  # Arabic-Indic digits
-        ("محمد‌علي", "mhmdly"),  # zero-width non-joiner removed
+        ("محمد\u200cعلي", "mhmdly"),  # zero-width non-joiner removed
         ("ځدران", "dzdran"),  # Pashto ځ
         ("ﷲ", "allh"),  # presentation ligature expanded by NFKC
     ],

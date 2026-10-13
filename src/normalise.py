@@ -58,7 +58,7 @@ _LATIN_SPECIAL = {
 
 _APOSTROPHES = "'`´‘’‛ʹʻʼʽʾʿˮ"
 # Zero-width and directional marks, soft hyphen, BOM.
-_INVISIBLE = "​‌‍‎‏؜­﻿"
+_INVISIBLE = "\u200b\u200c\u200d\u200e\u200f\u061c\u00ad\ufeff"
 
 
 def _build_table() -> dict[int, str]:
